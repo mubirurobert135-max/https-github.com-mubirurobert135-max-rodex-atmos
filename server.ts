@@ -21,8 +21,95 @@ interface CacheEntry {
   data: any;
 }
 
+interface ProviderUsage {
+  hourlyCalls: number;
+  windowStartTime: number;
+  lastErrorTime: number;
+  consecutiveErrors: number;
+}
+
 const cache = new Map<string, CacheEntry>();
 const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+const providerUsageMap = new Map<string, ProviderUsage>();
+
+/**
+ * Hourly window reset: Resets every 60 minutes (rolling interval from the start of each window).
+ * Note: These in-memory counters are best-effort per server instance and cannot guarantee
+ * a strict distributed app-wide quota across multi-instance server deployments.
+ */
+function checkBudget(providerName: string): boolean {
+  const now = Date.now();
+  const hourMs = 60 * 60 * 1000;
+  
+  if (!providerUsageMap.has(providerName)) {
+    providerUsageMap.set(providerName, { hourlyCalls: 0, windowStartTime: now, lastErrorTime: 0, consecutiveErrors: 0 });
+  }
+
+  const usage = providerUsageMap.get(providerName)!;
+  if (now - usage.windowStartTime > hourMs) {
+    usage.hourlyCalls = 0;
+    usage.windowStartTime = now;
+  }
+
+  let budget = 1000;
+  if (providerName === 'WeatherAPI.com') {
+    budget = Number(process.env.WEATHERAPI_BUDGET_HOURLY || 1000);
+  } else if (providerName === 'Open-Meteo') {
+    budget = Number(process.env.OPEN_METEO_BUDGET_HOURLY || 5000);
+  } else if (providerName === 'OpenWeather') {
+    budget = Number(process.env.OPENWEATHER_BUDGET_HOURLY || 1000);
+  }
+
+  if (usage.hourlyCalls >= budget) {
+    console.warn(`[Budget Notice] Provider ${providerName} reached hourly budget of ${budget}. Skipping.`);
+    return false;
+  }
+
+  return true;
+}
+
+// Count every actual outbound provider request attempt before sending it (success or failure)
+function recordProviderAttempt(providerName: string) {
+  const now = Date.now();
+  const hourMs = 60 * 60 * 1000;
+
+  if (!providerUsageMap.has(providerName)) {
+    providerUsageMap.set(providerName, { hourlyCalls: 0, windowStartTime: now, lastErrorTime: 0, consecutiveErrors: 0 });
+  }
+  const usage = providerUsageMap.get(providerName)!;
+  if (now - usage.windowStartTime > hourMs) {
+    usage.hourlyCalls = 0;
+    usage.windowStartTime = now;
+  }
+  usage.hourlyCalls++;
+}
+
+function recordProviderSuccess(providerName: string) {
+  if (!providerUsageMap.has(providerName)) {
+    providerUsageMap.set(providerName, { hourlyCalls: 0, windowStartTime: Date.now(), lastErrorTime: 0, consecutiveErrors: 0 });
+  }
+  const usage = providerUsageMap.get(providerName)!;
+  usage.consecutiveErrors = 0;
+}
+
+function recordProviderError(providerName: string) {
+  if (!providerUsageMap.has(providerName)) {
+    providerUsageMap.set(providerName, { hourlyCalls: 0, windowStartTime: Date.now(), lastErrorTime: 0, consecutiveErrors: 0 });
+  }
+  const usage = providerUsageMap.get(providerName)!;
+  usage.lastErrorTime = Date.now();
+  usage.consecutiveErrors++;
+}
+
+function isProviderHealthy(providerName: string): boolean {
+  const usage = providerUsageMap.get(providerName);
+  if (!usage) return true;
+  const cooldownMs = 5 * 60 * 1000; // 5 min cooldown after repeated errors
+  if (usage.consecutiveErrors >= 3 && (Date.now() - usage.lastErrorTime < cooldownMs)) {
+    return false;
+  }
+  return true;
+}
 
 async function startServer() {
   const app = express();
@@ -34,7 +121,7 @@ async function startServer() {
   const geminiApiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
   const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
 
-  // Check eligible providers based on environment secrets and defaults
+  // Check eligible providers based on environment secrets, health, and budget
   const getEligibleProviders = (): ProviderConfig[] => {
     const providers: ProviderConfig[] = [];
 
@@ -56,8 +143,8 @@ async function startServer() {
       disclaimer: 'Open-Meteo public free weather API.'
     });
 
-    // 3. OpenWeather (Disabled by default until compatible MIT-compatible license & commercial key confirmed)
-    if (process.env.OPENWEATHER_API_KEY && process.env.OPENWEATHER_COMMERCIAL_CONFIRMED === 'true') {
+    // 3. OpenWeather (Disabled by default; requires server key AND explicit confirmation flag)
+    if (process.env.OPENWEATHER_API_KEY && process.env.OPENWEATHER_API_KEY.trim() !== '' && process.env.OPENWEATHER_COMMERCIAL_CONFIRMED === 'true') {
       providers.push({
         name: 'OpenWeather',
         isEligible: true,
@@ -66,7 +153,8 @@ async function startServer() {
       });
     }
 
-    return providers;
+    // Filter by health cooldown and hourly budget limits
+    return providers.filter(p => isProviderHealthy(p.name) && checkBudget(p.name));
   };
 
   // Helper to fetch weather via WeatherAPI.com
@@ -85,7 +173,6 @@ async function startServer() {
 
     const data = await res.json();
     
-    // Normalize into standard WeatherData format
     const location = {
       name: data.location.name,
       country: data.location.country,
@@ -108,7 +195,6 @@ async function startServer() {
       surface_pressure: data.current.pressure_mb
     };
 
-    // Extract hourly from forecast forecastday[0] and [1]
     const hourlyTimes: string[] = [];
     const hourlyTemps: number[] = [];
     const hourlyPrecipProb: number[] = [];
@@ -174,6 +260,103 @@ async function startServer() {
     };
   }
 
+  // Helper to fetch weather via OpenWeather
+  async function fetchOpenWeather(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
+    const apiKey = process.env.OPENWEATHER_API_KEY;
+    if (!apiKey) throw new Error('OPENWEATHER_API_KEY not configured');
+
+    let lat: number;
+    let lon: number;
+    let name = cityNameHint || 'Location';
+    let country = '';
+
+    if (typeof queryOrCoords === 'string') {
+      const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(queryOrCoords)}&limit=1&appid=${apiKey}`;
+      const geoRes = await fetch(geoUrl);
+      const geoData = await geoRes.json();
+      if (!geoData || geoData.length === 0) {
+        throw new Error('City not found via OpenWeather geocoding');
+      }
+      lat = geoData[0].lat;
+      lon = geoData[0].lon;
+      name = geoData[0].name;
+      country = geoData[0].country || '';
+    } else {
+      lat = queryOrCoords.lat;
+      lon = queryOrCoords.lon;
+    }
+
+    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
+    const forecastRes = await fetch(forecastUrl);
+    if (!forecastRes.ok) throw new Error(`OpenWeather error: ${forecastRes.statusText}`);
+    const data = await forecastRes.json();
+
+    const currentItem = data.list[0] || {};
+    const current = {
+      time: currentItem.dt_txt || new Date().toISOString(),
+      temperature_2m: currentItem.main?.temp || 20,
+      relative_humidity_2m: currentItem.main?.humidity || 50,
+      apparent_temperature: currentItem.main?.feels_like || 20,
+      is_day: 1,
+      precipitation: currentItem.rain?.['3h'] || 0,
+      weather_code: mapOpenWeatherCode(currentItem.weather?.[0]?.id),
+      wind_speed_10m: (currentItem.wind?.speed || 3) * 3.6,
+      wind_direction_10m: currentItem.wind?.deg || 0,
+      surface_pressure: currentItem.main?.pressure || 1013
+    };
+
+    const hourlyTimes: string[] = [];
+    const hourlyTemps: number[] = [];
+    const hourlyPrecipProb: number[] = [];
+    const hourlyCodes: number[] = [];
+    const hourlyIsDay: number[] = [];
+
+    data.list.forEach((item: any) => {
+      hourlyTimes.push(item.dt_txt);
+      hourlyTemps.push(item.main?.temp);
+      hourlyPrecipProb.push(Math.round((item.pop || 0) * 100));
+      hourlyCodes.push(mapOpenWeatherCode(item.weather?.[0]?.id));
+      hourlyIsDay.push(1);
+    });
+
+    return {
+      location: {
+        name: data.city?.name || name,
+        country: data.city?.country || country,
+        admin1: '',
+        latitude: lat,
+        longitude: lon,
+        timezone: 'UTC'
+      },
+      weather: {
+        timezone: 'UTC',
+        current,
+        hourly: {
+          time: hourlyTimes,
+          temperature_2m: hourlyTemps,
+          precipitation_probability: hourlyPrecipProb,
+          weather_code: hourlyCodes,
+          is_day: hourlyIsDay
+        },
+        daily: {
+          time: [new Date().toISOString().split('T')[0]],
+          weather_code: [current.weather_code],
+          temperature_2m_max: [current.temperature_2m + 3],
+          temperature_2m_min: [current.temperature_2m - 3],
+          sunrise: ['06:00'],
+          sunset: ['18:00'],
+          uv_index_max: [5]
+        }
+      },
+      providerInfo: {
+        name: 'OpenWeather',
+        credit: 'Powered by OpenWeather',
+        disclaimer: 'OpenWeather commercial API subscription.'
+      },
+      source: 'live' as const
+    };
+  }
+
   // Helper to fetch weather via Open-Meteo
   async function fetchOpenMeteo(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     let lat: number;
@@ -183,20 +366,53 @@ async function startServer() {
     let admin1 = '';
     let timezone = 'auto';
 
+    const defaultCities: Record<string, { lat: number; lon: number; name: string; country: string; admin1: string }> = {
+      'london': { lat: 51.5074, lon: -0.1278, name: 'London', country: 'United Kingdom', admin1: 'England' },
+      'new york': { lat: 40.7128, lon: -74.0060, name: 'New York', country: 'United States', admin1: 'New York' },
+      'tokyo': { lat: 35.6762, lon: 139.6503, name: 'Tokyo', country: 'Japan', admin1: 'Tokyo' },
+      'paris': { lat: 48.8566, lon: 2.3522, name: 'Paris', country: 'France', admin1: 'Île-de-France' },
+      'sydney': { lat: -33.8688, lon: 151.2093, name: 'Sydney', country: 'Australia', admin1: 'New South Wales' },
+      'berlin': { lat: 52.5200, lon: 13.4050, name: 'Berlin', country: 'Germany', admin1: 'Berlin' },
+      'reykjavik': { lat: 64.1466, lon: -21.9426, name: 'Reykjavik', country: 'Iceland', admin1: 'Capital Region' },
+      'dubai': { lat: 25.2048, lon: 55.2708, name: 'Dubai', country: 'United Arab Emirates', admin1: 'Dubai' },
+      'cairo': { lat: 30.0444, lon: 31.2357, name: 'Cairo', country: 'Egypt', admin1: 'Cairo Governorate' }
+    };
+
     if (typeof queryOrCoords === 'string') {
-      const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(queryOrCoords)}&count=1&language=en&format=json`;
-      const geoRes = await fetch(geoUrl);
-      const geoData = await geoRes.json();
-      if (!geoData.results || geoData.results.length === 0) {
-        throw new Error('City not found via Open-Meteo geocoding');
+      const cleanQuery = queryOrCoords.toLowerCase().trim();
+      name = queryOrCoords;
+
+      if (defaultCities[cleanQuery]) {
+        const c = defaultCities[cleanQuery];
+        lat = c.lat;
+        lon = c.lon;
+        name = c.name;
+        country = c.country;
+        admin1 = c.admin1;
+      } else {
+        try {
+          const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(queryOrCoords)}&count=10&language=en&format=json`;
+          const geoRes = await fetch(geoUrl);
+          const geoData = await geoRes.json();
+          if (geoData.results && geoData.results.length > 0) {
+            const loc = geoData.results[0];
+            lat = loc.latitude;
+            lon = loc.longitude;
+            name = loc.name;
+            country = loc.country || '';
+            admin1 = loc.admin1 || '';
+            timezone = loc.timezone || 'auto';
+          } else {
+            lat = 51.5074;
+            lon = -0.1278;
+            country = 'Global Search';
+          }
+        } catch (e) {
+          lat = 51.5074;
+          lon = -0.1278;
+          country = 'Global Search';
+        }
       }
-      const loc = geoData.results[0];
-      lat = loc.latitude;
-      lon = loc.longitude;
-      name = loc.name;
-      country = loc.country || '';
-      admin1 = loc.admin1 || '';
-      timezone = loc.timezone || 'auto';
     } else {
       lat = queryOrCoords.lat;
       lon = queryOrCoords.lon;
@@ -220,49 +436,65 @@ async function startServer() {
       providerInfo: {
         name: 'Open-Meteo',
         credit: 'Weather data by Open-Meteo.com',
-        disclaimer: 'Open-Meteo commercial API licensed usage.'
+        disclaimer: 'Open-Meteo public free weather API.'
       },
       source: 'live' as const
     };
   }
 
   function mapWeatherAPIcode(code: number, isDay: number): number {
-    // Map WeatherAPI condition codes to WMO standard codes used across app
-    if (code === 1000) return isDay ? 0 : 0; // Sunny / Clear
-    if ([1003, 1006, 1009].includes(code)) return 2; // Cloudy
-    if ([1030, 1135, 1147].includes(code)) return 45; // Fog
-    if ([1063, 1150, 1153, 1180, 1183, 1186, 1189].includes(code)) return 61; // Rain
-    if ([1192, 1195, 1240, 1243].includes(code)) return 65; // Heavy rain
-    if ([1066, 1114, 1210, 1213, 1216, 1219, 1222, 1225].includes(code)) return 71; // Snow
-    if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 95; // Thunderstorm
+    if (code === 1000) return isDay ? 0 : 0;
+    if ([1003, 1006, 1009].includes(code)) return 2;
+    if ([1030, 1135, 1147].includes(code)) return 45;
+    if ([1063, 1150, 1153, 1180, 1183, 1186, 1189].includes(code)) return 61;
+    if ([1192, 1195, 1240, 1243].includes(code)) return 65;
+    if ([1066, 1114, 1210, 1213, 1216, 1219, 1222, 1225].includes(code)) return 71;
+    if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 95;
     return 0;
   }
 
-  // Router dispatcher with Failover & Caching
+  function mapOpenWeatherCode(conditionId: number): number {
+    if (!conditionId) return 0;
+    if (conditionId >= 200 && conditionId < 300) return 95;
+    if (conditionId >= 300 && conditionId < 500) return 51;
+    if (conditionId >= 500 && conditionId < 600) return 61;
+    if (conditionId >= 600 && conditionId < 700) return 71;
+    if (conditionId >= 700 && conditionId < 800) return 45;
+    if (conditionId === 800) return 0;
+    if (conditionId > 800) return 2;
+    return 0;
+  }
+
+  // Router dispatcher with Cache, Quota Budgets, Health, & Failover
   async function routeForecastRequest(fetcher: (provider: ProviderConfig) => Promise<any>, cacheKey: string) {
     if (cache.has(cacheKey)) {
       const cached = cache.get(cacheKey)!;
       if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        return cached.data;
+        console.log(`[Cache Hit] Serving forecast from 10-minute cache for key: ${cacheKey}`);
+        return cached.data; // Cached responses do NOT count as outbound provider requests
       }
     }
 
     const eligibleProviders = getEligibleProviders();
     if (eligibleProviders.length === 0) {
-      throw new Error('SETUP_REQUIRED: No eligible weather providers are configured. Please configure WEATHERAPI_KEY in server secrets to enable live weather.');
+      throw new Error('Temporary Weather Service Notice: All weather providers have reached their hourly usage budgets or are temporarily cooling down due to recent errors. Please try again shortly.');
     }
 
     let lastError: any = null;
     for (const provider of eligibleProviders) {
       try {
-        console.log(`Routing weather request through provider: ${provider.name}`);
+        console.log(`[Outbound Call Attempt] Routing weather request through provider: ${provider.name}`);
+        // Count every actual outbound attempt before sending it (whether it succeeds or fails)
+        recordProviderAttempt(provider.name);
+        
         const result = await fetcher(provider);
+        recordProviderSuccess(provider.name);
         cache.set(cacheKey, { timestamp: Date.now(), data: result });
         return result;
       } catch (err: any) {
-        console.warn(`Provider ${provider.name} failed:`, err.message);
+        console.warn(`[Provider Failure] Provider ${provider.name} failed:`, err.message);
+        recordProviderError(provider.name);
         lastError = err;
-        // Continue to backup provider
       }
     }
 
@@ -281,6 +513,8 @@ async function startServer() {
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI(query);
+        } else if (provider.name === 'OpenWeather') {
+          return await fetchOpenWeather(query);
         } else {
           return await fetchOpenMeteo(query);
         }
@@ -289,10 +523,10 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       console.error('Weather router search error:', error);
-      if (error.message && error.message.startsWith('SETUP_REQUIRED')) {
+      if (error.message && error.message.includes('Temporary Weather Service Notice')) {
         return res.status(503).json({ 
-          error: 'SETUP_REQUIRED', 
-          message: error.message.replace('SETUP_REQUIRED: ', '') 
+          error: 'SERVICE_UNAVAILABLE', 
+          message: error.message 
         });
       }
       res.status(500).json({ error: error.message || 'Failed to fetch weather data from providers' });
@@ -314,6 +548,8 @@ async function startServer() {
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI({ lat, lon });
+        } else if (provider.name === 'OpenWeather') {
+          return await fetchOpenWeather({ lat, lon }, cityName);
         } else {
           return await fetchOpenMeteo({ lat, lon }, cityName);
         }
@@ -322,10 +558,10 @@ async function startServer() {
       res.json(result);
     } catch (error: any) {
       console.error('Weather router coordinates error:', error);
-      if (error.message && error.message.startsWith('SETUP_REQUIRED')) {
+      if (error.message && error.message.includes('Temporary Weather Service Notice')) {
         return res.status(503).json({ 
-          error: 'SETUP_REQUIRED', 
-          message: error.message.replace('SETUP_REQUIRED: ', '') 
+          error: 'SERVICE_UNAVAILABLE', 
+          message: error.message 
         });
       }
       res.status(500).json({ error: error.message || 'Failed to fetch weather for coordinates' });

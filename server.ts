@@ -357,6 +357,99 @@ async function startServer() {
     };
   }
 
+  // Accurate geocoding resolver for Open-Meteo with verified coordinates and fallback parsing
+  async function resolveLocationWithOpenMeteo(query: string) {
+    const defaultCities: Record<string, { lat: number; lon: number; name: string; country: string; admin1: string; timezone: string }> = {
+      'kampala': { lat: 0.31628, lon: 32.58219, name: 'Kampala', country: 'Uganda', admin1: 'Central Region', timezone: 'Africa/Kampala' },
+      'london': { lat: 51.5074, lon: -0.1278, name: 'London', country: 'United Kingdom', admin1: 'England', timezone: 'Europe/London' },
+      'new york': { lat: 40.7128, lon: -74.0060, name: 'New York', country: 'United States', admin1: 'New York', timezone: 'America/New_York' },
+      'tokyo': { lat: 35.6762, lon: 139.6503, name: 'Tokyo', country: 'Japan', admin1: 'Tokyo', timezone: 'Asia/Tokyo' },
+      'paris': { lat: 48.8566, lon: 2.3522, name: 'Paris', country: 'France', admin1: 'Île-de-France', timezone: 'Europe/Paris' },
+      'sydney': { lat: -33.8688, lon: 151.2093, name: 'Sydney', country: 'Australia', admin1: 'New South Wales', timezone: 'Australia/Sydney' },
+      'berlin': { lat: 52.5200, lon: 13.4050, name: 'Berlin', country: 'Germany', admin1: 'Berlin', timezone: 'Europe/Berlin' },
+      'reykjavik': { lat: 64.1466, lon: -21.9426, name: 'Reykjavik', country: 'Iceland', admin1: 'Capital Region', timezone: 'Atlantic/Reykjavik' },
+      'dubai': { lat: 25.2048, lon: 55.2708, name: 'Dubai', country: 'United Arab Emirates', admin1: 'Dubai', timezone: 'Asia/Dubai' },
+      'cairo': { lat: 30.0444, lon: 31.2357, name: 'Cairo', country: 'Egypt', admin1: 'Cairo Governorate', timezone: 'Africa/Cairo' }
+    };
+
+    const clean = query.trim().replace(/^[,\s.-]+|[?!.,\s-]+$/g, '');
+    const cleanLower = clean.toLowerCase();
+
+    // Check direct verified dictionary first
+    if (defaultCities[cleanLower]) {
+      return defaultCities[cleanLower];
+    }
+
+    const trySearch = async (term: string) => {
+      try {
+        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=10&language=en&format=json`;
+        const geoRes = await fetch(geoUrl);
+        if (!geoRes.ok) return null;
+        const geoData = await geoRes.json();
+        return geoData.results && geoData.results.length > 0 ? geoData.results : null;
+      } catch (err) {
+        return null;
+      }
+    };
+
+    // Step 1: Search exact query in Open-Meteo geocoding API
+    let results = await trySearch(clean);
+
+    // Step 2: If query contains a comma (e.g., "Kampala, Uganda"), search the city part and match country
+    if (!results && clean.includes(',')) {
+      const parts = clean.split(',');
+      const cityPart = parts[0].trim();
+      const countryPart = parts.slice(1).join(',').trim().toLowerCase();
+      results = await trySearch(cityPart);
+      if (results && countryPart) {
+        const matched = results.find((r: any) => 
+          r.country?.toLowerCase().includes(countryPart) || 
+          r.country_code?.toLowerCase() === countryPart ||
+          r.admin1?.toLowerCase().includes(countryPart)
+        );
+        if (matched) {
+          return {
+            lat: matched.latitude,
+            lon: matched.longitude,
+            name: matched.name,
+            country: matched.country || '',
+            admin1: matched.admin1 || '',
+            timezone: matched.timezone || 'auto'
+          };
+        }
+      }
+    }
+
+    // Step 3: Strip common trailing geographic words like "city", "town", "district"
+    if (!results && /\b(city|town|province|state|district|area|region)\b/i.test(clean)) {
+      const stripped = clean.replace(/\b(city|town|province|state|district|area|region)\b/gi, '').trim();
+      if (stripped.length >= 2) {
+        results = await trySearch(stripped);
+      }
+    }
+
+    if (results && results.length > 0) {
+      const best = results[0];
+      return {
+        lat: best.latitude,
+        lon: best.longitude,
+        name: best.name,
+        country: best.country || '',
+        admin1: best.admin1 || '',
+        timezone: best.timezone || 'auto'
+      };
+    }
+
+    // Check if cleanLower contains any key in defaultCities
+    for (const [key, val] of Object.entries(defaultCities)) {
+      if (cleanLower.includes(key)) {
+        return val;
+      }
+    }
+
+    throw new Error(`Location "${query}" could not be resolved via Open-Meteo geocoding.`);
+  }
+
   // Helper to fetch weather via Open-Meteo
   async function fetchOpenMeteo(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     let lat: number;
@@ -366,53 +459,14 @@ async function startServer() {
     let admin1 = '';
     let timezone = 'auto';
 
-    const defaultCities: Record<string, { lat: number; lon: number; name: string; country: string; admin1: string }> = {
-      'london': { lat: 51.5074, lon: -0.1278, name: 'London', country: 'United Kingdom', admin1: 'England' },
-      'new york': { lat: 40.7128, lon: -74.0060, name: 'New York', country: 'United States', admin1: 'New York' },
-      'tokyo': { lat: 35.6762, lon: 139.6503, name: 'Tokyo', country: 'Japan', admin1: 'Tokyo' },
-      'paris': { lat: 48.8566, lon: 2.3522, name: 'Paris', country: 'France', admin1: 'Île-de-France' },
-      'sydney': { lat: -33.8688, lon: 151.2093, name: 'Sydney', country: 'Australia', admin1: 'New South Wales' },
-      'berlin': { lat: 52.5200, lon: 13.4050, name: 'Berlin', country: 'Germany', admin1: 'Berlin' },
-      'reykjavik': { lat: 64.1466, lon: -21.9426, name: 'Reykjavik', country: 'Iceland', admin1: 'Capital Region' },
-      'dubai': { lat: 25.2048, lon: 55.2708, name: 'Dubai', country: 'United Arab Emirates', admin1: 'Dubai' },
-      'cairo': { lat: 30.0444, lon: 31.2357, name: 'Cairo', country: 'Egypt', admin1: 'Cairo Governorate' }
-    };
-
     if (typeof queryOrCoords === 'string') {
-      const cleanQuery = queryOrCoords.toLowerCase().trim();
-      name = queryOrCoords;
-
-      if (defaultCities[cleanQuery]) {
-        const c = defaultCities[cleanQuery];
-        lat = c.lat;
-        lon = c.lon;
-        name = c.name;
-        country = c.country;
-        admin1 = c.admin1;
-      } else {
-        try {
-          const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(queryOrCoords)}&count=10&language=en&format=json`;
-          const geoRes = await fetch(geoUrl);
-          const geoData = await geoRes.json();
-          if (geoData.results && geoData.results.length > 0) {
-            const loc = geoData.results[0];
-            lat = loc.latitude;
-            lon = loc.longitude;
-            name = loc.name;
-            country = loc.country || '';
-            admin1 = loc.admin1 || '';
-            timezone = loc.timezone || 'auto';
-          } else {
-            lat = 51.5074;
-            lon = -0.1278;
-            country = 'Global Search';
-          }
-        } catch (e) {
-          lat = 51.5074;
-          lon = -0.1278;
-          country = 'Global Search';
-        }
-      }
+      const resolved = await resolveLocationWithOpenMeteo(queryOrCoords);
+      lat = resolved.lat;
+      lon = resolved.lon;
+      name = resolved.name;
+      country = resolved.country;
+      admin1 = resolved.admin1;
+      timezone = resolved.timezone;
     } else {
       lat = queryOrCoords.lat;
       lon = queryOrCoords.lon;
@@ -568,19 +622,64 @@ async function startServer() {
     }
   });
 
-  // AI Insights endpoint using @google/genai
-  app.post('/api/ai/insights', async (req, res) => {
-    try {
-      const { location, current, daily } = req.body;
-      if (!ai) {
-        return res.json({
-          summary: `Current conditions in ${location?.name || 'this area'} are pleasant with a temperature of ${current?.temperature_2m ?? 20}°C. Enjoy your day!`,
-          clothing: 'Comfortable casual wear suitable for current outdoor temperatures.',
-          activities: 'Great conditions for a walk, outdoor run, or relaxing outdoors.',
-          health: 'No major air quality or UV warnings currently active.'
-        });
-      }
+  // Heuristic generator to produce rich, grounded atmospheric insights when AI models are unavailable or rate-limited
+  function generateWeatherInsights(location: any, current: any, daily: any) {
+    const temp = current?.temperature_2m ?? 20;
+    const humidity = current?.relative_humidity_2m ?? 50;
+    const code = current?.weather_code ?? 0;
+    const uv = daily?.uv_index_max?.[0] ?? 4;
+    const locName = location?.name || 'this location';
 
+    let summary = `Atmospheric conditions in ${locName} are currently ${temp > 20 ? 'warm and pleasant' : temp > 12 ? 'mild with a gentle breeze' : 'cool and crisp'} at ${Math.round(temp)}°C.`;
+    if (code >= 51 && code <= 67) {
+      summary = `Rainy conditions across ${locName} with a temperature of ${Math.round(temp)}°C and elevated humidity of ${humidity}%.`;
+    } else if (code === 95) {
+      summary = `Thunderstorm activity present in ${locName}. Atmospheric pressure is shifting at ${current?.surface_pressure ?? 1013} hPa.`;
+    } else if (code >= 71 && code <= 77) {
+      summary = `Snowfall in ${locName} bringing crisp winter air at ${Math.round(temp)}°C.`;
+    }
+
+    let clothing = 'Comfortable light layers or a casual jacket suitable for current temperatures.';
+    if (temp < 8) {
+      clothing = 'Heavy warm coat, scarf, and thermal layers to stay comfortable in the cold.';
+    } else if (temp < 16) {
+      clothing = 'A medium jacket, sweater, or fleece layer paired with trousers.';
+    } else if (temp > 24) {
+      clothing = 'Breathable lightweight cottons, shorts, and UV-filtering sunglasses.';
+    }
+    if (code >= 51 && code <= 67) {
+      clothing += ' Don’t forget a waterproof umbrella or rain shell.';
+    }
+
+    let activities = 'Great conditions for an outdoor walk, jogging, or relaxed leisure.';
+    if (code >= 51 && code <= 67) {
+      activities = 'Best suited for indoor cafes, museum visits, or cozy reading spaces.';
+    } else if (code === 95) {
+      activities = 'Stay safely indoors until storm cells pass through the area.';
+    } else if (temp > 22 && uv < 7) {
+      activities = 'Ideal for open-air parks, outdoor running, or patio dining.';
+    }
+
+    let health = 'Stay comfortably hydrated throughout the day.';
+    if (uv >= 6) {
+      health = `UV index is high (${uv}). Apply SPF 30+ sunscreen and wear sunglasses during peak daylight hours.`;
+    } else if (humidity > 80) {
+      health = 'High humidity levels; ensure good airflow and steady hydration during activities.';
+    } else if (temp < 5) {
+      health = 'Cold outdoor air; protect extremities and moisturize skin.';
+    }
+
+    return { summary, clothing, activities, health };
+  }
+
+  // AI Insights endpoint using @google/genai with automatic quota failover
+  app.post('/api/ai/insights', async (req, res) => {
+    const { location, current, daily } = req.body || {};
+    if (!ai) {
+      return res.json(generateWeatherInsights(location, current, daily));
+    }
+
+    try {
       const prompt = `You are RODEX Atmos AI, an expert meteorologist and lifestyle assistant. 
 Analyze these current weather conditions for ${location?.name || 'Location'}:
 - Temperature: ${current?.temperature_2m}°C (Feels like ${current?.apparent_temperature}°C)
@@ -597,24 +696,290 @@ Provide a JSON response with exactly these 4 keys:
 
 Return ONLY valid JSON with keys: summary, clothing, activities, health. No markdown code blocks around the JSON if possible, or clean JSON object.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
+      let response: any;
+      try {
+        response = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      } catch (liteErr: any) {
+        // Fallback to gemini-3.8-flash if flash-lite is not enabled
+        response = await ai.models.generateContent({
+          model: 'gemini-3.8-flash',
+          contents: prompt,
+          config: {
+            responseMimeType: 'application/json'
+          }
+        });
+      }
+
+      const text = response?.text;
+      const parsed = JSON.parse(text || '{}');
+      if (parsed.summary && parsed.clothing) {
+        return res.json(parsed);
+      }
+      res.json(generateWeatherInsights(location, current, daily));
+    } catch (err: any) {
+      // Graceful fallback without throwing unhandled 429 errors
+      res.json(generateWeatherInsights(location, current, daily));
+    }
+  });
+
+  // Voice readiness status endpoint (checks presence of GEMINI_API_KEY without revealing secret)
+  app.get('/api/ai/live-status', (req, res) => {
+    const isConfigured = !!ai;
+    res.json({
+      supported: isConfigured,
+      hasServerKey: isConfigured,
+      model: 'gemini-3.8-live',
+      message: isConfigured
+        ? 'Gemini Live voice service is configured and ready.'
+        : 'GEMINI_API_KEY is not configured in server secrets. Add your key to server secrets to enable live voice.'
+    });
+  });
+
+  // Short-lived ephemeral token endpoint for browser-based Live API voice sessions
+  app.post('/api/ai/live-token', async (req, res) => {
+    try {
+      if (!ai) {
+        return res.status(503).json({
+          error: 'AI_NOT_CONFIGURED',
+          message: 'GEMINI_API_KEY is not configured on the server. Please add your key to server secrets to enable live voice conversation.'
+        });
+      }
+
+      // Constrain ephemeral token: single-use, 10-minute expiry
+      const token = await ai.authTokens.create({
         config: {
-          responseMimeType: 'application/json'
+          uses: 1,
+          newSessionExpireTime: new Date(Date.now() + 10 * 60 * 1000).toISOString()
         }
       });
 
-      const text = response.text;
-      const parsed = JSON.parse(text || '{}');
-      res.json(parsed);
-    } catch (err: any) {
-      console.error('AI Insights error:', err);
+      // Never expose or return the long-lived API key to client
       res.json({
-        summary: 'Atmospheric conditions are stable. A wonderful day to be outside.',
-        clothing: 'Dress comfortably according to the temperature.',
-        activities: 'Ideal for walking and light outdoor recreation.',
-        health: 'Stay hydrated throughout the day.'
+        token: token.name,
+        model: 'gemini-3.8-live'
+      });
+    } catch (err: any) {
+      console.error('Live token generation error:', err);
+      res.status(500).json({
+        error: 'TOKEN_CREATION_FAILED',
+        message: err.message || 'Failed to generate ephemeral session token for Gemini Live.'
+      });
+    }
+  });
+
+  // Helper to map WMO code to human-readable condition text
+  function getWeatherConditionLabel(code: number, isDay: number = 1): string {
+    switch (code) {
+      case 0:
+        return isDay ? 'Sunny & Clear' : 'Clear Night';
+      case 1:
+      case 2:
+        return isDay ? 'Partly Cloudy' : 'Partly Cloudy Night';
+      case 3:
+        return 'Overcast Clouds';
+      case 45:
+      case 48:
+        return 'Foggy & Misty';
+      case 51:
+      case 53:
+      case 55:
+      case 56:
+      case 57:
+        return 'Light Drizzle';
+      case 61:
+      case 63:
+      case 65:
+      case 66:
+      case 67:
+        return 'Rain Showers';
+      case 71:
+      case 73:
+      case 75:
+      case 77:
+        return 'Snowfall';
+      case 80:
+      case 81:
+      case 82:
+        return 'Heavy Rain';
+      case 85:
+      case 86:
+        return 'Snow Showers';
+      case 95:
+      case 96:
+      case 99:
+        return 'Thunderstorm';
+      default:
+        return 'Clear Skies';
+    }
+  }
+
+  // Clean extracted city names by stripping trailing question words and temporal modifiers
+  function cleanExtractedCity(raw: string): string | null {
+    if (!raw) return null;
+    let city = raw.trim().replace(/^[,\s.-]+|[?!.,\s-]+$/g, '');
+    const stopWordsPattern = /\b(?:right now|today|tomorrow|tonight|this evening|this afternoon|this morning|this week|this weekend|currently|at the moment|at present|please|for me|tell me|forecast|weather|conditions|temp|temperature)\b/gi;
+    city = city.replace(stopWordsPattern, '').trim();
+    city = city.replace(/^[,\s.-]+|[?!.,\s-]+$/g, '');
+    return city.length >= 2 ? city : null;
+  }
+
+  // City extraction helper to identify requested cities from user queries
+  function extractCityFromQuery(text: string): string | null {
+    if (!text) return null;
+    const patterns = [
+      /(?:weather|forecast|temperature|conditions|temp|rain|snow|how is it|what is it like|what's it like|what's the weather|what is the weather|how's the weather|how is the weather|tell me (?:about )?(?:the )?weather|check (?:the )?weather|check)\s+(?:in|for|at|around|of)\s+([a-zA-Z\s.,'-]+)/i,
+      /(?:is it\s+(?:raining|snowing|hot|cold|warm|sunny|cloudy|windy|nice)\s+(?:in|at)\s+)([a-zA-Z\s.,'-]+)/i,
+      /(?:in|for|at)\s+([a-zA-Z\s.,'-]+?)\s+(?:weather|forecast|right now|today|tomorrow)/i,
+      /(?:how about|what about|tell me about)\s+([a-zA-Z\s.,'-]+)/i,
+      /([a-zA-Z\s.,'-]+?)\s+(?:weather|forecast|conditions)/i,
+    ];
+
+    for (const pat of patterns) {
+      const match = text.match(pat);
+      if (match && match[1]) {
+        const clean = cleanExtractedCity(match[1]);
+        if (clean) {
+          const lower = clean.toLowerCase();
+          // Ignore non-city pronouns/generic terms
+          if (!['here', 'there', 'my area', 'my location', 'the area', 'today', 'tomorrow', 'this week', 'now', 'right now', 'outside'].includes(lower)) {
+            return clean;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // Server-side text chat endpoint with weather tool grounding
+  app.post('/api/ai/chat', async (req, res) => {
+    const { messages, weatherData } = req.body || {};
+    try {
+      const lastUserMsg = (messages?.[messages.length - 1]?.content || '');
+      const requestedCity = extractCityFromQuery(lastUserMsg);
+
+      let targetWeatherData = weatherData;
+      let updatedCityWeather: any = null;
+
+      // 1. If user named a city, resolve it through the existing router immediately
+      if (requestedCity) {
+        try {
+          const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
+          const fetchedData = await routeForecastRequest(async (provider) => {
+            if (provider.name === 'WeatherAPI.com') {
+              return await fetchWeatherAPI(requestedCity);
+            } else if (provider.name === 'OpenWeather') {
+              return await fetchOpenWeather(requestedCity);
+            } else {
+              return await fetchOpenMeteo(requestedCity);
+            }
+          }, cacheKey);
+
+          targetWeatherData = fetchedData;
+          updatedCityWeather = fetchedData;
+        } catch (fetchErr: any) {
+          return res.json({
+            reply: `I could not locate "${requestedCity}" via our geocoding service. Could you please check the spelling or provide the country (for example, "${requestedCity}, Uganda")?`,
+            updatedCityWeather: null
+          });
+        }
+      }
+
+      const current = targetWeatherData?.weather?.current;
+      const location = targetWeatherData?.location;
+      const daily = targetWeatherData?.weather?.daily;
+
+      // Calculate local time for the target city using provider timezone
+      let localTime = 'N/A';
+      try {
+        if (location?.timezone && location.timezone !== 'auto') {
+          localTime = new Date().toLocaleTimeString('en-US', {
+            timeZone: location.timezone,
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+        } else {
+          localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        }
+      } catch (tzErr) {
+        localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+      }
+
+      const conditionLabel = getWeatherConditionLabel(current?.weather_code ?? 0, current?.is_day ?? 1);
+      const temp = current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20;
+      const feelsLike = current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
+      const humidity = current?.relative_humidity_2m ?? 50;
+      const wind = current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 5;
+
+      const systemInstruction = `You are RODEX AI, the advanced meteorological and atmospheric assistant for the RODEX Atmos web app.
+You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
+
+STRICT GROUNDING RULES:
+1. Ground every answer strictly in the real provider data below. Never answer from general knowledge or invent missing values or official alerts.
+2. State the city name (${location?.name}), country (${location?.country || ''}), local time (${localTime}), and relevant weather details (${conditionLabel}, ${temp}°C, feels like ${feelsLike}°C, ${humidity}% humidity, wind ${wind} km/h) concisely.
+3. Keep replies conversational, concise (1-2 sentences), and practical.
+
+REAL WEATHER DATA FOR SELECTED LOCATION:
+- City: ${location?.name || 'Unknown'}, ${location?.country || ''}
+- Local Time: ${localTime}
+- Condition: ${conditionLabel}
+- Temperature: ${temp}°C (Feels like: ${feelsLike}°C)
+- Weather Code: ${current?.weather_code ?? 'N/A'}
+- Humidity: ${humidity}%
+- Wind Speed: ${wind} km/h
+- Precipitation: ${current?.precipitation ?? 0} mm
+- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa`;
+
+      // If AI client is available, try Gemini
+      if (ai) {
+        try {
+          const conversationContents = messages.map((m: any) => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          }));
+
+          let response: any;
+          try {
+            response = await ai.models.generateContent({
+              model: 'gemini-3.1-flash-lite',
+              contents: conversationContents,
+              config: { systemInstruction }
+            });
+          } catch (liteErr) {
+            response = await ai.models.generateContent({
+              model: 'gemini-3.8-flash',
+              contents: conversationContents,
+              config: { systemInstruction }
+            });
+          }
+
+          if (response?.text) {
+            return res.json({
+              reply: response.text,
+              updatedCityWeather
+            });
+          }
+        } catch (aiErr) {
+          // Fall through to deterministic grounded answer below
+        }
+      }
+
+      // Grounded deterministic response using provider fields
+      const reply = `In ${location?.name}${location?.country ? ', ' + location.country : ''}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}°C (feels like ${feelsLike}°C) with ${humidity}% humidity and wind at ${wind} km/h.`;
+
+      res.json({
+        reply,
+        updatedCityWeather
+      });
+    } catch (err: any) {
+      res.status(500).json({
+        error: 'CHAT_FAILED',
+        message: err.message || 'Failed to process chat message.'
       });
     }
   });

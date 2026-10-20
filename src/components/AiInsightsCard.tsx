@@ -4,9 +4,10 @@ import { WeatherData, AIInsights } from '../types';
 
 interface AiInsightsCardProps {
   data: WeatherData;
+  onOpenAssistant?: () => void;
 }
 
-export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data }) => {
+export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data, onOpenAssistant }) => {
   const [insights, setInsights] = useState<AIInsights | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [cacheKey, setCacheKey] = useState<string>('');
@@ -70,6 +71,16 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data }) => {
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          {onOpenAssistant && (
+            <button
+              onClick={onOpenAssistant}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-md shadow-sky-500/20"
+              title="Speak or chat in real time with RODEX AI"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Ask AI (Voice/Chat)</span>
+            </button>
+          )}
           <button
             onClick={() => fetchInsights(true)}
             disabled={isLoading}

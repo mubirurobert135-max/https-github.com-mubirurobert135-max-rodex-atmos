@@ -6,9 +6,10 @@ import { AiInsightsCard } from './components/AiInsightsCard';
 import { HourlyForecast } from './components/HourlyForecast';
 import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
+import { AssistantModal } from './components/AssistantModal';
 import { WeatherData } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
-import { AlertCircle, RefreshCw, CloudSun, ShieldCheck, KeyRound } from 'lucide-react';
+import { AlertCircle, RefreshCw, CloudSun, ShieldCheck, KeyRound, Sparkles, Mic } from 'lucide-react';
 
 export default function App() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
@@ -16,6 +17,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
+  const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
 
   // Fetch live weather by search query
   const handleSearch = async (query: string) => {
@@ -109,7 +111,7 @@ export default function App() {
     : 'sunny';
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-16">
+    <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-16 relative">
       {/* Continuous atmospheric background across the entire app */}
       <AtmosphericBackground theme={currentTheme} />
 
@@ -122,6 +124,7 @@ export default function App() {
         onToggleUnit={() => setUnit(u => (u === 'C' ? 'F' : 'C'))}
         isLoading={isLoading}
         currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Loading Live Weather...')}
+        onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
       {/* Main Content Container */}
@@ -195,8 +198,11 @@ export default function App() {
             {/* Hero Current Weather */}
             <CurrentWeatherCard data={weatherData} unit={unit} />
 
-            {/* AI Atmospheric Insights */}
-            <AiInsightsCard data={weatherData} />
+            {/* AI Atmospheric Insights Card */}
+            <AiInsightsCard 
+              data={weatherData} 
+              onOpenAssistant={() => setIsAssistantOpen(true)}
+            />
 
             {/* Hourly Forecast */}
             <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
@@ -211,6 +217,31 @@ export default function App() {
 
       </main>
 
+      {/* Floating Action Button for RODEX AI Assistant */}
+      <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40">
+        <button
+          onClick={() => setIsAssistantOpen(true)}
+          className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-2xl shadow-sky-500/40 border border-sky-300/40 transition transform hover:scale-105 group backdrop-blur-md"
+          title="Open RODEX AI Voice & Chat"
+        >
+          <div className="relative">
+            <Sparkles className="w-5 h-5 text-sky-200 group-hover:rotate-12 transition-transform" />
+            <Mic className="w-3 h-3 text-amber-300 absolute -bottom-1 -right-1" />
+          </div>
+          <span>RODEX AI (Voice & Chat)</span>
+        </button>
+      </aside>
+
+      {/* RODEX AI Live Voice & Text Assistant Modal */}
+      <AssistantModal
+        isOpen={isAssistantOpen}
+        onClose={() => setIsAssistantOpen(false)}
+        weatherData={weatherData}
+        onSelectCityWeather={(newWeather) => {
+          setWeatherData(newWeather);
+        }}
+      />
+
       {/* Footer */}
       <footer className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-xs text-white/50 gap-4">
         <div>
@@ -219,7 +250,7 @@ export default function App() {
         <div className="flex items-center gap-4">
           <span>Active Provider: <strong className="text-white">{weatherData?.providerInfo?.name || 'Multi-Router'}</strong></span>
           <span>•</span>
-          <span>AI Insights: Google Gemini</span>
+          <span>RODEX AI: Live Voice (Gemini 3.8 Live) & Chat (Gemini 3.8 Flash)</span>
         </div>
       </footer>
     </div>

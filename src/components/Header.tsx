@@ -10,6 +10,7 @@ interface HeaderProps {
   onToggleUnit: () => void;
   isLoading: boolean;
   currentLocationName: string;
+  onOpenAssistant: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -19,7 +20,8 @@ export const Header: React.FC<HeaderProps> = ({
   unit,
   onToggleUnit,
   isLoading,
-  currentLocationName
+  currentLocationName,
+  onOpenAssistant
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
@@ -68,8 +70,16 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Mobile Unit Switch */}
+          {/* Mobile Controls */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={onOpenAssistant}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs shadow-md border border-sky-400/30 transition animate-pulse"
+              title="Open RODEX AI Voice & Chat"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>AI</span>
+            </button>
             <button
               onClick={onToggleUnit}
               className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition"
@@ -139,8 +149,16 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Desktop Controls (Current Location & Unit Switch) */}
+        {/* Desktop Controls (Current Location, AI Assistant, & Unit Switch) */}
         <div className="hidden md:flex items-center gap-3">
+
+          <button
+            onClick={onOpenAssistant}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-400/40 group"
+          >
+            <Sparkles className="w-4 h-4 text-sky-200 group-hover:rotate-12 transition-transform" />
+            <span>RODEX AI (Voice & Chat)</span>
+          </button>
 
           <button
             onClick={onGetCurrentLocation}

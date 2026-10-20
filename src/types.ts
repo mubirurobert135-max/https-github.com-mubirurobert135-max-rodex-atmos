@@ -38,6 +38,12 @@ export interface DailyWeather {
   uv_index_max: number[];
 }
 
+export interface ProviderInfo {
+  name: string;
+  credit: string;
+  disclaimer: string;
+}
+
 export interface WeatherData {
   location: WeatherLocation;
   weather: {
@@ -46,7 +52,8 @@ export interface WeatherData {
     daily: DailyWeather;
     timezone: string;
   };
-  source: 'live' | 'sample';
+  providerInfo: ProviderInfo;
+  source: 'live' | 'setup_required';
 }
 
 export interface AIInsights {

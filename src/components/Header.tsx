@@ -8,7 +8,6 @@ interface HeaderProps {
   onGetCurrentLocation: () => void;
   unit: 'C' | 'F';
   onToggleUnit: () => void;
-  isSampleData: boolean;
   isLoading: boolean;
   currentLocationName: string;
 }
@@ -19,7 +18,6 @@ export const Header: React.FC<HeaderProps> = ({
   onGetCurrentLocation,
   unit,
   onToggleUnit,
-  isSampleData,
   isLoading,
   currentLocationName
 }) => {
@@ -143,13 +141,6 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Controls (Current Location & Unit Switch) */}
         <div className="hidden md:flex items-center gap-3">
-          {/* Sample Data Banner indicator */}
-          {isSampleData && (
-            <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-medium">
-              <AlertCircle className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
-              <span>Sample Mode</span>
-            </div>
-          )}
 
           <button
             onClick={onGetCurrentLocation}
@@ -173,13 +164,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       </div>
 
-      {/* Mobile Sample Notice */}
-      {isSampleData && (
-        <div className="flex md:hidden items-center justify-center gap-1.5 mt-2 py-1 px-3 rounded-lg bg-amber-500/20 border border-amber-400/30 text-amber-200 text-xs font-medium text-center">
-          <AlertCircle className="w-3.5 h-3.5 text-amber-300 shrink-0" />
-          <span>Showing sample weather data. Search any city for live weather.</span>
-        </div>
-      )}
     </header>
   );
 };

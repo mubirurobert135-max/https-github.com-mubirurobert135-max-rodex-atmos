@@ -131,5 +131,10 @@ export const SAMPLE_WEATHER_DATA: WeatherData = {
       uv_index_max: [7.2, 6.5, 4.1, 3.0, 6.8, 5.2, 7.0]
     }
   },
-  source: 'sample'
+  providerInfo: {
+    name: 'WeatherAPI.com',
+    credit: 'Powered by WeatherAPI.com',
+    disclaimer: 'Weather data provided by WeatherAPI.com.'
+  },
+  source: 'live'
 };

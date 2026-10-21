@@ -38,3 +38,29 @@ export function base64ToFloat32Array(base64: string): Float32Array {
   }
   return float32Array;
 }
+
+/**
+ * Linear interpolation audio resampler.
+ * Accurately converts arbitrary source sample rates (e.g. 44.1kHz, 48kHz) to target sample rate (16kHz).
+ */
+export function resampleAudioBuffer(
+  input: Float32Array,
+  sourceRate: number,
+  targetRate: number = 16000
+): Float32Array {
+  if (sourceRate === targetRate || input.length === 0) {
+    return input;
+  }
+  const ratio = sourceRate / targetRate;
+  const newLength = Math.round(input.length / ratio);
+  const result = new Float32Array(newLength);
+
+  for (let i = 0; i < newLength; i++) {
+    const srcIndex = i * ratio;
+    const indexFloor = Math.floor(srcIndex);
+    const indexCeil = Math.min(input.length - 1, indexFloor + 1);
+    const fraction = srcIndex - indexFloor;
+    result[i] = input[indexFloor] * (1 - fraction) + input[indexCeil] * fraction;
+  }
+  return result;
+}

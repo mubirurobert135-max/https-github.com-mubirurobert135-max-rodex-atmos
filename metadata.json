@@ -1,6 +1,8 @@
 {
   "name": "RODEX Atmos",
   "description": "Polished, responsive weather forecasting web app with atmospheric live conditions, multi-day forecasts, and AI weather insights.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": [
+    "microphone"
+  ],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

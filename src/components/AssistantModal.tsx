@@ -4,7 +4,7 @@ import {
   Radio, AlertCircle, Compass, CheckCircle2, ChevronRight, Loader2, ArrowUpRight
 } from 'lucide-react';
 import { WeatherData } from '../types';
-import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array } from '../utils/audioUtils';
+import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array, resampleAudioBuffer } from '../utils/audioUtils';
 import { getWeatherCondition } from '../utils/weatherUtils';
 
 interface AssistantModalProps {
@@ -59,6 +59,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [liveTranscripts, setLiveTranscripts] = useState<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
   const [currentAssistantSpoken, setCurrentAssistantSpoken] = useState('');
+  const [interimUserSpeech, setInterimUserSpeech] = useState('');
 
   // Voice readiness and environment checks
   const [serverVoiceStatus, setServerVoiceStatus] = useState<{ checked: boolean; supported: boolean; message?: string }>({
@@ -71,15 +72,20 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   });
   const [permissionStatus, setPermissionStatus] = useState<'prompt' | 'granted' | 'denied' | 'unknown'>('prompt');
 
-  // Audio refs
+  // Audio and session refs
   const inputAudioCtxRef = useRef<AudioContext | null>(null);
   const outputAudioCtxRef = useRef<AudioContext | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null);
+  const silentGainRef = useRef<GainNode | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
   const nextStartTimeRef = useRef<number>(0);
   const isMutedRef = useRef(false);
   const activeSourcesRef = useRef<AudioBufferSourceNode[]>([]);
+  const isSetupCompleteRef = useRef(false);
+  const sessionIdRef = useRef<number>(0);
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const transcriptsBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -90,6 +96,13 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isChatLoading]);
+
+  // Auto-scroll live voice transcripts as new speech turns arrive
+  useEffect(() => {
+    if (transcriptsBottomRef.current) {
+      transcriptsBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [liveTranscripts, currentAssistantSpoken, interimUserSpeech]);
 
   // Check voice environment readiness on modal open (does NOT request mic access)
   useEffect(() => {
@@ -138,16 +151,30 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Clean termination of all voice resources - stops mic stream, closes contexts, closes WebSocket
   const stopVoiceSession = useCallback((targetState: 'idle' | 'ended' | 'error' = 'ended') => {
+    // Invalidate inflight callbacks and setup state
+    sessionIdRef.current += 1;
+    isSetupCompleteRef.current = false;
+
+    // Clear connection & setup timer
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
+
     // 1. Stop mic hardware tracks immediately
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
       mediaStreamRef.current = null;
     }
 
-    // 2. Disconnect processor
+    // 2. Disconnect processor and silent gain node
     if (scriptProcessorRef.current) {
       scriptProcessorRef.current.disconnect();
       scriptProcessorRef.current = null;
+    }
+    if (silentGainRef.current) {
+      silentGainRef.current.disconnect();
+      silentGainRef.current = null;
     }
 
     // 3. Stop active audio playing nodes
@@ -170,17 +197,22 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       outputAudioCtxRef.current = null;
     }
 
-    // 5. Close WebSocket connection
+    // 5. Close WebSocket connection cleanly
     if (wsRef.current) {
       wsRef.current.onclose = null;
       wsRef.current.onerror = null;
       wsRef.current.onmessage = null;
-      wsRef.current.close();
+      try {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.close();
+        }
+      } catch (e) {}
       wsRef.current = null;
     }
 
     setVoiceState(targetState);
     setCurrentAssistantSpoken('');
+    setInterimUserSpeech('');
   }, []);
 
   // Stop voice if modal closes
@@ -200,30 +232,71 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
     setVoiceError(null);
+    sessionIdRef.current += 1;
+    const currentSessionId = sessionIdRef.current;
+    isSetupCompleteRef.current = false;
+
     // Explicitly show requesting permission state before invoking browser prompt
     setVoiceState('requesting_permission');
 
+    const isSecure = typeof window !== 'undefined' ? window.isSecureContext : false;
+    const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
+    const hasMedia = typeof navigator !== 'undefined' && !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+    const hasAudioCtx = typeof window !== 'undefined' && !!(window.AudioContext || (window as any).webkitAudioContext);
+
+    console.log('[RODEX Voice Context Diagnostic]', {
+      isSecureContext: isSecure,
+      inIframe,
+      hasMediaDevices: typeof navigator !== 'undefined' && !!navigator.mediaDevices,
+      hasGetUserMedia: hasMedia,
+      hasAudioContext: hasAudioCtx,
+      permissionStatus
+    });
+
     try {
+      if (!isSecure && typeof location !== 'undefined' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+        throw new DOMException('Microphone access requires a Secure Context (HTTPS or localhost).', 'SecurityError');
+      }
+
       // Check browser MediaDevices support
-      if (typeof navigator === 'undefined' || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error('Microphone capture is not supported in this browser context (navigator.mediaDevices is unavailable).');
+      if (!hasMedia) {
+        throw new DOMException('Microphone API is not supported or is blocked in this browser environment (navigator.mediaDevices is unavailable).', 'NotSupportedError');
       }
 
       // Check browser AudioContext support
       const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
       if (!AudioCtx) {
-        throw new Error('Web Audio API is not supported in this browser.');
+        throw new DOMException('Web Audio API is not supported in this browser.', 'NotSupportedError');
       }
 
       // 1. Request microphone access strictly upon user action (shows browser permission prompt)
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: {
-          channelCount: 1,
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
+      let stream: MediaStream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        });
+      } catch (firstErr: any) {
+        if (
+          firstErr.name === 'OverconstrainedError' ||
+          firstErr.name === 'TypeError' ||
+          firstErr.name === 'ConstraintNotSatisfiedError'
+        ) {
+          console.warn('[RODEX Voice] Specific audio constraints failed, retrying with basic audio constraint:', firstErr);
+          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } else {
+          throw firstErr;
         }
-      });
+      }
+
+      if (sessionIdRef.current !== currentSessionId) {
+        stream.getTracks().forEach((t) => t.stop());
+        return;
+      }
+
       mediaStreamRef.current = stream;
       setPermissionStatus('granted');
 
@@ -233,10 +306,12 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       // Request short-lived, single-use ephemeral token from server (never client key)
       const tokenRes = await fetch('/api/ai/live-token', { method: 'POST' });
       if (!tokenRes.ok) {
-        const errJson = await tokenRes.json();
+        const errJson = await tokenRes.json().catch(() => ({}));
         throw new Error(errJson.message || 'Unable to obtain Live voice security token from server.');
       }
       const { token } = await tokenRes.json();
+
+      if (sessionIdRef.current !== currentSessionId) return;
 
       // 3. Initialize Audio Contexts
       const inputCtx = new AudioCtx({ sampleRate: 16000 });
@@ -256,29 +331,61 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
-      ws.onopen = () => {
-        setVoiceState('connecting');
+      // Start 15s session setup timeout
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
+      connectionTimeoutRef.current = setTimeout(() => {
+        if (!isSetupCompleteRef.current && sessionIdRef.current === currentSessionId) {
+          setVoiceError('Connection to Gemini Live timed out during session setup. Please check your network and tap Start Voice to retry, or use Text Chat.');
+          stopVoiceSession('error');
+        }
+      }, 15000);
 
-        // Send Initial Setup with Weather Grounding
+      ws.onopen = () => {
+        if (sessionIdRef.current !== currentSessionId) {
+          try { ws.close(); } catch (e) {}
+          return;
+        }
+
+        // Send Initial Setup with Weather Grounding and Section 8 Personality
         const location = weatherData?.location;
         const current = weatherData?.weather?.current;
-        const daily = weatherData?.weather?.daily;
 
-        const systemPrompt = `You are RODEX AI, the real-time spoken voice meteorologist for the RODEX Atmos app.
-CURRENT DASHBOARD LOCATION:
+        const systemPrompt = `You are RODEX Atmos, a friendly, intelligent, calm, professional, and naturally conversational AI weather assistant.
+Your purpose is to help people understand the weather and make better decisions about their day.
+You communicate like a capable human assistant: attentive, warm, clear, confident when the facts support confidence, and honest when information is unavailable.
+Your voice should sound natural rather than robotic. Use a moderate speaking pace, clear pronunciation, natural pauses, and an approachable tone. Avoid exaggerated excitement, unnecessary formality, repetitive greetings, and long monologues.
+
+Follow these conversation rules:
+1. Listen carefully to the complete request before answering.
+2. Respond directly to the user's actual question.
+3. Keep ordinary spoken answers concise and easy to understand.
+4. Expand the explanation when the user asks for more detail.
+5. Ask one short clarification when a location or request is genuinely ambiguous.
+6. Respect the user's language and communicate in that language when supported.
+7. Handle ordinary accents and natural speech variations as robustly as possible.
+8. Never repeatedly greet a user during the same uninterrupted conversation unless the context makes another greeting appropriate.
+9. Never repeat an answer merely because duplicate events arrived.
+10. Allow a user to interrupt the assistant and ask a new question naturally.
+11. Never claim to have heard something that was not received or recognized.
+12. Never invent a weather report, observation, forecast, alert, tool result, or completed action.
+
+Use natural language rather than reading raw data fields to the user.
+For example, when asked about the weather in Kampala, give a concise overview of the verified current conditions, temperature, relevant rain or wind information, and the forecast when available.
+Do not invent Kampala's current weather or use an unrelated city's conditions as a substitute.
+If weather data cannot be retrieved, explain clearly that the information could not be retrieved and offer a useful next step.
+Your priority is to be accurate, helpful, natural, and responsive.
+
+Current Dashboard Location:
 - City: ${location?.name || 'Local'}, ${location?.country || ''}
-- Temperature: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : '20°C'}
+- Temperature: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : 'N/A'}
 - Condition Code: ${current?.weather_code ?? 0}
 - Humidity: ${current?.relative_humidity_2m ?? 50}%
 
-MANDATORY CITY LOOKUP RULE:
-Whenever the user asks about the weather in any city (e.g., "What's the weather in Kampala?", "How is it in Tokyo?", "Tell me the weather in Paris"), you MUST immediately call the tool 'getCityWeather' with the exact city name.
-DO NOT guess or invent coordinates or temperatures. Wait for the tool result.
-Once you receive the tool response, speak a concise 1-to-2 sentence answer stating:
-1. The city name and country.
-2. The current temperature, weather condition, humidity, and wind.
-3. The city's local time (from localTime field).
-Only use real fields returned by the tool. If the tool reports that the city could not be found, explain that clearly and ask for the country or spelling.`;
+Function Tool 'getCityWeather':
+Whenever the user asks about current conditions, forecasts, rain, temperature, wind, or weather in any city (e.g., "What's the weather in Kampala?", "How is it in Tokyo?", "Tell me the weather in Paris"), you MUST immediately call the tool 'getCityWeather' with the exact city name.
+Wait for the real weather tool result before answering. Once you receive the tool response, speak a concise 1-to-2 sentence answer stating the city name, country, local time, and verified weather details. If the city could not be found, explain that clearly and ask for the country or spelling.`;
 
         const setupMessage = {
           setup: {
@@ -305,59 +412,82 @@ Only use real fields returned by the tool. If the tool reports that the city cou
                     parameters: {
                       type: 'OBJECT',
                       properties: {
-                        city: { type: 'STRING', description: 'City name to look up' }
+                        city: { type: 'STRING', description: 'City name to look up, e.g. Kampala, Tokyo, Paris' }
                       },
                       required: ['city']
                     }
                   }
                 ]
               }
-            ]
+            ],
+            inputAudioTranscription: {},
+            outputAudioTranscription: {}
           }
         };
 
         ws.send(JSON.stringify(setupMessage));
 
-        // Start streaming microphone PCM chunks (16kHz)
+        // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
         const source = inputCtx.createMediaStreamSource(stream);
         const processor = inputCtx.createScriptProcessor(4096, 1, 1);
+        const silentGain = inputCtx.createGain();
+        silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
+
         scriptProcessorRef.current = processor;
+        silentGainRef.current = silentGain;
 
         source.connect(processor);
-        processor.connect(inputCtx.destination);
+        processor.connect(silentGain);
+        silentGain.connect(inputCtx.destination);
 
         processor.onaudioprocess = (e) => {
-          if (isMutedRef.current || !wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
+          // Do not transmit audio until session is confirmed ready (setupComplete)
+          if (
+            !isSetupCompleteRef.current ||
+            isMutedRef.current ||
+            !wsRef.current ||
+            wsRef.current.readyState !== WebSocket.OPEN ||
+            sessionIdRef.current !== currentSessionId
+          ) {
+            return;
+          }
+
           const inputData = e.inputBuffer.getChannelData(0);
-          const pcmBuffer = floatTo16BitPCM(inputData);
+          // Resample from hardware rate to exactly 16000Hz mono PCM
+          const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
+          const pcmBuffer = floatTo16BitPCM(resampled);
           const base64Audio = arrayBufferToBase64(pcmBuffer);
 
           wsRef.current.send(JSON.stringify({
             realtimeInput: {
-              mediaChunks: [
-                {
-                  mimeType: 'audio/pcm;rate=16000',
-                  data: base64Audio
-                }
-              ]
+              audio: {
+                mimeType: 'audio/pcm;rate=16000',
+                data: base64Audio
+              }
             }
           }));
         };
       };
 
       ws.onmessage = async (event) => {
+        if (sessionIdRef.current !== currentSessionId) return;
+
         try {
           const rawData = typeof event.data === 'string' ? event.data : await event.data.text();
           const msg = JSON.parse(rawData);
 
-          // Handle Setup Completion -> Switch to active listening state
+          // 1. Handle Setup Completion -> Switch to active listening state & clear timeout
           if (msg.setupComplete) {
+            if (connectionTimeoutRef.current) {
+              clearTimeout(connectionTimeoutRef.current);
+              connectionTimeoutRef.current = null;
+            }
+            isSetupCompleteRef.current = true;
             setVoiceState('listening');
           }
 
-          // Handle Model Interruption
+          // 2. Handle Model Interruption (Barge-in)
           if (msg.serverContent?.interrupted) {
-            setVoiceState('listening');
             activeSourcesRef.current.forEach((src) => {
               try {
                 src.stop();
@@ -366,19 +496,50 @@ Only use real fields returned by the tool. If the tool reports that the city cou
             });
             activeSourcesRef.current = [];
             nextStartTimeRef.current = 0;
+            setCurrentAssistantSpoken((prev) => {
+              if (prev.trim()) {
+                setLiveTranscripts((t) => [
+                  ...t,
+                  { sender: 'assistant', text: `${prev.trim()} [interrupted]`, id: 'ast-' + Date.now() }
+                ]);
+              }
+              return '';
+            });
+            setInterimUserSpeech('');
+            setVoiceState('listening');
             return;
           }
 
-          // Handle Function Tool Call from Live API
+          // 3. Handle Live Audio Transcriptions from API
+          if (msg.serverContent?.interimInputTranscription?.text) {
+            setInterimUserSpeech(msg.serverContent.interimInputTranscription.text);
+          }
+
+          if (msg.serverContent?.inputTranscription?.text) {
+            const userText = msg.serverContent.inputTranscription.text.trim();
+            setInterimUserSpeech('');
+            if (userText) {
+              setLiveTranscripts((t) => [
+                ...t,
+                { sender: 'user', text: userText, id: 'user-' + Date.now() }
+              ]);
+            }
+          }
+
+          if (msg.serverContent?.outputTranscription?.text) {
+            setCurrentAssistantSpoken((prev) => (prev + ' ' + msg.serverContent.outputTranscription.text).trim());
+          }
+
+          // 4. Handle Function Tool Call from Live API
           if (msg.toolCall?.functionCalls) {
             setVoiceState('thinking');
             for (const call of msg.toolCall.functionCalls) {
               if (call.name === 'getCityWeather') {
-                const cityName = call.args?.city || 'London';
+                const cityName = call.args?.city || 'Kampala';
                 try {
                   const searchRes = await fetch(`/api/weather/search?query=${encodeURIComponent(cityName)}`);
                   if (!searchRes.ok) {
-                    const errJson = await searchRes.json();
+                    const errJson = await searchRes.json().catch(() => ({}));
                     throw new Error(errJson.message || `City "${cityName}" not found`);
                   }
                   const data: WeatherData = await searchRes.json();
@@ -404,21 +565,6 @@ Only use real fields returned by the tool. If the tool reports that the city cou
 
                   const conditionObj = getWeatherCondition(data.weather.current.weather_code, data.weather.current.is_day);
                   const conditionText = conditionObj.label;
-
-                  // Add live spoken captions for the lookup and result
-                  setLiveTranscripts((t) => [
-                    ...t,
-                    {
-                      sender: 'user',
-                      text: `What's the weather in ${cityName}?`,
-                      id: Date.now().toString()
-                    },
-                    {
-                      sender: 'assistant',
-                      text: `In ${data.location.name}, ${data.location.country}, the local time is ${localTime}. Current conditions are ${conditionText.toLowerCase()} at ${Math.round(data.weather.current.temperature_2m)}°C (feels like ${Math.round(data.weather.current.apparent_temperature)}°C) with ${data.weather.current.relative_humidity_2m}% humidity and wind at ${Math.round(data.weather.current.wind_speed_10m)} km/h.`,
-                      id: (Date.now() + 1).toString()
-                    }
-                  ]);
 
                   // Respond to Live API tool call with real provider fields
                   ws.send(JSON.stringify({
@@ -446,15 +592,6 @@ Only use real fields returned by the tool. If the tool reports that the city cou
                     }
                   }));
                 } catch (err: any) {
-                  setLiveTranscripts((t) => [
-                    ...t,
-                    {
-                      sender: 'assistant',
-                      text: `I could not locate "${cityName}" via our geocoding service. Please check the spelling or specify the country.`,
-                      id: Date.now().toString()
-                    }
-                  ]);
-
                   ws.send(JSON.stringify({
                     toolResponse: {
                       functionResponses: [
@@ -463,7 +600,7 @@ Only use real fields returned by the tool. If the tool reports that the city cou
                           name: call.name,
                           response: {
                             output: {
-                              error: `City "${cityName}" could not be resolved or found. Please ask the user to check the spelling or provide the country name.`
+                              error: `City "${cityName}" could not be resolved or found. Explain to the user that the city could not be retrieved and ask for country or spelling.`
                             }
                           }
                         }
@@ -475,7 +612,7 @@ Only use real fields returned by the tool. If the tool reports that the city cou
             }
           }
 
-          // Handle Model Audio Output
+          // 5. Handle Model Spoken Audio Output
           const parts = msg.serverContent?.modelTurn?.parts;
           if (parts && parts.length > 0) {
             for (const part of parts) {
@@ -484,58 +621,121 @@ Only use real fields returned by the tool. If the tool reports that the city cou
                 play24kPcmChunk(part.inlineData.data, outputCtx);
               }
               if (part.text) {
-                setCurrentAssistantSpoken((prev) => {
-                  const next = prev + ' ' + part.text;
-                  return next.trim();
-                });
+                setCurrentAssistantSpoken((prev) => (prev ? prev + ' ' + part.text : part.text).trim());
               }
             }
           }
 
-          // Handle Turn Complete
+          // 6. Handle Turn Complete
           if (msg.serverContent?.turnComplete) {
             setCurrentAssistantSpoken((prev) => {
               if (prev.trim()) {
                 setLiveTranscripts((t) => [
                   ...t,
-                  { sender: 'assistant', text: prev.trim(), id: Date.now().toString() }
+                  { sender: 'assistant', text: prev.trim(), id: 'ast-' + Date.now() }
                 ]);
               }
               return '';
             });
-            setVoiceState('listening');
+            if (activeSourcesRef.current.length === 0) {
+              setVoiceState('listening');
+            }
           }
         } catch (parseErr) {
           console.warn('Live message parsing error:', parseErr);
         }
       };
 
-      ws.onerror = (err) => {
-        console.warn('Live voice socket notice:', err);
-        setVoiceError('Live voice connection interrupted. Please tap "Start Voice" to reconnect or switch to text chat.');
+      ws.onerror = (event: Event) => {
+        const target = event.target as WebSocket | null;
+        const stateStr = target ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][target.readyState] || target.readyState : 'UNKNOWN';
+        const rawUrl = target?.url || '';
+        const safeUrl = rawUrl ? rawUrl.replace(/access_token=[^&]+/, 'access_token=[REDACTED]') : 'unknown_url';
+
+        console.warn('[RODEX Live Voice Socket Notice]', {
+          message: (event as any).message || 'WebSocket connection error or reset',
+          type: event.type,
+          readyState: stateStr,
+          url: safeUrl
+        });
+
+        setVoiceError(`Live voice connection interrupted (${stateStr}). Please tap "Start Voice" to reconnect or switch to text chat.`);
         stopVoiceSession('error');
       };
 
-      ws.onclose = () => {
-        stopVoiceSession('ended');
+      ws.onclose = (event: CloseEvent) => {
+        console.log('[RODEX Live Voice Socket Closed]', {
+          code: event.code,
+          reason: event.reason || 'Normal closure or session end',
+          wasClean: event.wasClean
+        });
+
+        if (!event.wasClean && isSetupCompleteRef.current) {
+          setVoiceError(`Live voice connection closed (${event.code} ${event.reason || 'Abnormal Close'}). Tap Start Voice to reconnect.`);
+          stopVoiceSession('error');
+        } else {
+          stopVoiceSession('ended');
+        }
       };
     } catch (err: any) {
-      const isDenied = err.name === 'NotAllowedError' || 
-                       err.name === 'PermissionDeniedError' || 
-                       err.message?.toLowerCase().includes('permission denied') ||
-                       err.message?.toLowerCase().includes('not allowed');
+      const errName = err.name || 'UnknownError';
+      const errMsg = err.message || 'No detailed error message provided';
+      console.error(`[RODEX Voice Failure Diagnostic] Name: ${errName} | Message: ${errMsg}`, err);
 
-      const isNoDevice = err.name === 'NotFoundError' || 
-                         err.name === 'DevicesNotFoundError' ||
-                         err.message?.toLowerCase().includes('requested device not found');
+      const isPolicyBlocked =
+        errName === 'SecurityError' ||
+        errMsg.toLowerCase().includes('permissions policy') ||
+        errMsg.toLowerCase().includes('permission policy') ||
+        errMsg.toLowerCase().includes('disallowed') ||
+        (inIframe && errName === 'NotAllowedError' && (permissionStatus === 'granted' || permissionStatus === 'prompt'));
 
-      if (isDenied) {
+      const isUserDenied =
+        !isPolicyBlocked &&
+        (errName === 'NotAllowedError' ||
+          errName === 'PermissionDeniedError' ||
+          errMsg.toLowerCase().includes('permission denied') ||
+          errMsg.toLowerCase().includes('not allowed'));
+
+      const isNoDevice =
+        errName === 'NotFoundError' ||
+        errName === 'DevicesNotFoundError' ||
+        errMsg.toLowerCase().includes('requested device not found');
+
+      const isDeviceInUse =
+        errName === 'NotReadableError' ||
+        errName === 'TrackStartError' ||
+        errMsg.toLowerCase().includes('could not start audio source');
+
+      const isOverconstrained =
+        errName === 'OverconstrainedError' ||
+        errName === 'ConstraintNotSatisfiedError';
+
+      if (isPolicyBlocked) {
         setPermissionStatus('denied');
-        setVoiceError('Microphone permission was denied. To enable real-time voice, please allow microphone access in your browser address bar (lock/site settings icon) and tap Start Voice again, or switch to Text Chat.');
+        setVoiceError(
+          `Microphone access is restricted by the embedded frame's Permissions Policy [${errName}: ${errMsg}]. Ensure "requestFramePermissions": ["microphone"] is set in metadata.json or open the application directly.`
+        );
+      } else if (isUserDenied) {
+        setPermissionStatus('denied');
+        setVoiceError(
+          `Microphone permission was denied by browser settings [${errName}: ${errMsg}]. To enable real-time voice, click the lock or tune icon in your browser address bar, set Microphone to "Allow", and tap Start Voice again, or switch to Text Chat.`
+        );
       } else if (isNoDevice) {
-        setVoiceError('No microphone was detected on your system. Please connect an audio input device or switch to Text Chat.');
+        setVoiceError(
+          `No microphone hardware detected on your device [${errName}: ${errMsg}]. Please connect an audio input device or switch to Text Chat.`
+        );
+      } else if (isDeviceInUse) {
+        setVoiceError(
+          `Microphone hardware could not be initialized [${errName}: ${errMsg}]. The microphone may be in use by another application (e.g. Zoom or Discord). Please close competing apps and try again.`
+        );
+      } else if (isOverconstrained) {
+        setVoiceError(
+          `Microphone audio constraints failed [${errName}: ${errMsg}]. Please check your input audio device settings.`
+        );
       } else {
-        setVoiceError(err.message || 'Live voice session encountered a temporary issue. Please check your connection or switch to Text Chat.');
+        setVoiceError(
+          `Microphone initialisation failed [${errName}: ${errMsg}]. Please check your browser audio settings or switch to Text Chat.`
+        );
       }
       stopVoiceSession('error');
     }
@@ -546,6 +746,10 @@ Only use real fields returned by the tool. If the tool reports that the city cou
     if (isMutedRef.current || ctx.state === 'closed') return;
 
     try {
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+
       const float32Data = base64ToFloat32Array(base64Audio);
       const audioBuffer = ctx.createBuffer(1, float32Data.length, 24000);
       audioBuffer.getChannelData(0).set(float32Data);
@@ -565,9 +769,12 @@ Only use real fields returned by the tool. If the tool reports that the city cou
       activeSourcesRef.current.push(sourceNode);
       sourceNode.onended = () => {
         activeSourcesRef.current = activeSourcesRef.current.filter((s) => s !== sourceNode);
-        if (activeSourcesRef.current.length === 0 && voiceState === 'speaking') {
-          setVoiceState('listening');
-        }
+        setVoiceState((current) => {
+          if (current === 'speaking' && activeSourcesRef.current.length === 0) {
+            return 'listening';
+          }
+          return current;
+        });
       };
     } catch (err) {
       console.warn('Audio playback error:', err);
@@ -868,27 +1075,62 @@ Only use real fields returned by the tool. If the tool reports that the city cou
               )}
 
               {/* Real-Time Live Transcripts & Spoken Captions */}
-              <div className="w-full max-w-lg bg-black/30 border border-white/10 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2">
-                <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider">
-                  Live Spoken Captions
+              <div className="w-full max-w-lg bg-black/40 border border-white/10 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
+                <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider flex items-center justify-between">
+                  <span>Live Spoken Conversation</span>
+                  {voiceState === 'speaking' && (
+                    <span className="text-[9px] text-sky-300 font-medium animate-pulse flex items-center gap-1">
+                      <Volume2 className="w-3 h-3" /> Speaking 24kHz
+                    </span>
+                  )}
+                  {voiceState === 'listening' && (
+                    <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-1">
+                      <Mic className="w-3 h-3 animate-pulse" /> 16kHz Mono Stream
+                    </span>
+                  )}
                 </div>
-                {liveTranscripts.length === 0 && !currentAssistantSpoken && (
-                  <p className="text-white/40 italic my-auto text-center">
-                    Click "Start Voice" to speak with RODEX AI. Live captions will display here in real time.
+
+                {liveTranscripts.length === 0 && !currentAssistantSpoken && !interimUserSpeech && (
+                  <p className="text-white/40 italic my-auto text-center leading-relaxed">
+                    Click <strong className="text-white/70">"Start Voice"</strong> to talk with RODEX Atmos.<br />
+                    Ask: <em>"What's the weather in Kampala?"</em>, <em>"Is it raining in Tokyo?"</em>, or <em>"What should I wear?"</em>
                   </p>
                 )}
+
                 {liveTranscripts.map((t) => (
-                  <div key={t.id} className="text-white/80">
-                    <strong className="text-sky-300 font-semibold">{t.sender === 'assistant' ? 'RODEX AI: ' : 'You: '}</strong>
-                    {t.text}
+                  <div key={t.id} className="text-white/80 leading-relaxed">
+                    <strong className={t.sender === 'assistant' ? 'text-sky-300 font-semibold' : 'text-emerald-400 font-semibold'}>
+                      {t.sender === 'assistant' ? 'RODEX Atmos: ' : 'You: '}
+                    </strong>
+                    <span>{t.text}</span>
                   </div>
                 ))}
-                {currentAssistantSpoken && (
-                  <div className="text-sky-200 animate-pulse">
-                    <strong className="text-sky-400 font-semibold">RODEX AI: </strong>
-                    {currentAssistantSpoken}
+
+                {/* Real-time Interim User Speech */}
+                {interimUserSpeech && (
+                  <div className="text-amber-300/90 italic flex items-start gap-1.5 animate-pulse">
+                    <strong className="text-amber-400 font-semibold not-italic shrink-0">You (speaking): </strong>
+                    <span>"{interimUserSpeech}"</span>
                   </div>
                 )}
+
+                {/* Tool execution thinking indicator */}
+                {voiceState === 'thinking' && (
+                  <div className="text-indigo-300 italic flex items-center gap-2 py-0.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400 shrink-0" />
+                    <span>Retrieving verified weather forecast from router...</span>
+                  </div>
+                )}
+
+                {/* Real-time Streaming Model Speech */}
+                {currentAssistantSpoken && (
+                  <div className="text-sky-200 animate-pulse leading-relaxed">
+                    <strong className="text-sky-400 font-semibold">RODEX Atmos: </strong>
+                    <span>{currentAssistantSpoken}</span>
+                  </div>
+                )}
+
+                <div ref={transcriptsBottomRef} />
               </div>
 
               {/* Voice Controls: Mute and End Session */}

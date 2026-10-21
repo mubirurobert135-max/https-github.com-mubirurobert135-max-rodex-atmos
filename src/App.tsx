@@ -8,6 +8,7 @@ import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
+import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
@@ -23,6 +24,7 @@ export default function App() {
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
+  const [isPrivacyPortalOpen, setIsPrivacyPortalOpen] = useState<boolean>(false);
 
   // Progressive Location Strategy on App Startup (GPS -> IP Geolocation -> Default Kampala)
   const initializeStartupLocation = async () => {
@@ -208,6 +210,7 @@ export default function App() {
         locationMode={locationMode}
         onOpenAssistant={() => setIsAssistantOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenPrivacyPortal={() => setIsPrivacyPortalOpen(true)}
       />
 
       {/* Main Content Container */}
@@ -385,6 +388,13 @@ export default function App() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+      />
+
+      {/* Individual Privacy Portal, Controls & Account Management Modal */}
+      <PrivacyPortalModal
+        isOpen={isPrivacyPortalOpen}
+        onClose={() => setIsPrivacyPortalOpen(false)}
+        onOpenAuthModal={() => setIsAuthOpen(true)}
       />
 
       {/* Footer */}

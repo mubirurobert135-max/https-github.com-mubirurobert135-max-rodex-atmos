@@ -15,6 +15,7 @@ interface HeaderProps {
   locationMode?: LocationMode;
   onOpenAssistant: () => void;
   onOpenAuth: () => void;
+  onOpenPrivacyPortal: () => void;
 }
 
 interface GeocodingResult {
@@ -35,7 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   currentLocationName,
   locationMode = 'gps',
   onOpenAssistant,
-  onOpenAuth
+  onOpenAuth,
+  onOpenPrivacyPortal
 }) => {
   const { user, isVerified } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -259,6 +261,15 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-3">
+
+          <button
+            onClick={onOpenPrivacyPortal}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-200 hover:text-white border border-sky-400/30 text-xs font-bold transition shadow-lg shrink-0"
+            title="Privacy & Account Portal"
+          >
+            <ShieldCheck className="w-4 h-4 text-sky-400" />
+            <span>Privacy Portal</span>
+          </button>
 
           <button
             onClick={onOpenAuth}

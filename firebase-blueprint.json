@@ -37,6 +37,14 @@
         "updatedAt": {
           "type": "string",
           "description": "ISO timestamp of last profile update"
+        },
+        "preferences": {
+          "type": "object",
+          "description": "User privacy and app preferences"
+        },
+        "savedCities": {
+          "type": "array",
+          "description": "User saved favorite cities"
         }
       },
       "required": ["uid", "createdAt"]

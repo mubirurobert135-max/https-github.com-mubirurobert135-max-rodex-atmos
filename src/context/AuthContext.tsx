@@ -4,7 +4,11 @@ import {
   onAuthStateChanged, 
   signOut as firebaseSignOut,
   deleteUser,
-  updateProfile
+  updateProfile,
+  reauthenticateWithPopup,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  GoogleAuthProvider
 } from 'firebase/auth';
 import { 
   doc, 
@@ -59,7 +63,7 @@ interface AuthContextType {
   updateUserPreferences: (newPrefs: Partial<UserPrivacyPreferences>) => Promise<void>;
   updateDisplayName: (newName: string) => Promise<void>;
   exportUserData: () => Promise<Record<string, any>>;
-  deleteAccountPermanently: () => Promise<void>;
+  deleteAccountPermanently: (passwordForReauth?: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -227,8 +231,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  // Recoverable & Idempotent Account Deletion Workflow
-  const deleteAccountPermanently = async () => {
+  // Recoverable & Idempotent Account Deletion Workflow with Interactive Re-authentication
+  const deleteAccountPermanently = async (passwordForReauth?: string) => {
     if (!auth.currentUser) {
       throw new Error('No authenticated user session found to delete.');
     }
@@ -236,38 +240,76 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentUser = auth.currentUser;
     const uid = currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-
-    // Save profile snapshot in memory for rollback if Auth deletion fails
     const profileBackup = userProfile ? { ...userProfile } : null;
+
+    // Helper to perform deleteUser with automatic re-authentication handling
+    const executeAuthDeletion = async () => {
+      try {
+        await deleteUser(currentUser);
+      } catch (err: any) {
+        console.warn('[RODEX Auth Notice] Initial deleteUser failed, attempting re-authentication:', err?.code);
+
+        if (err.code === 'auth/requires-recent-login') {
+          const providerId = currentUser.providerData[0]?.providerId || 'google.com';
+
+          if (providerId === 'google.com') {
+            // Interactive Popup Re-authentication for Google
+            const googleProvider = new GoogleAuthProvider();
+            googleProvider.setCustomParameters({ prompt: 'select_account' });
+            await reauthenticateWithPopup(currentUser, googleProvider);
+            // Retry deletion after Google re-auth
+            await deleteUser(currentUser);
+          } else if (providerId === 'password' && currentUser.email) {
+            if (!passwordForReauth) {
+              throw new Error('REAUTH_PASSWORD_REQUIRED');
+            }
+            const cred = EmailAuthProvider.credential(currentUser.email, passwordForReauth);
+            await reauthenticateWithCredential(currentUser, cred);
+            // Retry deletion after email re-auth
+            await deleteUser(currentUser);
+          } else {
+            throw err;
+          }
+        } else {
+          throw err;
+        }
+      }
+    };
 
     // 1. Delete Firestore user document
     try {
       await deleteDoc(userDocRef);
     } catch (err) {
-      console.warn('Firestore doc deletion warning:', err);
+      console.warn('Firestore doc deletion notice:', err);
     }
 
-    // 2. Delete Firebase Auth User
+    // 2. Delete Firebase Auth User with re-authentication
     try {
-      await deleteUser(currentUser);
+      await executeAuthDeletion();
     } catch (err: any) {
-      console.error('Firebase deleteUser error:', err);
+      console.error('Firebase deleteUser error after re-auth attempt:', err);
 
-      // ROLLBACK: Restore Firestore user doc if deleteUser fails!
+      // ROLLBACK: Restore Firestore user doc if deleteUser fails or is cancelled!
       if (profileBackup) {
         try {
-          await setDoc(userDocRef, profileBackup, { merge: true });
+          const cleanData = sanitizeForFirestore(profileBackup);
+          await setDoc(userDocRef, cleanData, { merge: true });
           setUserProfile(profileBackup);
         } catch (rollbackErr) {
-          console.error('Rollback failed:', rollbackErr);
+          console.error('Rollback restoration failed:', rollbackErr);
         }
       }
 
-      if (err.code === 'auth/requires-recent-login') {
-        throw new Error(
-          'For your security, account deletion requires a recent sign-in. Your account data has been safely preserved. Please sign out, sign back in, and try deleting again.'
-        );
+      if (err.message === 'REAUTH_PASSWORD_REQUIRED') {
+        throw new Error('For security, please enter your account password below to confirm deletion.');
+      } else if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/cancelled-popup-request') {
+        throw new Error('Google re-authentication popup was closed before completion. Account was NOT deleted.');
+      } else if (err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
+        throw new Error('Incorrect account password. Please check your password and try again.');
+      } else if (err.code === 'auth/requires-recent-login') {
+        throw new Error('Re-authentication required. Please sign out and sign back in, then retry deleting your account.');
       }
+
       throw new Error(`Account deletion aborted: ${err.message || 'Authentication error.'}`);
     }
 
@@ -278,7 +320,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('rodex_atmos_last_location');
     }
 
-    // 4. Reset Local Context State
+    // 4. Reset Local Context State & Return to Guest Mode
     setUser(null);
     setUserProfile(null);
     continueAsGuest();

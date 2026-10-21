@@ -25,18 +25,30 @@ export function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 export function base64ToFloat32Array(base64: string): Float32Array {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i);
+  if (!base64) return new Float32Array(0);
+  try {
+    const binaryString = atob(base64);
+    const len = binaryString.length;
+    const sampleCount = Math.floor(len / 2);
+    if (sampleCount === 0) return new Float32Array(0);
+
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    const dataView = new DataView(bytes.buffer, bytes.byteOffset, len);
+    const float32Array = new Float32Array(sampleCount);
+
+    for (let i = 0; i < sampleCount; i++) {
+      const int16 = dataView.getInt16(i * 2, true); // true for little-endian
+      float32Array[i] = int16 < 0 ? int16 / 32768.0 : int16 / 32767.0;
+    }
+    return float32Array;
+  } catch (err) {
+    console.warn('[RODEX Audio Decoding Notice]', err);
+    return new Float32Array(0);
   }
-  const int16Array = new Int16Array(bytes.buffer);
-  const float32Array = new Float32Array(int16Array.length);
-  for (let i = 0; i < int16Array.length; i++) {
-    float32Array[i] = int16Array[i] / 32768.0;
-  }
-  return float32Array;
 }
 
 /**

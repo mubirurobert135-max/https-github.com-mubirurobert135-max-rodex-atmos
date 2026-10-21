@@ -706,7 +706,11 @@ Wait for the real weather tool result before answering. Once you receive the too
             for (const part of parts) {
               if (part.inlineData?.data) {
                 setVoiceState('speaking');
-                play24kPcmChunk(part.inlineData.data, outputCtx);
+                playPcmAudioChunk(
+                  part.inlineData.data,
+                  part.inlineData.mimeType || 'audio/pcm;rate=24000',
+                  outputCtx
+                );
               }
               if (part.text) {
                 setCurrentAssistantSpoken((prev) => (prev ? prev + ' ' + part.text : part.text).trim());
@@ -842,35 +846,72 @@ Wait for the real weather tool result before answering. Once you receive the too
     }
   };
 
-  // Play 24kHz audio chunk gaplessly
-  const play24kPcmChunk = (base64Audio: string, ctx: AudioContext) => {
-    if (isMutedRef.current || ctx.state === 'closed') return;
+  // Diagnostics metrics tracking ref
+  const playbackMetricsRef = useRef({
+    receivedChunks: 0,
+    decodedChunks: 0,
+    totalDurationSec: 0,
+    sampleRate: 24000,
+    underruns: 0,
+    discardedChunks: 0
+  });
+
+  // Play PCM audio chunk gaplessly with jitter buffer lead-time
+  const playPcmAudioChunk = (base64Audio: string, mimeType: string = 'audio/pcm;rate=24000', ctx: AudioContext) => {
+    if (isMutedRef.current || !ctx || ctx.state === 'closed') {
+      playbackMetricsRef.current.discardedChunks += 1;
+      return;
+    }
 
     try {
       if (ctx.state === 'suspended') {
         ctx.resume().catch(() => {});
       }
 
+      playbackMetricsRef.current.receivedChunks += 1;
+
+      // Extract sample rate from MIME type if specified (e.g. rate=24000 or rate=16000), default 24000
+      const rateMatch = mimeType ? mimeType.match(/rate=(\d+)/) : null;
+      const targetSampleRate = rateMatch ? parseInt(rateMatch[1], 10) : 24000;
+      playbackMetricsRef.current.sampleRate = targetSampleRate;
+
       const float32Data = base64ToFloat32Array(base64Audio);
-      const audioBuffer = ctx.createBuffer(1, float32Data.length, 24000);
+      if (float32Data.length === 0) return;
+
+      playbackMetricsRef.current.decodedChunks += 1;
+
+      // Create mono AudioBuffer matching exact PCM sample rate
+      const audioBuffer = ctx.createBuffer(1, float32Data.length, targetSampleRate);
       audioBuffer.getChannelData(0).set(float32Data);
+
+      const chunkDuration = audioBuffer.duration;
+      playbackMetricsRef.current.totalDurationSec += chunkDuration;
 
       const sourceNode = ctx.createBufferSource();
       sourceNode.buffer = audioBuffer;
       sourceNode.connect(ctx.destination);
 
       const now = ctx.currentTime;
+      const INITIAL_JITTER_BUFFER_LEAD = 0.080; // 80ms initial lead time to absorb network packet arrival jitter
+
+      // If playback cursor is behind current time (first chunk or after a gap/underrun), set lead buffer
       if (nextStartTimeRef.current < now) {
-        nextStartTimeRef.current = now;
+        if (nextStartTimeRef.current > 0) {
+          playbackMetricsRef.current.underruns += 1;
+        }
+        nextStartTimeRef.current = now + INITIAL_JITTER_BUFFER_LEAD;
       }
 
-      sourceNode.start(nextStartTimeRef.current);
-      nextStartTimeRef.current += audioBuffer.duration;
-      recordStage('assistant_audio_played');
+      const scheduledStartTime = nextStartTimeRef.current;
+      sourceNode.start(scheduledStartTime);
+      nextStartTimeRef.current += chunkDuration;
 
+      recordStage('assistant_audio_played');
       activeSourcesRef.current.push(sourceNode);
+
       sourceNode.onended = () => {
         activeSourcesRef.current = activeSourcesRef.current.filter((s) => s !== sourceNode);
+        // Only switch state to listening if all queued sources have finished playing
         setVoiceState((current) => {
           if (current === 'speaking' && activeSourcesRef.current.length === 0) {
             return 'listening';
@@ -879,7 +920,7 @@ Wait for the real weather tool result before answering. Once you receive the too
         });
       };
     } catch (err) {
-      console.warn('Audio playback error:', err);
+      console.warn('[RODEX Playback Scheduling Error]', err);
     }
   };
 

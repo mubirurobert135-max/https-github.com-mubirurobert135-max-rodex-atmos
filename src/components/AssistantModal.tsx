@@ -7,10 +7,14 @@ import { WeatherData } from '../types';
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array, resampleAudioBuffer } from '../utils/audioUtils';
 import { getWeatherCondition } from '../utils/weatherUtils';
 
+import { LocationMode } from '../types';
+
 interface AssistantModalProps {
   isOpen: boolean;
   onClose: () => void;
   weatherData: WeatherData | null;
+  deviceLocationData?: WeatherData | null;
+  locationMode?: LocationMode;
   onSelectCityWeather: (data: WeatherData) => void;
 }
 
@@ -84,6 +88,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   isOpen,
   onClose,
   weatherData,
+  deviceLocationData,
+  locationMode = 'gps',
   onSelectCityWeather
 }) => {
   const [activeTab, setActiveTab] = useState<'voice' | 'chat'>('voice');
@@ -288,6 +294,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
+    const tStart = performance.now();
     setVoiceError(null);
     sessionIdRef.current += 1;
     const currentSessionId = sessionIdRef.current;
@@ -327,28 +334,69 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         throw new DOMException('Web Audio API is not supported in this browser.', 'NotSupportedError');
       }
 
-      // 1. Request microphone access strictly upon user action (shows browser permission prompt)
-      let stream: MediaStream;
-      try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          }
-        });
-      } catch (firstErr: any) {
-        if (
-          firstErr.name === 'OverconstrainedError' ||
-          firstErr.name === 'TypeError' ||
-          firstErr.name === 'ConstraintNotSatisfiedError'
-        ) {
-          console.warn('[RODEX Voice] Specific audio constraints failed, retrying with basic audio constraint:', firstErr);
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        } else {
-          throw firstErr;
-        }
+      // 1. Immediately create or reuse AudioContexts in direct user gesture stack
+      let inputCtx = inputAudioCtxRef.current;
+      let outputCtx = outputAudioCtxRef.current;
+
+      if (!inputCtx || inputCtx.state === 'closed') {
+        inputCtx = new AudioCtx();
+        inputAudioCtxRef.current = inputCtx;
       }
+      if (!outputCtx || outputCtx.state === 'closed') {
+        outputCtx = new AudioCtx();
+        outputAudioCtxRef.current = outputCtx;
+      }
+
+      const audioCtxResumes = [];
+      if (inputCtx.state === 'suspended') audioCtxResumes.push(inputCtx.resume());
+      if (outputCtx.state === 'suspended') audioCtxResumes.push(outputCtx.resume());
+      await Promise.all(audioCtxResumes);
+      const tAudioCtxReady = performance.now();
+
+      // 2. PARALLEL EXECUTION: Acquire microphone stream AND fetch ephemeral token concurrently
+      const micPromise = (async () => {
+        const tMicStart = performance.now();
+        let stream: MediaStream;
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            }
+          });
+        } catch (firstErr: any) {
+          if (
+            firstErr.name === 'OverconstrainedError' ||
+            firstErr.name === 'TypeError' ||
+            firstErr.name === 'ConstraintNotSatisfiedError'
+          ) {
+            console.warn('[RODEX Voice] Specific audio constraints failed, retrying with basic audio constraint:', firstErr);
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          } else {
+            throw firstErr;
+          }
+        }
+        const tMicDone = performance.now();
+        return { stream, durationMs: Math.round(tMicDone - tMicStart) };
+      })();
+
+      const tokenPromise = (async () => {
+        const tTokenStart = performance.now();
+        const tokenRes = await fetch('/api/ai/live-token', { method: 'POST' });
+        if (!tokenRes.ok) {
+          const errJson = await tokenRes.json().catch(() => ({}));
+          throw new Error(errJson.message || 'Unable to obtain Live voice security token from server.');
+        }
+        const { token } = await tokenRes.json();
+        const tTokenDone = performance.now();
+        return { token: token as string, durationMs: Math.round(tTokenDone - tTokenStart) };
+      })();
+
+      // Await both operations concurrently
+      const [micResult, tokenResult] = await Promise.all([micPromise, tokenPromise]);
+      const { stream, durationMs: micMs } = micResult;
+      const { token, durationMs: tokenMs } = tokenResult;
 
       if (sessionIdRef.current !== currentSessionId) {
         stream.getTracks().forEach((t) => t.stop());
@@ -358,35 +406,12 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       mediaStreamRef.current = stream;
       setPermissionStatus('granted');
       recordStage('mic_stream_acquired');
-
-      // 2. Switch to connecting state once mic permission is granted
-      setVoiceState('connecting');
-
-      // Request short-lived, single-use ephemeral token from server (never client key)
-      const tokenRes = await fetch('/api/ai/live-token', { method: 'POST' });
-      if (!tokenRes.ok) {
-        const errJson = await tokenRes.json().catch(() => ({}));
-        throw new Error(errJson.message || 'Unable to obtain Live voice security token from server.');
-      }
-      const { token } = await tokenRes.json();
-
-      if (sessionIdRef.current !== currentSessionId) return;
       recordStage('ephemeral_token_received');
 
-      // 3. Initialize Audio Contexts using system native hardware sample rates
-      const inputCtx = new AudioCtx();
-      const outputCtx = new AudioCtx();
-      if (inputCtx.state === 'suspended') {
-        await inputCtx.resume();
-      }
-      if (outputCtx.state === 'suspended') {
-        await outputCtx.resume();
-      }
-      inputAudioCtxRef.current = inputCtx;
-      outputAudioCtxRef.current = outputCtx;
-      nextStartTimeRef.current = 0;
+      // 3. Switch to connecting state once parallel prerequisites complete
+      setVoiceState('connecting');
 
-      // 4. Connect to Gemini Live Constrained WebSocket endpoint with ephemeral token
+      // 4. Instantiate WebSocket connection immediately
       const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
@@ -411,44 +436,29 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
         recordStage('websocket_opened');
 
-        // Send Initial Setup with Weather Grounding and Section 8 Personality
+        // Send Initial Setup with Weather Grounding & Device Location Awareness
         const location = weatherData?.location;
         const current = weatherData?.weather?.current;
+        const devLoc = deviceLocationData?.location;
 
-        const systemPrompt = `You are RODEX Atmos, a friendly, intelligent, calm, professional, and naturally conversational AI weather assistant.
-Your purpose is to help people understand the weather and make better decisions about their day.
-You communicate like a capable human assistant: attentive, warm, clear, confident when the facts support confidence, and honest when information is unavailable.
-Your voice should sound natural rather than robotic. Use a moderate speaking pace, clear pronunciation, natural pauses, and an approachable tone. Avoid exaggerated excitement, unnecessary formality, repetitive greetings, and long monologues.
+        const systemPrompt = `You are Hey Atmos, the expert meteorologist and voice assistant for RODEX Atmos. Listen carefully and respond naturally, promptly and clearly in concise conversational sentences (1 to 3 short sentences max).
 
-Follow these conversation rules:
-1. Listen carefully to the complete request before answering.
-2. Respond directly to the user's actual question.
-3. Keep ordinary spoken answers concise and easy to understand.
-4. Expand the explanation when the user asks for more detail.
-5. Ask one short clarification when a location or request is genuinely ambiguous.
-6. Respect the user's language and communicate in that language when supported.
-7. Handle ordinary accents and natural speech variations as robustly as possible.
-8. Never repeatedly greet a user during the same uninterrupted conversation unless the context makes another greeting appropriate.
-9. Never repeat an answer merely because duplicate events arrived.
-10. Allow a user to interrupt the assistant and ask a new question naturally.
-11. Never claim to have heard something that was not received or recognized.
-12. Never invent a weather report, observation, forecast, alert, tool result, or completed action.
+Device Location vs Searched Location Grounding Rules:
+- If the user asks "What's the weather here?", "How is the weather in my area?", or "What is local weather?", answer using the user's detected physical device location (${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}).
+- If the user asks for weather in a specific named city (e.g., "What's the weather in Kampala?", "How is Tokyo?", "Tell me about Paris"), you MUST immediately call the tool 'getCityWeather' with the exact city name.
 
-Use natural language rather than reading raw data fields to the user.
-For example, when asked about the weather in Kampala, give a concise overview of the verified current conditions, temperature, relevant rain or wind information, and the forecast when available.
-Do not invent Kampala's current weather or use an unrelated city's conditions as a substitute.
-If weather data cannot be retrieved, explain clearly that the information could not be retrieved and offer a useful next step.
-Your priority is to be accurate, helpful, natural, and responsive.
+User's Detected Physical Device Location:
+- Locality: ${devLoc?.name || location?.name || 'Local'}, ${devLoc?.country || location?.country || ''}
+- Location Detection Mode: ${locationMode}
 
-Current Dashboard Location:
+Currently Displayed Dashboard Weather:
 - City: ${location?.name || 'Local'}, ${location?.country || ''}
 - Temperature: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : 'N/A'}
 - Condition Code: ${current?.weather_code ?? 0}
 - Humidity: ${current?.relative_humidity_2m ?? 50}%
 
 Function Tool 'getCityWeather':
-Whenever the user asks about current conditions, forecasts, rain, temperature, wind, or weather in any city (e.g., "What's the weather in Kampala?", "How is it in Tokyo?", "Tell me the weather in Paris"), you MUST immediately call the tool 'getCityWeather' with the exact city name.
-Wait for the real weather tool result before answering. Once you receive the tool response, speak a concise 1-to-2 sentence answer stating the city name, country, local time, and verified weather details. If the city could not be found, explain that clearly and ask for the country or spelling.`;
+Whenever the user asks about current conditions, forecasts, rain, temperature, wind, or weather in any named city, immediately call 'getCityWeather' with the city name.`;
 
         const setupMessage = {
           setup: {
@@ -492,7 +502,7 @@ Wait for the real weather tool result before answering. Once you receive the too
         try {
           // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
           const source = inputCtx.createMediaStreamSource(stream);
-          const processor = inputCtx.createScriptProcessor(4096, 1, 1);
+          const processor = inputCtx.createScriptProcessor(2048, 1, 1);
           const silentGain = inputCtx.createGain();
           silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
 
@@ -564,6 +574,7 @@ Wait for the real weather tool result before answering. Once you receive the too
 
           // 1. Handle Setup Completion -> Switch to active listening state & clear timeout
           if (msg.setupComplete) {
+            const tSetupComplete = performance.now();
             if (connectionTimeoutRef.current) {
               clearTimeout(connectionTimeoutRef.current);
               connectionTimeoutRef.current = null;
@@ -571,6 +582,14 @@ Wait for the real weather tool result before answering. Once you receive the too
             isSetupCompleteRef.current = true;
             recordStage('setup_complete_received');
             setVoiceState('listening');
+
+            console.log('[RODEX Voice Startup Benchmark]', {
+              audioCtxResumeMs: Math.round(tAudioCtxReady - tStart),
+              micAcquisitionMs: micMs,
+              tokenFetchMs: tokenMs,
+              parallelPrerequisitesMs: Math.round(performance.now() - tStart),
+              totalTimeToReadyMs: Math.round(tSetupComplete - tStart)
+            });
           }
 
           // 2. Handle Model Interruption (Barge-in)

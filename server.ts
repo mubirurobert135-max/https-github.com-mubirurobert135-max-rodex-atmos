@@ -450,11 +450,36 @@ async function startServer() {
     throw new Error(`Location "${query}" could not be resolved via Open-Meteo geocoding.`);
   }
 
+  // Reverse geocoding helper using Nominatim with coordinates fallback
+  async function reverseGeocodeCoordinates(lat: number, lon: number): Promise<{ name: string; country: string; admin1: string }> {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`;
+      const res = await fetch(url, { headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' } });
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const city = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || 'Local Area';
+        const country = addr.country || '';
+        const admin1 = addr.state || addr.region || addr.province || '';
+        const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
+        
+        let displayName = city;
+        if (suburb && suburb !== city && city !== 'Local Area') {
+          displayName = `${suburb}, ${city}`;
+        }
+        return { name: displayName, country, admin1 };
+      }
+    } catch (e) {
+      console.warn('[Reverse Geocode Notice] Nominatim lookup failed, using fallback:', e);
+    }
+    return { name: `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`, country: '', admin1: '' };
+  }
+
   // Helper to fetch weather via Open-Meteo
   async function fetchOpenMeteo(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     let lat: number;
     let lon: number;
-    let name = cityNameHint || 'Location';
+    let name = cityNameHint || '';
     let country = '';
     let admin1 = '';
     let timezone = 'auto';
@@ -470,6 +495,12 @@ async function startServer() {
     } else {
       lat = queryOrCoords.lat;
       lon = queryOrCoords.lon;
+      if (!name || name === 'Current Location' || name === 'My Location' || name === 'Location') {
+        const geo = await reverseGeocodeCoordinates(lat, lon);
+        name = geo.name;
+        country = geo.country;
+        admin1 = geo.admin1;
+      }
     }
 
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
@@ -554,6 +585,75 @@ async function startServer() {
 
     throw lastError || new Error('All eligible weather providers failed.');
   }
+
+  // Geocoding Autocomplete Search Endpoint for Header
+  app.get('/api/weather/geocoding-search', async (req, res) => {
+    try {
+      const q = ((req.query.q as string) || '').trim();
+      if (q.length < 2) {
+        return res.json({ results: [] });
+      }
+
+      const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`;
+      const geoRes = await fetch(geoUrl);
+      if (!geoRes.ok) return res.json({ results: [] });
+      const data = await geoRes.json();
+      const results = (data.results || []).map((r: any) => ({
+        name: r.name,
+        country: r.country || '',
+        admin1: r.admin1 || '',
+        lat: r.latitude,
+        lon: r.longitude,
+        timezone: r.timezone || 'auto'
+      }));
+
+      res.json({ results });
+    } catch (err: any) {
+      res.json({ results: [] });
+    }
+  });
+
+  // IP Geolocation Endpoint (2nd priority fallback in progressive location strategy)
+  app.get('/api/weather/ip-location', async (req, res) => {
+    try {
+      const ipRes = await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
+        headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' }
+      });
+      if (!ipRes.ok) {
+        throw new Error('IP geolocation service unavailable');
+      }
+      const ipData = await ipRes.json();
+      if (ipData.status !== 'success' || !ipData.lat || !ipData.lon) {
+        throw new Error(ipData.message || 'Could not resolve network location from IP');
+      }
+
+      const lat = ipData.lat;
+      const lon = ipData.lon;
+      const cityName = ipData.city || 'Network Location';
+      const countryName = ipData.country || '';
+
+      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const result = await routeForecastRequest(async (provider) => {
+        if (provider.name === 'WeatherAPI.com') {
+          return await fetchWeatherAPI({ lat, lon });
+        } else if (provider.name === 'OpenWeather') {
+          return await fetchOpenWeather({ lat, lon }, `${cityName}, ${countryName}`);
+        } else {
+          return await fetchOpenMeteo({ lat, lon }, cityName);
+        }
+      }, cacheKey);
+
+      result.location.isApproximateNetwork = true;
+      result.location.detectedIP = ipData.query;
+      res.json(result);
+    } catch (error: any) {
+      console.warn('IP geolocation error, falling back:', error.message);
+      res.status(503).json({
+        error: 'IP_LOCATION_FAILED',
+        message: error.message || 'Unable to retrieve approximate network location'
+      });
+    }
+  });
 
   // Search Endpoint
   app.get('/api/weather/search', async (req, res) => {

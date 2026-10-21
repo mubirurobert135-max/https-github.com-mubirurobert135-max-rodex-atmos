@@ -7,19 +7,118 @@ import { HourlyForecast } from './components/HourlyForecast';
 import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
-import { WeatherData } from './types';
+import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
-import { AlertCircle, RefreshCw, CloudSun, ShieldCheck, KeyRound, Sparkles, Mic } from 'lucide-react';
+import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
 
 export default function App() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
+  const [locationMode, setLocationMode] = useState<LocationMode>('gps');
+  const [locationNotice, setLocationNotice] = useState<{ type: 'info' | 'warning'; message: string } | null>(null);
   const [unit, setUnit] = useState<'C' | 'F'>('C');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
 
-  // Fetch live weather by search query
+  // Progressive Location Strategy on App Startup (GPS -> IP Geolocation -> Default Kampala)
+  const initializeStartupLocation = async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    setLocationNotice(null);
+
+    const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
+
+    // Helper for Step 2: Approximate Network IP Geolocation
+    const tryNetworkIpLocation = async (gpsErrorReason?: string) => {
+      try {
+        const res = await fetch('/api/weather/ip-location');
+        if (res.ok) {
+          const data: WeatherData = await res.json();
+          setWeatherData(data);
+          setDeviceLocationData(data);
+          setLocationMode('network');
+          setLocationNotice({
+            type: 'info',
+            message: `Approximate network location detected (${data.location.name}${data.location.country ? ', ' + data.location.country : ''}). Enable device location for exact local weather.`
+          });
+          return;
+        }
+      } catch (e) {
+        console.warn('IP geolocation fetch failed:', e);
+      }
+
+      // Step 3: Default Fallback Location (Kampala, Uganda)
+      try {
+        const res = await fetch('/api/weather/search?query=Kampala,Uganda');
+        if (res.ok) {
+          const data: WeatherData = await res.json();
+          setWeatherData(data);
+          setDeviceLocationData(data);
+          setLocationMode('fallback');
+          setLocationNotice({
+            type: 'warning',
+            message: gpsErrorReason 
+              ? `${gpsErrorReason} Displaying default location (Kampala, Uganda). Search any city or tap "My Location" to retry.`
+              : 'Device location unavailable. Displaying default location (Kampala, Uganda).'
+          });
+        }
+      } catch (fallbackErr) {
+        setErrorMessage('Unable to fetch initial weather forecast. Please check your network connection.');
+      }
+    };
+
+    // Step 1: Check Physical Geolocation API
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      await tryNetworkIpLocation('Geolocation is not supported by your browser.');
+      setIsLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
+          if (res.ok) {
+            const data: WeatherData = await res.json();
+            setWeatherData(data);
+            setDeviceLocationData(data);
+            setLocationMode('gps');
+            setLocationNotice(null);
+          } else {
+            await tryNetworkIpLocation('Unable to resolve GPS coordinates.');
+          }
+        } catch (err) {
+          await tryNetworkIpLocation('GPS coordinate lookup failed.');
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      async (error) => {
+        let reason = 'Location access was unavailable.';
+        if (error.code === error.PERMISSION_DENIED) {
+          if (inIframe) {
+            reason = 'Location access is restricted by the preview frame policy.';
+          } else {
+            reason = 'Location permission was denied in browser settings.';
+          }
+        } else if (error.code === error.TIMEOUT) {
+          reason = 'GPS location request timed out.';
+        }
+        await tryNetworkIpLocation(reason);
+        setIsLoading(false);
+      },
+      { timeout: 7000, enableHighAccuracy: true, maximumAge: 300000 }
+    );
+  };
+
+  useEffect(() => {
+    initializeStartupLocation();
+  }, []);
+
+  // Fetch live weather by search query (preserves deviceLocationData!)
   const handleSearch = async (query: string) => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -33,20 +132,21 @@ export default function App() {
           setSetupRequired(true);
           setErrorMessage(data.message || 'Setup required: Weather API key not configured.');
         } else {
-          throw new Error(data.error || 'City not found');
+          throw new Error(data.error || `City "${query}" not found`);
         }
         return;
       }
       setWeatherData(data);
+      setLocationMode('search');
     } catch (err: any) {
       console.error('Search error:', err);
-      setErrorMessage(err.message || 'Could not fetch live weather from providers.');
+      setErrorMessage(err.message || 'Could not fetch live weather for the requested city.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Fetch live weather by coordinates
+  // Fetch live weather by exact coordinates
   const handleSelectCoordinates = async (lat: number, lon: number, name: string) => {
     setIsLoading(true);
     setErrorMessage(null);
@@ -65,50 +165,29 @@ export default function App() {
         return;
       }
       setWeatherData(data);
+      setLocationMode('search');
     } catch (err: any) {
       console.error('Coordinates error:', err);
-      setErrorMessage('Failed to fetch live weather data. Please check your connection or configuration.');
+      setErrorMessage('Failed to fetch live weather data for coordinates.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Initial load: Fetch live weather for London by default
-  useEffect(() => {
-    handleSearch('London');
-  }, []);
-
-  // Get current GPS location
+  // Re-trigger "My Location" button action
   const handleGetCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setErrorMessage('Geolocation is not supported by your browser.');
-      return;
+    if (deviceLocationData && locationMode === 'search') {
+      setWeatherData(deviceLocationData);
+      setLocationMode(deviceLocationData.location.isApproximateNetwork ? 'network' : 'gps');
     }
-
-    setIsLoading(true);
-    setErrorMessage(null);
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const { latitude, longitude } = position.coords;
-        handleSelectCoordinates(latitude, longitude, 'My Location');
-      },
-      (error) => {
-        setIsLoading(false);
-        console.warn('Geolocation error:', error);
-        if (error.code === error.PERMISSION_DENIED) {
-          setErrorMessage('Location permission was denied. Please search for your city manually using the search bar.');
-        } else {
-          setErrorMessage('Unable to retrieve your location. Please try searching manually.');
-        }
-      },
-      { timeout: 10000, maximumAge: 60000 }
-    );
+    initializeStartupLocation();
   };
 
   const currentTheme = weatherData 
     ? getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).theme
     : 'sunny';
+
+  const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
 
   return (
     <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-16 relative">
@@ -123,13 +202,65 @@ export default function App() {
         unit={unit}
         onToggleUnit={() => setUnit(u => (u === 'C' ? 'F' : 'C'))}
         isLoading={isLoading}
-        currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Loading Live Weather...')}
+        currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Detecting Location...')}
+        locationMode={locationMode}
         onOpenAssistant={() => setIsAssistantOpen(true)}
       />
 
       {/* Main Content Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
         
+        {/* Location Detection / Fallback Notice Banner */}
+        {locationNotice && !setupRequired && (
+          <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 backdrop-blur-xl animate-fade-in ${
+            locationNotice.type === 'warning' 
+              ? 'bg-amber-500/15 border-amber-400/30 text-amber-200' 
+              : 'bg-sky-500/15 border-sky-400/30 text-sky-200'
+          }`}>
+            <div className="flex items-center gap-3">
+              {locationMode === 'network' ? (
+                <Globe className="w-5 h-5 text-sky-300 shrink-0" />
+              ) : locationMode === 'fallback' ? (
+                <MapPin className="w-5 h-5 text-amber-300 shrink-0" />
+              ) : (
+                <Navigation className="w-5 h-5 text-emerald-300 shrink-0" />
+              )}
+              <div className="text-xs sm:text-sm font-medium leading-relaxed">
+                {locationNotice.message}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+              {locationMode !== 'gps' && (
+                <button
+                  onClick={initializeStartupLocation}
+                  className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition shadow"
+                >
+                  Enable GPS Location
+                </button>
+              )}
+              {inIframe && locationMode !== 'gps' && (
+                <a
+                  href={typeof window !== 'undefined' ? window.location.href : '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold flex items-center gap-1 border border-white/20 transition"
+                >
+                  <span>Open in New Tab</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+              <button
+                onClick={() => setLocationNotice(null)}
+                className="p-1 rounded-lg hover:bg-white/10 text-white/60 hover:text-white transition"
+                title="Dismiss notice"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Weather Provider Attribution & Disclaimer Banner */}
         {weatherData && weatherData.providerInfo && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md text-xs text-sky-200 gap-2">
@@ -139,9 +270,11 @@ export default function App() {
               <span className="text-white/40">•</span>
               <span className="text-sky-200/80">{weatherData.providerInfo.disclaimer}</span>
             </div>
-            <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-[11px] font-medium">
-              Multi-Provider Router Active
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-[11px] font-medium">
+                {locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}
+              </span>
+            </div>
           </div>
         )}
 
@@ -161,7 +294,7 @@ export default function App() {
               <div className="text-white/50 text-[10px] mt-2">Get a free key at https://www.weatherapi.com/</div>
             </div>
             <button
-              onClick={() => handleSearch('London')}
+              onClick={() => handleSearch('Kampala')}
               className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg transition"
             >
               Retry Connection
@@ -189,7 +322,7 @@ export default function App() {
         {isLoading && !weatherData && !setupRequired && (
           <div className="w-full py-24 flex flex-col items-center justify-center gap-4 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10">
             <RefreshCw className="w-10 h-10 text-sky-400 animate-spin" />
-            <p className="text-base font-semibold text-sky-200">Routing request through weather provider network...</p>
+            <p className="text-base font-semibold text-sky-200">Detecting local weather for your location...</p>
           </div>
         )}
 
@@ -237,8 +370,11 @@ export default function App() {
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}
         weatherData={weatherData}
+        deviceLocationData={deviceLocationData}
+        locationMode={locationMode}
         onSelectCityWeather={(newWeather) => {
           setWeatherData(newWeather);
+          setLocationMode('search');
         }}
       />
 

@@ -1,3 +1,5 @@
+export type LocationMode = 'gps' | 'network' | 'search' | 'fallback';
+
 export interface WeatherLocation {
   name: string;
   country: string;
@@ -5,6 +7,8 @@ export interface WeatherLocation {
   latitude: number;
   longitude: number;
   timezone: string;
+  isApproximateNetwork?: boolean;
+  detectedIP?: string;
 }
 
 export interface CurrentWeather {

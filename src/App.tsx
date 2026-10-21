@@ -11,14 +11,16 @@ import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
+import { useAuth } from './context/AuthContext';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
 
 export default function App() {
+  const { userPreferences, updateUserPreferences } = useAuth();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
-  const [locationNotice, setLocationNotice] = useState<{ type: 'info' | 'warning'; message: string } | null>(null);
-  const [unit, setUnit] = useState<'C' | 'F'>('C');
+  const [locationNotice, setLocationNotice] = useState<{ type: 'info' | 'message' | 'warning'; message: string } | null>(null);
+  const [unit, setUnit] = useState<'C' | 'F'>(userPreferences?.temperatureUnit || 'C');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
@@ -26,11 +28,40 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isPrivacyPortalOpen, setIsPrivacyPortalOpen] = useState<boolean>(false);
 
-  // Progressive Location Strategy on App Startup (GPS -> IP Geolocation -> Default Kampala)
-  const initializeStartupLocation = async () => {
+  // Sync temperature unit with user privacy preferences
+  useEffect(() => {
+    if (userPreferences?.temperatureUnit) {
+      setUnit(userPreferences.temperatureUnit);
+    }
+  }, [userPreferences?.temperatureUnit]);
+
+  // Progressive Location Strategy on App Startup
+  const initializeStartupLocation = async (forceGPS = false) => {
     setIsLoading(true);
     setErrorMessage(null);
     setLocationNotice(null);
+
+    // Respect Privacy Preference for Auto Location
+    if (!forceGPS && userPreferences && userPreferences.autoLocationEnabled === false) {
+      try {
+        const res = await fetch('/api/weather/search?query=Kampala,Uganda');
+        if (res.ok) {
+          const data: WeatherData = await res.json();
+          setWeatherData(data);
+          setDeviceLocationData(data);
+          setLocationMode('fallback');
+          setLocationNotice({
+            type: 'info',
+            message: 'Automatic location lookup is disabled in Privacy Preferences. Search any city or tap "My Location" to fetch weather.'
+          });
+        }
+      } catch (e) {
+        console.warn('Auto location disabled fallback error:', e);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
 
     const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
 
@@ -184,7 +215,7 @@ export default function App() {
       setWeatherData(deviceLocationData);
       setLocationMode(deviceLocationData.location.isApproximateNetwork ? 'network' : 'gps');
     }
-    initializeStartupLocation();
+    initializeStartupLocation(true);
   };
 
   const currentTheme = weatherData 
@@ -204,7 +235,11 @@ export default function App() {
         onSelectCoordinates={handleSelectCoordinates}
         onGetCurrentLocation={handleGetCurrentLocation}
         unit={unit}
-        onToggleUnit={() => setUnit(u => (u === 'C' ? 'F' : 'C'))}
+        onToggleUnit={() => {
+          const nextUnit = unit === 'C' ? 'F' : 'C';
+          setUnit(nextUnit);
+          updateUserPreferences({ temperatureUnit: nextUnit });
+        }}
         isLoading={isLoading}
         currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Detecting Location...')}
         locationMode={locationMode}
@@ -239,7 +274,7 @@ export default function App() {
             <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
               {locationMode !== 'gps' && (
                 <button
-                  onClick={initializeStartupLocation}
+                  onClick={() => initializeStartupLocation(true)}
                   className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition shadow"
                 >
                   Enable GPS Location

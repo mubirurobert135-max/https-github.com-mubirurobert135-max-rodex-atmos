@@ -64,6 +64,17 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Helper to remove any 'undefined' property values before writing to Firestore
+function sanitizeForFirestore<T extends Record<string, any>>(obj: T): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined) {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
@@ -89,11 +100,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profile = snap.data() as UserProfileData;
         setUserProfile(profile);
       } else {
-        const newProfile: UserProfileData = {
+        const newProfileRaw: Record<string, any> = {
           uid: firebaseUser.uid,
           displayName: firebaseUser.displayName || '',
-          email: firebaseUser.email || undefined,
-          phoneNumber: firebaseUser.phoneNumber || undefined,
           emailVerified: firebaseUser.emailVerified,
           phoneVerified: !!firebaseUser.phoneNumber,
           createdAt: new Date().toISOString(),
@@ -101,8 +110,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           preferences: DEFAULT_PREFERENCES,
           savedCities: []
         };
-        await setDoc(userDocRef, newProfile);
-        setUserProfile(newProfile);
+        if (firebaseUser.email) {
+          newProfileRaw.email = firebaseUser.email;
+        }
+        if (firebaseUser.phoneNumber) {
+          newProfileRaw.phoneNumber = firebaseUser.phoneNumber;
+        }
+
+        const cleanData = sanitizeForFirestore(newProfileRaw);
+        await setDoc(userDocRef, cleanData);
+        setUserProfile(cleanData as UserProfileData);
       }
     } catch (err) {
       console.warn('[RODEX Auth Profile Warning]', err);
@@ -126,17 +143,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
     try {
-      const updatedProfile: Partial<UserProfileData> = {
+      const updatedProfileRaw: Record<string, any> = {
         uid,
-        email: auth.currentUser.email || undefined,
-        phoneNumber: auth.currentUser.phoneNumber || undefined,
         emailVerified: auth.currentUser.emailVerified,
         phoneVerified: !!auth.currentUser.phoneNumber,
         updatedAt: new Date().toISOString(),
         ...additionalData
       };
-      await setDoc(userDocRef, updatedProfile, { merge: true });
-      setUserProfile((prev) => (prev ? { ...prev, ...updatedProfile } : (updatedProfile as UserProfileData)));
+      if (auth.currentUser.email) {
+        updatedProfileRaw.email = auth.currentUser.email;
+      }
+      if (auth.currentUser.phoneNumber) {
+        updatedProfileRaw.phoneNumber = auth.currentUser.phoneNumber;
+      }
+
+      const cleanData = sanitizeForFirestore(updatedProfileRaw);
+      await setDoc(userDocRef, cleanData, { merge: true });
+      setUserProfile((prev) => (prev ? { ...prev, ...cleanData } : (cleanData as UserProfileData)));
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `users/${uid}`);
     }
@@ -204,32 +227,58 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  // Delete Account Permanently
+  // Recoverable & Idempotent Account Deletion Workflow
   const deleteAccountPermanently = async () => {
     if (!auth.currentUser) {
       throw new Error('No authenticated user session found to delete.');
     }
 
-    const uid = auth.currentUser.uid;
+    const currentUser = auth.currentUser;
+    const uid = currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
+
+    // Save profile snapshot in memory for rollback if Auth deletion fails
+    const profileBackup = userProfile ? { ...userProfile } : null;
 
     // 1. Delete Firestore user document
     try {
       await deleteDoc(userDocRef);
     } catch (err) {
-      console.warn('Firestore user doc cleanup warning:', err);
+      console.warn('Firestore doc deletion warning:', err);
     }
 
-    // 2. Delete Firebase Auth user
+    // 2. Delete Firebase Auth User
     try {
-      await deleteUser(auth.currentUser);
+      await deleteUser(currentUser);
     } catch (err: any) {
-      if (err.code === 'auth/requires-recent-login') {
-        throw new Error('For security reasons, deleting your account requires recent authentication. Please sign out and sign back in before deleting.');
+      console.error('Firebase deleteUser error:', err);
+
+      // ROLLBACK: Restore Firestore user doc if deleteUser fails!
+      if (profileBackup) {
+        try {
+          await setDoc(userDocRef, profileBackup, { merge: true });
+          setUserProfile(profileBackup);
+        } catch (rollbackErr) {
+          console.error('Rollback failed:', rollbackErr);
+        }
       }
-      throw err;
+
+      if (err.code === 'auth/requires-recent-login') {
+        throw new Error(
+          'For your security, account deletion requires a recent sign-in. Your account data has been safely preserved. Please sign out, sign back in, and try deleting again.'
+        );
+      }
+      throw new Error(`Account deletion aborted: ${err.message || 'Authentication error.'}`);
     }
 
+    // 3. Clear Local Storage App Keys
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('rodex_atmos_saved_cities');
+      localStorage.removeItem('rodex_atmos_preferences');
+      localStorage.removeItem('rodex_atmos_last_location');
+    }
+
+    // 4. Reset Local Context State
     setUser(null);
     setUserProfile(null);
     continueAsGuest();
@@ -274,6 +323,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await firebaseSignOut(auth);
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('rodex_atmos_saved_cities');
+      localStorage.removeItem('rodex_atmos_preferences');
+      localStorage.removeItem('rodex_atmos_last_location');
+    }
     setUser(null);
     setUserProfile(null);
     continueAsGuest();

@@ -32,6 +32,54 @@ type VoiceState =
   | 'ended' 
   | 'error';
 
+export type LiveConnectionStage =
+  | 'idle'
+  | 'requesting_permission'
+  | 'mic_stream_acquired'
+  | 'ephemeral_token_received'
+  | 'websocket_created'
+  | 'websocket_opened'
+  | 'setup_message_sent'
+  | 'setup_complete_received'
+  | 'server_response_received'
+  | 'audio_message_sent'
+  | 'model_response_received'
+  | 'assistant_audio_played';
+
+const STAGE_LABELS: Record<LiveConnectionStage, string> = {
+  idle: 'Session Not Started',
+  requesting_permission: '1/10 Requesting Microphone Access',
+  mic_stream_acquired: '2/10 Microphone Stream Acquired',
+  ephemeral_token_received: '3/10 Ephemeral Security Token Received',
+  websocket_created: '4/10 Live WebSocket Instantiated',
+  websocket_opened: '5/10 WebSocket Handshake Completed',
+  setup_message_sent: '6/10 Gemini Session Setup Sent',
+  setup_complete_received: '7/10 Gemini Setup Confirmed (setupComplete)',
+  server_response_received: '8/10 Gemini Message Received',
+  audio_message_sent: '9/10 Microphone PCM Transmitted',
+  model_response_received: '9/10 AI Response Generated',
+  assistant_audio_played: '10/10 AI Spoken Audio Playing'
+};
+
+function getCloseCodeReason(code: number): string {
+  switch (code) {
+    case 1000: return 'Normal Session Closure';
+    case 1001: return 'Client/Server Navigating Away';
+    case 1002: return 'WebSocket Protocol Error';
+    case 1003: return 'Unsupported Payload Data';
+    case 1005: return 'No Close Status Received';
+    case 1006: return 'Abnormal Closure (TCP/TLS Drop or Blocked Handshake)';
+    case 1007: return 'Invalid Payload Data';
+    case 1008: return 'Policy Violation / Session Auth Rejected';
+    case 1009: return 'Message Frame Exceeds Capacity';
+    case 1011: return 'Gemini Remote Server Exception';
+    case 4000: return 'Ephemeral Token Consumed or Expired';
+    case 4001: return 'Invalid Session Configuration';
+    case 4003: return 'Model Access Unauthorized';
+    default: return `Close Code ${code}`;
+  }
+}
+
 export const AssistantModal: React.FC<AssistantModalProps> = ({
   isOpen,
   onClose,
@@ -55,11 +103,20 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Live Voice State
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
+  const [lastStage, setLastStage] = useState<LiveConnectionStage>('idle');
+  const lastStageRef = useRef<LiveConnectionStage>('idle');
   const [isMuted, setIsMuted] = useState(false);
   const [voiceError, setVoiceError] = useState<string | null>(null);
   const [liveTranscripts, setLiveTranscripts] = useState<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
   const [currentAssistantSpoken, setCurrentAssistantSpoken] = useState('');
   const [interimUserSpeech, setInterimUserSpeech] = useState('');
+
+  // Helper to safely record sequential diagnostic stages
+  const recordStage = useCallback((stage: LiveConnectionStage) => {
+    lastStageRef.current = stage;
+    setLastStage(stage);
+    console.log(`[RODEX Voice Stage Completed] -> ${STAGE_LABELS[stage]}`);
+  }, []);
 
   // Voice readiness and environment checks
   const [serverVoiceStatus, setServerVoiceStatus] = useState<{ checked: boolean; supported: boolean; message?: string }>({
@@ -238,6 +295,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
     // Explicitly show requesting permission state before invoking browser prompt
     setVoiceState('requesting_permission');
+    recordStage('requesting_permission');
 
     const isSecure = typeof window !== 'undefined' ? window.isSecureContext : false;
     const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
@@ -299,6 +357,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       mediaStreamRef.current = stream;
       setPermissionStatus('granted');
+      recordStage('mic_stream_acquired');
 
       // 2. Switch to connecting state once mic permission is granted
       setVoiceState('connecting');
@@ -312,10 +371,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       const { token } = await tokenRes.json();
 
       if (sessionIdRef.current !== currentSessionId) return;
+      recordStage('ephemeral_token_received');
 
-      // 3. Initialize Audio Contexts
-      const inputCtx = new AudioCtx({ sampleRate: 16000 });
-      const outputCtx = new AudioCtx({ sampleRate: 24000 });
+      // 3. Initialize Audio Contexts using system native hardware sample rates
+      const inputCtx = new AudioCtx();
+      const outputCtx = new AudioCtx();
       if (inputCtx.state === 'suspended') {
         await inputCtx.resume();
       }
@@ -330,6 +390,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContentConstrained?access_token=${encodeURIComponent(token)}`;
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
+      recordStage('websocket_created');
 
       // Start 15s session setup timeout
       if (connectionTimeoutRef.current) {
@@ -337,7 +398,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       }
       connectionTimeoutRef.current = setTimeout(() => {
         if (!isSetupCompleteRef.current && sessionIdRef.current === currentSessionId) {
-          setVoiceError('Connection to Gemini Live timed out during session setup. Please check your network and tap Start Voice to retry, or use Text Chat.');
+          setVoiceError(`Connection to Gemini Live timed out during session setup (at stage ${STAGE_LABELS[lastStageRef.current]}). Please check your network and tap Start Voice to retry.`);
           stopVoiceSession('error');
         }
       }, 15000);
@@ -347,6 +408,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
           try { ws.close(); } catch (e) {}
           return;
         }
+
+        recordStage('websocket_opened');
 
         // Send Initial Setup with Weather Grounding and Section 8 Personality
         const location = weatherData?.location;
@@ -419,54 +482,63 @@ Wait for the real weather tool result before answering. Once you receive the too
                   }
                 ]
               }
-            ],
-            inputAudioTranscription: {},
-            outputAudioTranscription: {}
+            ]
           }
         };
 
         ws.send(JSON.stringify(setupMessage));
+        recordStage('setup_message_sent');
 
-        // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
-        const source = inputCtx.createMediaStreamSource(stream);
-        const processor = inputCtx.createScriptProcessor(4096, 1, 1);
-        const silentGain = inputCtx.createGain();
-        silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
+        try {
+          // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
+          const source = inputCtx.createMediaStreamSource(stream);
+          const processor = inputCtx.createScriptProcessor(4096, 1, 1);
+          const silentGain = inputCtx.createGain();
+          silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
 
-        scriptProcessorRef.current = processor;
-        silentGainRef.current = silentGain;
+          scriptProcessorRef.current = processor;
+          silentGainRef.current = silentGain;
 
-        source.connect(processor);
-        processor.connect(silentGain);
-        silentGain.connect(inputCtx.destination);
+          source.connect(processor);
+          processor.connect(silentGain);
+          silentGain.connect(inputCtx.destination);
 
-        processor.onaudioprocess = (e) => {
-          // Do not transmit audio until session is confirmed ready (setupComplete)
-          if (
-            !isSetupCompleteRef.current ||
-            isMutedRef.current ||
-            !wsRef.current ||
-            wsRef.current.readyState !== WebSocket.OPEN ||
-            sessionIdRef.current !== currentSessionId
-          ) {
-            return;
-          }
-
-          const inputData = e.inputBuffer.getChannelData(0);
-          // Resample from hardware rate to exactly 16000Hz mono PCM
-          const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
-          const pcmBuffer = floatTo16BitPCM(resampled);
-          const base64Audio = arrayBufferToBase64(pcmBuffer);
-
-          wsRef.current.send(JSON.stringify({
-            realtimeInput: {
-              audio: {
-                mimeType: 'audio/pcm;rate=16000',
-                data: base64Audio
-              }
+          processor.onaudioprocess = (e) => {
+            // Do not transmit audio until session is confirmed ready (setupComplete)
+            if (
+              !isSetupCompleteRef.current ||
+              isMutedRef.current ||
+              !wsRef.current ||
+              wsRef.current.readyState !== WebSocket.OPEN ||
+              sessionIdRef.current !== currentSessionId
+            ) {
+              return;
             }
-          }));
-        };
+
+            const inputData = e.inputBuffer.getChannelData(0);
+            // Resample from hardware rate to exactly 16000Hz mono PCM
+            const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
+            const pcmBuffer = floatTo16BitPCM(resampled);
+            const base64Audio = arrayBufferToBase64(pcmBuffer);
+
+            wsRef.current.send(JSON.stringify({
+              realtimeInput: {
+                audio: {
+                  mimeType: 'audio/pcm;rate=16000',
+                  data: base64Audio
+                }
+              }
+            }));
+
+            if (lastStageRef.current === 'setup_complete_received' || lastStageRef.current === 'server_response_received') {
+              recordStage('audio_message_sent');
+            }
+          };
+        } catch (audioGraphErr: any) {
+          console.error('[RODEX Voice WebAudio Graph Error]', audioGraphErr);
+          setVoiceError(`Web Audio processing error: ${audioGraphErr.message || 'Sample rate mismatch'}. Please tap Start Voice to retry.`);
+          stopVoiceSession('error');
+        }
       };
 
       ws.onmessage = async (event) => {
@@ -476,6 +548,20 @@ Wait for the real weather tool result before answering. Once you receive the too
           const rawData = typeof event.data === 'string' ? event.data : await event.data.text();
           const msg = JSON.parse(rawData);
 
+          // 0. Handle Structured Gemini Errors
+          if (msg.error) {
+            const errText = `Gemini Error (${msg.error.code || 'API Error'}): ${msg.error.message || msg.error.status || 'Structured setup error'}`;
+            console.error('[RODEX Live Voice Server Error]', msg.error);
+            setVoiceError(`Failed at stage [${STAGE_LABELS[lastStageRef.current]}]: ${errText}`);
+            stopVoiceSession('error');
+            return;
+          }
+
+          // Record first server response
+          if (lastStageRef.current === 'setup_message_sent' || lastStageRef.current === 'websocket_opened') {
+            recordStage('server_response_received');
+          }
+
           // 1. Handle Setup Completion -> Switch to active listening state & clear timeout
           if (msg.setupComplete) {
             if (connectionTimeoutRef.current) {
@@ -483,6 +569,7 @@ Wait for the real weather tool result before answering. Once you receive the too
               connectionTimeoutRef.current = null;
             }
             isSetupCompleteRef.current = true;
+            recordStage('setup_complete_received');
             setVoiceState('listening');
           }
 
@@ -615,6 +702,7 @@ Wait for the real weather tool result before answering. Once you receive the too
           // 5. Handle Model Spoken Audio Output
           const parts = msg.serverContent?.modelTurn?.parts;
           if (parts && parts.length > 0) {
+            recordStage('model_response_received');
             for (const part of parts) {
               if (part.inlineData?.data) {
                 setVoiceState('speaking');
@@ -647,31 +735,44 @@ Wait for the real weather tool result before answering. Once you receive the too
       };
 
       ws.onerror = (event: Event) => {
-        const target = event.target as WebSocket | null;
-        const stateStr = target ? ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'][target.readyState] || target.readyState : 'UNKNOWN';
+        const target = (event?.target as WebSocket) || wsRef.current;
+        const readyStateNum = target ? target.readyState : -1;
+        const stateNames = ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED'];
+        const stateStr = readyStateNum >= 0 && readyStateNum <= 3 ? stateNames[readyStateNum] : 'CLOSED';
         const rawUrl = target?.url || '';
-        const safeUrl = rawUrl ? rawUrl.replace(/access_token=[^&]+/, 'access_token=[REDACTED]') : 'unknown_url';
+        const safeUrl = rawUrl ? rawUrl.replace(/access_token=[^&]+/, 'access_token=[REDACTED]') : 'wss://generativelanguage...';
 
         console.warn('[RODEX Live Voice Socket Notice]', {
-          message: (event as any).message || 'WebSocket connection error or reset',
+          lastSuccessfulStage: STAGE_LABELS[lastStageRef.current],
           type: event.type,
           readyState: stateStr,
           url: safeUrl
         });
 
-        setVoiceError(`Live voice connection interrupted (${stateStr}). Please tap "Start Voice" to reconnect or switch to text chat.`);
+        setVoiceError((prev) =>
+          prev ||
+          `Live voice socket interrupted at stage [${STAGE_LABELS[lastStageRef.current]}] (State: ${stateStr}). Tap Start Voice to retry or switch to text chat.`
+        );
         stopVoiceSession('error');
       };
 
       ws.onclose = (event: CloseEvent) => {
+        const closeCode = event.code;
+        const closeReason = event.reason || getCloseCodeReason(closeCode);
+        const isClean = event.wasClean;
+
         console.log('[RODEX Live Voice Socket Closed]', {
-          code: event.code,
-          reason: event.reason || 'Normal closure or session end',
-          wasClean: event.wasClean
+          lastSuccessfulStage: STAGE_LABELS[lastStageRef.current],
+          code: closeCode,
+          reason: closeReason,
+          wasClean: isClean
         });
 
-        if (!event.wasClean && isSetupCompleteRef.current) {
-          setVoiceError(`Live voice connection closed (${event.code} ${event.reason || 'Abnormal Close'}). Tap Start Voice to reconnect.`);
+        if (!isClean && lastStageRef.current !== 'assistant_audio_played' && lastStageRef.current !== 'model_response_received') {
+          setVoiceError((prev) =>
+            prev ||
+            `Live voice socket closed at stage [${STAGE_LABELS[lastStageRef.current]}] (${closeCode}: ${closeReason}). Tap Start Voice to reconnect.`
+          );
           stopVoiceSession('error');
         } else {
           stopVoiceSession('ended');
@@ -713,12 +814,12 @@ Wait for the real weather tool result before answering. Once you receive the too
       if (isPolicyBlocked) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone access is restricted by the embedded frame's Permissions Policy [${errName}: ${errMsg}]. Ensure "requestFramePermissions": ["microphone"] is set in metadata.json or open the application directly.`
+          `Microphone access is restricted by the embedded frame's Permissions Policy [${errName}: ${errMsg}]. Please click "Open in New Tab" below to allow microphone access directly on the page, or check "requestFramePermissions" in metadata.json.`
         );
       } else if (isUserDenied) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone permission was denied by browser settings [${errName}: ${errMsg}]. To enable real-time voice, click the lock or tune icon in your browser address bar, set Microphone to "Allow", and tap Start Voice again, or switch to Text Chat.`
+          `Microphone permission was denied by browser settings [${errName}: ${errMsg}]. To enable voice, click the lock/tune icon in your browser address bar and set Microphone to "Allow", or click "Open in New Tab" below to grant permissions directly.`
         );
       } else if (isNoDevice) {
         setVoiceError(
@@ -765,6 +866,7 @@ Wait for the real weather tool result before answering. Once you receive the too
 
       sourceNode.start(nextStartTimeRef.current);
       nextStartTimeRef.current += audioBuffer.duration;
+      recordStage('assistant_audio_played');
 
       activeSourcesRef.current.push(sourceNode);
       sourceNode.onended = () => {
@@ -1056,16 +1158,26 @@ Wait for the real weather tool result before answering. Once you receive the too
                   <div className="flex-1">
                     <p className="font-semibold mb-0.5 text-white">Voice Notice</p>
                     <p className="leading-relaxed">{voiceError}</p>
-                    <div className="flex items-center gap-3 mt-2.5">
+                    <div className="flex flex-wrap items-center gap-2.5 mt-2.5">
                       <button
                         onClick={startVoiceSession}
-                        className="text-[11px] font-bold px-3 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition shadow"
+                        className="text-[11px] font-bold px-3 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
                       >
                         Try Again
                       </button>
+                      {typeof window !== 'undefined' && window.self !== window.top && (
+                        <a
+                          href={window.location.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white transition shadow cursor-pointer"
+                        >
+                          <ArrowUpRight className="w-3 h-3" /> Open in New Tab
+                        </a>
+                      )}
                       <button
                         onClick={() => setActiveTab('chat')}
-                        className="text-[11px] font-semibold text-sky-300 hover:text-white transition"
+                        className="text-[11px] font-semibold text-sky-300 hover:text-white transition cursor-pointer"
                       >
                         Switch to Text Chat →
                       </button>

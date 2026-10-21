@@ -7,6 +7,7 @@ import { HourlyForecast } from './components/HourlyForecast';
 import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
+import { AuthModal } from './components/AuthModal';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
 
   // Progressive Location Strategy on App Startup (GPS -> IP Geolocation -> Default Kampala)
   const initializeStartupLocation = async () => {
@@ -205,6 +207,7 @@ export default function App() {
         currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Detecting Location...')}
         locationMode={locationMode}
         onOpenAssistant={() => setIsAssistantOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
       />
 
       {/* Main Content Container */}
@@ -376,6 +379,12 @@ export default function App() {
           setWeatherData(newWeather);
           setLocationMode('search');
         }}
+      />
+
+      {/* Account Authentication & Verification Modal */}
+      <AuthModal
+        isOpen={isAuthOpen}
+        onClose={() => setIsAuthOpen(false)}
       />
 
       {/* Footer */}

@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check } from 'lucide-react';
+import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check, User, ShieldCheck } from 'lucide-react';
 import { SAMPLE_CITIES } from '../utils/weatherUtils';
 import { LocationMode } from '../types';
+import { useAuth } from '../context/AuthContext';
 
 interface HeaderProps {
   onSearch: (query: string) => void;
@@ -13,6 +14,7 @@ interface HeaderProps {
   currentLocationName: string;
   locationMode?: LocationMode;
   onOpenAssistant: () => void;
+  onOpenAuth: () => void;
 }
 
 interface GeocodingResult {
@@ -32,8 +34,10 @@ export const Header: React.FC<HeaderProps> = ({
   isLoading,
   currentLocationName,
   locationMode = 'gps',
-  onOpenAssistant
+  onOpenAssistant,
+  onOpenAuth
 }) => {
+  const { user, isVerified } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [liveSearchResults, setLiveSearchResults] = useState<GeocodingResult[]>([]);
@@ -129,6 +133,13 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Mobile Controls */}
           <div className="flex md:hidden items-center gap-2">
+            <button
+              onClick={onOpenAuth}
+              className={`p-2 rounded-lg border transition ${user ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-white/10 text-white border-white/20'}`}
+              title={user ? (isVerified ? 'Verified Account' : 'Account Pending Verification') : 'Sign In or Register'}
+            >
+              <User className="w-4 h-4" />
+            </button>
             <button
               onClick={onOpenAssistant}
               className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs shadow-md border border-sky-400/30 transition animate-pulse"
@@ -248,6 +259,26 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-3">
+
+          <button
+            onClick={onOpenAuth}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-lg border ${
+              user 
+                ? isVerified 
+                  ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-400/40' 
+                  : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-400/40'
+                : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
+            }`}
+            title={user ? 'Manage Account' : 'Sign In or Create Account'}
+          >
+            <User className="w-4 h-4" />
+            <span>{user ? (user.email ? user.email.split('@')[0] : user.phoneNumber || 'Account') : 'Account'}</span>
+            {user && (
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase ${isVerified ? 'bg-emerald-500/30 text-emerald-300' : 'bg-amber-500/30 text-amber-300'}`}>
+                {isVerified ? 'Verified' : 'Pending'}
+              </span>
+            )}
+          </button>
 
           <button
             onClick={onOpenAssistant}

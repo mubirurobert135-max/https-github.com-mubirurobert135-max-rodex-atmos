@@ -1,0 +1,51 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile document stored at /users/{userId}",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "description": "Unique Firebase Auth user ID"
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User's display name or nickname",
+          "maxLength": 100
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address if registered via email"
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "User's phone number if registered via SMS OTP"
+        },
+        "emailVerified": {
+          "type": "boolean",
+          "description": "Whether email address has been verified"
+        },
+        "phoneVerified": {
+          "type": "boolean",
+          "description": "Whether phone number has been verified"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of profile creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last profile update"
+        }
+      },
+      "required": ["uid", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores individual user profile data accessible only by the authenticated owner"
+    }
+  }
+}

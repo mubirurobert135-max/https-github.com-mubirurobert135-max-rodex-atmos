@@ -97,72 +97,44 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="w-full py-4 px-4 sm:px-6 lg:px-8 border-b border-white/10 bg-black/20 backdrop-blur-md sticky top-0 z-50 transition-all">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
         
-        {/* Brand Logo & Location Mode Label */}
-        <div className="flex items-center justify-between w-full md:w-auto gap-4">
+        {/* Brand Logo & Slogan */}
+        <div className="flex items-center justify-between w-full md:w-auto gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/30 text-white font-bold text-xl">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-sky-500/20 text-white font-bold text-xl">
               <Compass className="w-6 h-6 animate-spin-slow" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-wider text-white flex items-center gap-2">
+              <h1 className="text-xl font-black tracking-wider text-white flex items-center gap-1.5">
                 RODEX <span className="text-sky-300 font-light">Atmos</span>
               </h1>
-              <div className="text-xs text-sky-200/90 flex items-center gap-1.5 font-medium">
-                {locationMode === 'gps' ? (
-                  <Navigation className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                ) : locationMode === 'network' ? (
-                  <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                ) : (
-                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                )}
-                <span className="font-semibold text-white truncate max-w-[200px] sm:max-w-[300px]">
-                  {currentLocationName}
-                </span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold uppercase border ${
-                  locationMode === 'gps' 
-                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' 
-                    : locationMode === 'network'
-                    ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
-                    : locationMode === 'search'
-                    ? 'bg-purple-500/20 text-purple-300 border-purple-400/30'
-                    : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
-                }`}>
-                  {locationMode === 'gps' ? 'GPS Local' : locationMode === 'network' ? 'IP Approx' : locationMode === 'search' ? 'Searched' : 'Default'}
-                </span>
-              </div>
+              <p className="text-[11px] text-sky-200/80 font-medium">
+                Understand your day
+              </p>
             </div>
           </div>
 
-          {/* Mobile Controls */}
+          {/* Compact Mobile Utilities */}
           <div className="flex md:hidden items-center gap-2">
             <button
-              onClick={onOpenAuth}
-              className={`p-2 rounded-lg border transition ${user ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-white/10 text-white border-white/20'}`}
-              title={user ? (isVerified ? 'Verified Account' : 'Account Pending Verification') : 'Sign In or Register'}
-            >
-              <User className="w-4 h-4" />
-            </button>
-            <button
-              onClick={onOpenAssistant}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs shadow-md border border-sky-400/30 transition animate-pulse"
-              title="Open RODEX AI Voice & Chat"
-            >
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>AI</span>
-            </button>
-            <button
               onClick={onToggleUnit}
-              className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-semibold text-xs border border-white/20 transition"
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-200 font-bold text-xs border border-white/15 transition"
             >
               °{unit}
             </button>
             <button
-              onClick={onGetCurrentLocation}
-              disabled={isLoading}
-              title="Use My Current Location"
-              className="p-2 rounded-lg bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 border border-sky-400/30 transition disabled:opacity-50"
+              onClick={onOpenAssistant}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs shadow border border-sky-400/30 transition"
+              title="RODEX AI Assistant"
             >
-              <NavigationIcon isLoading={isLoading} />
+              <Sparkles className="w-3.5 h-3.5 text-sky-200 animate-pulse" />
+              <span>AI</span>
+            </button>
+            <button
+              onClick={onOpenAuth}
+              className={`p-2 rounded-xl border transition ${user ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-white/10 text-white border-white/20'}`}
+              title={user ? 'Account' : 'Sign In'}
+            >
+              <User className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -180,11 +152,11 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               onFocus={() => setShowDropdown(true)}
               placeholder="Search city globally (e.g. Kampala, Tokyo, Paris)..."
-              className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl pl-10 pr-24 py-2.5 border border-white/20 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition shadow-inner"
+              className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-2xl pl-10 pr-24 py-2 border border-white/15 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition shadow-inner"
             />
             <button
               type="submit"
-              className="absolute right-1.5 px-3 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-xs font-semibold shadow transition flex items-center gap-1"
+              className="absolute right-1.5 px-3 py-1 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-semibold shadow transition flex items-center gap-1"
             >
               {isSearchingLive ? <RefreshCw className="w-3 h-3 animate-spin" /> : null}
               <span>Search</span>
@@ -259,28 +231,40 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* Desktop Controls */}
-        <div className="hidden md:flex items-center gap-3">
-
+        {/* Desktop Controls (Clean & Balanced) */}
+        <div className="hidden md:flex items-center gap-2.5">
+          {/* Temperature Unit Toggle */}
           <button
-            onClick={onOpenPrivacyPortal}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-200 hover:text-white border border-sky-400/30 text-xs font-bold transition shadow-lg shrink-0"
-            title="Privacy & Account Portal"
+            onClick={onToggleUnit}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-sky-200 text-xs font-bold transition shadow-md backdrop-blur-md"
+            title="Toggle Temperature Unit"
           >
-            <ShieldCheck className="w-4 h-4 text-sky-400" />
-            <span>Privacy Portal</span>
+            <span>°{unit}</span>
+            <span className="text-white/40">|</span>
+            <span className="text-white/70 font-normal">°{unit === 'C' ? 'F' : 'C'}</span>
           </button>
 
+          {/* Compact RODEX AI Trigger */}
+          <button
+            onClick={onOpenAssistant}
+            className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/20 border border-sky-400/30 group"
+            title="Open RODEX AI Voice & Chat Assistant"
+          >
+            <Sparkles className="w-4 h-4 text-sky-200 group-hover:rotate-12 transition-transform" />
+            <span>AI Assistant</span>
+          </button>
+
+          {/* Account / Profile Button */}
           <button
             onClick={onOpenAuth}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition shadow-lg border ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-lg border ${
               user 
                 ? isVerified 
                   ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border-emerald-400/40' 
                   : 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 border-amber-400/40'
                 : 'bg-white/10 hover:bg-white/20 text-white border-white/20'
             }`}
-            title={user ? 'Manage Account' : 'Sign In or Create Account'}
+            title={user ? 'Account Settings & Privacy' : 'Sign In or Create Account'}
           >
             <User className="w-4 h-4" />
             <span>{user ? (user.email ? user.email.split('@')[0] : user.phoneNumber || 'Account') : 'Account'}</span>
@@ -289,34 +273,6 @@ export const Header: React.FC<HeaderProps> = ({
                 {isVerified ? 'Verified' : 'Pending'}
               </span>
             )}
-          </button>
-
-          <button
-            onClick={onOpenAssistant}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-400/40 group"
-          >
-            <Sparkles className="w-4 h-4 text-sky-200 group-hover:rotate-12 transition-transform" />
-            <span>RODEX AI (Voice & Chat)</span>
-          </button>
-
-          <button
-            onClick={onGetCurrentLocation}
-            disabled={isLoading}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-medium transition shadow-lg backdrop-blur-md disabled:opacity-50 group"
-            title="Use My Current Location"
-          >
-            <NavigationIcon isLoading={isLoading} />
-            <span>My Location</span>
-          </button>
-
-          <button
-            onClick={onToggleUnit}
-            className="flex items-center gap-1 px-3.5 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 text-sky-200 text-xs font-bold transition shadow-lg backdrop-blur-md"
-            title="Toggle Temperature Unit"
-          >
-            <span>°{unit}</span>
-            <span className="text-sky-400/60 font-normal">|</span>
-            <span className="text-white/70 font-normal">°{unit === 'C' ? 'F' : 'C'}</span>
           </button>
         </div>
 

@@ -32,7 +32,7 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
     <div className="w-full bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
       <div className="flex items-center gap-2 mb-6">
         <Calendar className="w-5 h-5 text-sky-300" />
-        <h3 className="text-lg font-bold text-white tracking-wide">
+        <h3 className="text-lg font-heading font-bold text-white tracking-wide">
           7-Day Atmospheric Outlook
         </h3>
       </div>
@@ -62,14 +62,14 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
                   {renderConditionIcon(code)}
                 </div>
                 <div>
-                  <div className="text-sm font-bold text-white">{dayName}</div>
+                  <div className="text-sm font-heading font-bold text-white">{dayName}</div>
                   <div className="text-xs text-sky-200/70">{cond.label}</div>
                 </div>
               </div>
 
               {/* Min - Max Range Bar (Desktop) */}
               <div className="hidden sm:flex items-center gap-3 w-1/2 px-4">
-                <span className="text-xs font-semibold text-white/70 w-10 text-right">
+                <span className="text-xs font-heading font-semibold text-white/70 w-10 text-right tabular-nums">
                   {formatTemp(minT, unit)}
                 </span>
                 <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden relative">
@@ -78,16 +78,16 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
                     style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
                   />
                 </div>
-                <span className="text-xs font-bold text-white w-10">
+                <span className="text-xs font-heading font-bold text-white w-10 tabular-nums">
                   {formatTemp(maxT, unit)}
                 </span>
               </div>
 
               {/* Temperatures (Mobile/Tablet) */}
-              <div className="flex sm:hidden items-center gap-2">
+              <div className="flex sm:hidden items-center gap-2 tabular-nums">
                 <span className="text-xs text-white/70">{formatTemp(minT, unit)}</span>
                 <span className="text-xs text-white/40">/</span>
-                <span className="text-xs font-bold text-white">{formatTemp(maxT, unit)}</span>
+                <span className="text-xs font-heading font-bold text-white">{formatTemp(maxT, unit)}</span>
               </div>
             </div>
           );

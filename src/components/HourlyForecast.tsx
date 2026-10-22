@@ -41,7 +41,7 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
     <div className="w-full bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 shadow-2xl">
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-5 h-5 text-sky-300" />
-        <h3 className="text-lg font-bold text-white tracking-wide">
+        <h3 className="text-lg font-heading font-bold text-white tracking-wide">
           Hourly Atmospheric Forecast
         </h3>
       </div>
@@ -61,18 +61,18 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
                   : 'bg-white/5 hover:bg-white/10 border border-white/10'
               }`}
             >
-              <span className="text-xs font-semibold text-white/80">{timeLabel}</span>
+              <span className="text-xs font-semibold text-white/80 tabular-nums">{timeLabel}</span>
 
               <div className="my-3">
                 {renderMiniIcon(codes[idx], isDays[idx])}
               </div>
 
-              <div className="text-base font-bold text-white">
+              <div className="text-base font-heading font-bold text-white tabular-nums">
                 {formatTemp(temps[idx], unit)}
               </div>
 
               {precipProbs[idx] > 15 ? (
-                <div className="flex items-center gap-1 mt-2 text-[10px] text-sky-300 font-medium">
+                <div className="flex items-center gap-1 mt-2 text-[10px] text-sky-300 font-medium tabular-nums">
                   <Droplets className="w-3 h-3" />
                   <span>{precipProbs[idx]}%</span>
                 </div>

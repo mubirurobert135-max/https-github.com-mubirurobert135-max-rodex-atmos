@@ -23,6 +23,7 @@ interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
   initialTab?: 'signin' | 'register_email' | 'register_phone' | 'guest';
+  onOpenPrivacyPortal?: () => void;
 }
 
 const COUNTRY_DIAL_CODES = [
@@ -44,7 +45,8 @@ const COUNTRY_DIAL_CODES = [
 export const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
-  initialTab = 'signin'
+  initialTab = 'signin',
+  onOpenPrivacyPortal
 }) => {
   const { user, isGuest, isEmailVerified, isPhoneVerified, isVerified, continueAsGuest, refreshUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'signin' | 'register_email' | 'register_phone' | 'guest'>(initialTab);
@@ -538,6 +540,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   </button>
                 </div>
               )}
+
+              {/* Privacy & Security Portal Access */}
+              <div className="pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    if (onOpenPrivacyPortal) onOpenPrivacyPortal();
+                  }}
+                  className="w-full py-2.5 px-3.5 rounded-xl bg-gradient-to-r from-sky-500/20 via-indigo-500/20 to-purple-500/20 hover:from-sky-500/30 hover:to-indigo-500/30 border border-sky-400/40 text-sky-200 hover:text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-lg"
+                >
+                  <ShieldCheck className="w-4 h-4 text-sky-300" />
+                  <span>Privacy & Security Portal</span>
+                </button>
+              </div>
 
               <button
                 onClick={logout}

@@ -2,17 +2,26 @@ import React from 'react';
 import { 
   Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudDrizzle, 
   CloudRain, CloudSnow, CloudLightning, Wind, Droplets, Thermometer, 
-  Compass, Gauge, Eye, ArrowUp, ArrowDown, Clock
+  Compass, Gauge, Eye, ArrowUp, ArrowDown, Clock, Navigation, RefreshCw, Globe, MapPin
 } from 'lucide-react';
-import { WeatherData } from '../types';
+import { WeatherData, LocationMode } from '../types';
 import { formatTemp, formatWind, getWeatherCondition, getWindDirectionLabel } from '../utils/weatherUtils';
 
 interface CurrentWeatherCardProps {
   data: WeatherData;
   unit: 'C' | 'F';
+  onGetCurrentLocation?: () => void;
+  locationMode?: LocationMode;
+  isLoading?: boolean;
 }
 
-export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({ data, unit }) => {
+export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({ 
+  data, 
+  unit,
+  onGetCurrentLocation,
+  locationMode = 'gps',
+  isLoading = false
+}) => {
   const { location, weather } = data;
   const current = weather.current;
   const daily = weather.daily;
@@ -50,18 +59,43 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({ data, un
         
         {/* Left: Location & Main Temperature */}
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span className="px-3 py-1 rounded-full bg-white/15 border border-white/25 text-white text-xs font-semibold tracking-wide backdrop-blur-md">
               Live Conditions
             </span>
             <span className="text-xs text-white/60 flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" /> Updated {updateTimeFormatted}
             </span>
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase border flex items-center gap-1 ${
+              locationMode === 'gps' 
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30' 
+                : locationMode === 'network'
+                ? 'bg-sky-500/20 text-sky-300 border-sky-400/30'
+                : locationMode === 'search'
+                ? 'bg-purple-500/20 text-purple-300 border-purple-400/30'
+                : 'bg-amber-500/20 text-amber-300 border-amber-400/30'
+            }`}>
+              {locationMode === 'gps' ? <Navigation className="w-3 h-3 text-emerald-400" /> : locationMode === 'network' ? <Globe className="w-3 h-3 text-sky-400" /> : <MapPin className="w-3 h-3 text-amber-400" />}
+              <span>{locationMode === 'gps' ? 'GPS Local' : locationMode === 'network' ? 'IP Approx' : locationMode === 'search' ? 'Searched' : 'Default'}</span>
+            </span>
           </div>
 
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight mt-1">
-            {location.name}
-          </h2>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight">
+              {location.name}
+            </h2>
+            {onGetCurrentLocation && (
+              <button
+                onClick={onGetCurrentLocation}
+                disabled={isLoading}
+                className="px-3 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/30 text-sky-200 text-xs font-bold transition shadow-md flex items-center gap-1.5 disabled:opacity-50"
+                title="Detect My Location (GPS / Network)"
+              >
+                {isLoading ? <RefreshCw className="w-3.5 h-3.5 text-sky-400 animate-spin" /> : <Navigation className="w-3.5 h-3.5 text-emerald-400" />}
+                <span>My Location</span>
+              </button>
+            )}
+          </div>
           <p className="text-sm sm:text-base text-sky-200 font-medium">
             {location.admin1 ? `${location.admin1}, ` : ''}{location.country || 'Coordinates View'}
           </p>

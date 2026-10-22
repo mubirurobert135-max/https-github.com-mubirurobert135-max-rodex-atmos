@@ -370,7 +370,13 @@ export default function App() {
         {weatherData && !setupRequired && (
           <>
             {/* Hero Current Weather */}
-            <CurrentWeatherCard data={weatherData} unit={unit} />
+            <CurrentWeatherCard 
+              data={weatherData} 
+              unit={unit} 
+              onGetCurrentLocation={() => initializeStartupLocation(true)}
+              locationMode={locationMode}
+              isLoading={isLoading}
+            />
 
             {/* AI Atmospheric Insights Card */}
             <AiInsightsCard 
@@ -423,6 +429,7 @@ export default function App() {
       <AuthModal
         isOpen={isAuthOpen}
         onClose={() => setIsAuthOpen(false)}
+        onOpenPrivacyPortal={() => setIsPrivacyPortalOpen(true)}
       />
 
       {/* Individual Privacy Portal, Controls & Account Management Modal */}

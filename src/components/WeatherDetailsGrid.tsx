@@ -19,7 +19,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
       
       {/* Sunrise & Sunset */}
       <div className="bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
-        <div className="flex items-center gap-2 text-sky-300 text-sm font-bold uppercase tracking-wider mb-4">
+        <div className="flex items-center gap-2 text-sky-300 text-sm font-heading font-bold uppercase tracking-wider mb-4">
           <Sunrise className="w-4 h-4" />
           <span>Solar Schedule</span>
         </div>
@@ -32,7 +32,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               </div>
               <div>
                 <div className="text-xs text-white/60 font-medium">Sunrise</div>
-                <div className="text-base font-bold text-white">{sunriseStr}</div>
+                <div className="text-base font-heading font-bold text-white tabular-nums">{sunriseStr}</div>
               </div>
             </div>
           </div>
@@ -44,7 +44,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               </div>
               <div>
                 <div className="text-xs text-white/60 font-medium">Sunset</div>
-                <div className="text-base font-bold text-white">{sunsetStr}</div>
+                <div className="text-base font-heading font-bold text-white tabular-nums">{sunsetStr}</div>
               </div>
             </div>
           </div>
@@ -53,15 +53,15 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
 
       {/* Wind & Direction Compass */}
       <div className="bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
-        <div className="flex items-center gap-2 text-sky-300 text-sm font-bold uppercase tracking-wider mb-4">
+        <div className="flex items-center gap-2 text-sky-300 text-sm font-heading font-bold uppercase tracking-wider mb-4">
           <Wind className="w-4 h-4" />
           <span>Wind Dynamics</span>
         </div>
 
         <div className="flex items-center justify-between my-auto py-4">
           <div>
-            <div className="text-3xl font-black text-white">{formatWind(current.wind_speed_10m, unit)}</div>
-            <div className="text-sm text-sky-200 mt-1 font-medium">
+            <div className="text-3xl font-heading font-black text-white tabular-nums">{formatWind(current.wind_speed_10m, unit)}</div>
+            <div className="text-sm text-sky-200 mt-1 font-medium tabular-nums">
               Direction: {getWindDirectionLabel(current.wind_direction_10m)} ({current.wind_direction_10m}°)
             </div>
           </div>
@@ -78,7 +78,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
 
       {/* Precipitation & Air Quality */}
       <div className="bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col justify-between sm:col-span-2 lg:col-span-1">
-        <div className="flex items-center gap-2 text-sky-300 text-sm font-bold uppercase tracking-wider mb-4">
+        <div className="flex items-center gap-2 text-sky-300 text-sm font-heading font-bold uppercase tracking-wider mb-4">
           <Droplets className="w-4 h-4" />
           <span>Precipitation & Moisture</span>
         </div>
@@ -91,7 +91,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               </div>
               <div>
                 <div className="text-xs text-white/60 font-medium">Precipitation Volume</div>
-                <div className="text-base font-bold text-white">{current.precipitation} mm</div>
+                <div className="text-base font-heading font-bold text-white tabular-nums">{current.precipitation} mm</div>
               </div>
             </div>
           </div>
@@ -103,7 +103,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               </div>
               <div>
                 <div className="text-xs text-white/60 font-medium">Surface Pressure</div>
-                <div className="text-base font-bold text-white">{current.surface_pressure} hPa</div>
+                <div className="text-base font-heading font-bold text-white tabular-nums">{current.surface_pressure} hPa</div>
               </div>
             </div>
           </div>

@@ -4,6 +4,8 @@ import { SAMPLE_CITIES } from '../utils/weatherUtils';
 import { LocationMode } from '../types';
 import { useAuth } from '../context/AuthContext';
 
+import { PWAInstallButton } from './PWAInstallButton';
+
 interface HeaderProps {
   onSearch: (query: string) => void;
   onSelectCoordinates: (lat: number, lon: number, name: string) => void;
@@ -18,6 +20,8 @@ interface HeaderProps {
   onOpenPrivacyPortal: () => void;
   onOpenAlertsModal?: () => void;
   activeAlertsCount?: number;
+  activeTab?: 'dashboard' | 'map';
+  onSelectTab?: (tab: 'dashboard' | 'map') => void;
 }
 
 interface GeocodingResult {
@@ -41,7 +45,9 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onOpenPrivacyPortal,
   onOpenAlertsModal,
-  activeAlertsCount = 0
+  activeAlertsCount = 0,
+  activeTab = 'dashboard',
+  onSelectTab
 }) => {
   const { user, isVerified } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -147,6 +153,8 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Compact Mobile Utilities */}
           <div className="flex md:hidden items-center gap-2">
+            <PWAInstallButton />
+
             {onOpenAlertsModal && (
               <button
                 onClick={onOpenAlertsModal}
@@ -170,6 +178,34 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           </div>
         </div>
+
+        {/* Navigation Tabs (Dashboard & Weather Map) */}
+        {onSelectTab && (
+          <nav aria-label="Main Navigation" className="flex items-center p-1 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-inner">
+            <button
+              onClick={() => onSelectTab('dashboard')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2 btn-hover-lift ${
+                activeTab === 'dashboard'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20 border border-sky-400/30'
+                  : 'text-sky-200/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Compass className="w-3.5 h-3.5" />
+              <span>Dashboard</span>
+            </button>
+            <button
+              onClick={() => onSelectTab('map')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-300 flex items-center gap-2 btn-hover-lift ${
+                activeTab === 'map'
+                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/20 border border-sky-400/30'
+                  : 'text-sky-200/70 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>Interactive Map</span>
+            </button>
+          </nav>
+        )}
 
         {/* Search Bar */}
         <div ref={searchRef} className="relative w-full max-w-md">
@@ -260,6 +296,8 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-2.5">
+          <PWAInstallButton />
+
           {/* Smart Alerts Bell Icon */}
           {onOpenAlertsModal && (
             <button

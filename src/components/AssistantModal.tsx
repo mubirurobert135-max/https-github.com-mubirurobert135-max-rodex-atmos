@@ -14,6 +14,8 @@ interface AssistantModalProps {
   onClose: () => void;
   weatherData: WeatherData | null;
   deviceLocationData?: WeatherData | null;
+  mapContextData?: WeatherData | null;
+  activeMapLayer?: 'temperature' | 'precipitation' | 'wind';
   locationMode?: LocationMode;
   onSelectCityWeather: (data: WeatherData) => void;
   initialPrompt?: string;
@@ -90,6 +92,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   onClose,
   weatherData,
   deviceLocationData,
+  mapContextData,
+  activeMapLayer = 'temperature',
   locationMode = 'gps',
   onSelectCityWeather,
   initialPrompt
@@ -446,29 +450,26 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
         recordStage('websocket_opened');
 
-        // Send Initial Setup with Weather Grounding & Device Location Awareness
+        // Send Initial Setup with Weather Grounding, Map Context & Device Location Awareness
         const location = weatherData?.location;
         const current = weatherData?.weather?.current;
         const devLoc = deviceLocationData?.location;
+        const mapLoc = mapContextData?.location;
+        const mapCurr = mapContextData?.weather?.current;
 
         const systemPrompt = `You are Hey Atmos, the expert meteorologist and voice assistant for RODEX Atmos. Listen carefully and respond naturally, promptly and clearly in concise conversational sentences (1 to 3 short sentences max).
 
-Device Location vs Searched Location Grounding Rules:
-- If the user asks "What's the weather here?", "How is the weather in my area?", or "What is local weather?", answer using the user's detected physical device location (${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}).
-- If the user asks for weather in a specific named city (e.g., "What's the weather in Kampala?", "How is Tokyo?", "Tell me about Paris"), you MUST immediately call the tool 'getCityWeather' with the exact city name.
+Location Context Hierarchy & Rules:
+1. User's Detected Physical Location: ${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}. (Use when user asks "What's the weather here?" or "How is my local weather?").
+2. Currently Displayed Dashboard Location: ${location?.name || 'Local'}, ${location?.country || ''} (${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : 'N/A'}).
+3. Currently Selected Map Context Location: ${mapLoc?.name || location?.name || 'None'} (${mapCurr?.temperature_2m != null ? Math.round(mapCurr.temperature_2m) + '°C' : 'N/A'}). (Use when user asks "What's the weather at this location?", "How is it on the map?", or "Tell me about this spot").
+4. Active Weather Map Layer: ${activeMapLayer || 'temperature'}. (Describe this layer using real metrics when asked to explain the map layer).
+5. Explicit City Overrides: If user names a city explicitly (e.g. "What's the weather in Kampala?"), call 'getCityWeather'.
+6. Location Comparisons: If user asks to compare two locations (e.g. "Compare Kampala and Entebbe", "Compare my location with Entebbe"), call 'compareWeather'.
 
-User's Detected Physical Device Location:
-- Locality: ${devLoc?.name || location?.name || 'Local'}, ${devLoc?.country || location?.country || ''}
-- Location Detection Mode: ${locationMode}
-
-Currently Displayed Dashboard Weather:
-- City: ${location?.name || 'Local'}, ${location?.country || ''}
-- Temperature: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : 'N/A'}
-- Condition Code: ${current?.weather_code ?? 0}
-- Humidity: ${current?.relative_humidity_2m ?? 50}%
-
-Function Tool 'getCityWeather':
-Whenever the user asks about current conditions, forecasts, rain, temperature, wind, or weather in any named city, immediately call 'getCityWeather' with the city name.`;
+Available Function Tools:
+- 'getCityWeather': Fetch live weather conditions for a single city.
+- 'compareWeather': Compare weather conditions between two cities or locations.`;
 
         const setupMessage = {
           setup: {
@@ -498,6 +499,18 @@ Whenever the user asks about current conditions, forecasts, rain, temperature, w
                         city: { type: 'STRING', description: 'City name to look up, e.g. Kampala, Tokyo, Paris' }
                       },
                       required: ['city']
+                    }
+                  },
+                  {
+                    name: 'compareWeather',
+                    description: 'Compare current weather conditions and forecasts between two cities or locations',
+                    parameters: {
+                      type: 'OBJECT',
+                      properties: {
+                        city1: { type: 'STRING', description: 'First city name or location, e.g. Kampala' },
+                        city2: { type: 'STRING', description: 'Second city name or location, e.g. Entebbe' }
+                      },
+                      required: ['city1', 'city2']
                     }
                   }
                 ]
@@ -718,6 +731,59 @@ Whenever the user asks about current conditions, forecasts, rain, temperature, w
                             output: {
                               error: `City "${cityName}" could not be resolved or found. Explain to the user that the city could not be retrieved and ask for country or spelling.`
                             }
+                          }
+                        }
+                      ]
+                    }
+                  }));
+                }
+              } else if (call.name === 'compareWeather') {
+                const city1 = call.args?.city1 || 'Kampala';
+                const city2 = call.args?.city2 || 'Entebbe';
+                try {
+                  const [res1, res2] = await Promise.all([
+                    fetch(`/api/weather/search?query=${encodeURIComponent(city1)}`),
+                    fetch(`/api/weather/search?query=${encodeURIComponent(city2)}`)
+                  ]);
+                  const data1: WeatherData = await res1.json();
+                  const data2: WeatherData = await res2.json();
+
+                  const formatCityOutput = (data: WeatherData) => ({
+                    city: data.location.name,
+                    country: data.location.country,
+                    condition: getWeatherCondition(data.weather.current.weather_code, data.weather.current.is_day).label,
+                    temperature: `${Math.round(data.weather.current.temperature_2m)}°C`,
+                    feelsLike: `${Math.round(data.weather.current.apparent_temperature)}°C`,
+                    wind: `${Math.round(data.weather.current.wind_speed_10m)} km/h`,
+                    humidity: `${data.weather.current.relative_humidity_2m}%`,
+                    precipitation: `${data.weather.current.precipitation} mm`
+                  });
+
+                  ws.send(JSON.stringify({
+                    toolResponse: {
+                      functionResponses: [
+                        {
+                          id: call.id,
+                          name: call.name,
+                          response: {
+                            output: {
+                              city1: formatCityOutput(data1),
+                              city2: formatCityOutput(data2)
+                            }
+                          }
+                        }
+                      ]
+                    }
+                  }));
+                } catch (err: any) {
+                  ws.send(JSON.stringify({
+                    toolResponse: {
+                      functionResponses: [
+                        {
+                          id: call.id,
+                          name: call.name,
+                          response: {
+                            output: { error: `Could not fetch weather to compare ${city1} and ${city2}.` }
                           }
                         }
                       ]
@@ -977,7 +1043,9 @@ Whenever the user asks about current conditions, forecasts, rain, temperature, w
         body: JSON.stringify({
           messages: newHistory.map((m) => ({ role: m.role, content: m.content })),
           weatherData,
-          deviceLocationData
+          deviceLocationData,
+          mapContextData,
+          activeMapLayer
         })
       });
 

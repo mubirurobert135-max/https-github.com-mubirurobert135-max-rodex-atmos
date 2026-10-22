@@ -1363,15 +1363,19 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
 
   // Server-side text chat endpoint with weather tool grounding
   app.post('/api/ai/chat', async (req, res) => {
-    const { messages, weatherData, deviceLocationData } = req.body || {};
+    const { messages, weatherData, deviceLocationData, mapContextData, activeMapLayer } = req.body || {};
     try {
       const lastUserMsg = (messages?.[messages.length - 1]?.content || '');
       const comparisonCities = extractMultipleCitiesFromQuery(lastUserMsg);
       const requestedCity = extractCityFromQuery(lastUserMsg);
 
-      let targetWeatherData = weatherData;
+      let targetWeatherData = mapContextData || weatherData;
       let updatedCityWeather: any = null;
       let comparisonContext = '';
+
+      // Check if user asks to compare current/device location vs map context
+      const isMapCompareQuery = /\b(?:compare|difference|versus|vs)\b/i.test(lastUserMsg) &&
+        /\b(?:map|selected|this spot|pin|marker)\b/i.test(lastUserMsg);
 
       // Handle Multi-City Comparison Queries (e.g., "Compare Kampala and Entebbe")
       if (comparisonCities.length === 2) {
@@ -1401,10 +1405,23 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
 GROUNDED MULTI-CITY COMPARISON DATA:
 - City 1 (${data1.location.name}, ${data1.location.country || ''}): ${temp1}°C, ${cond1}, ${data1.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data1.weather.current.wind_speed_10m)} km/h.
 - City 2 (${data2.location.name}, ${data2.location.country || ''}): ${temp2}°C, ${cond2}, ${data2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data2.weather.current.wind_speed_10m)} km/h.
-Compare both cities directly and highlight key differences in temperature, weather conditions, and comfort.`;
+Compare both cities directly and highlight key differences in temperature, weather conditions, rain, and wind.`;
         } catch (compErr) {
           console.warn('[RODEX Chat] Multi-city comparison lookup warning:', compErr);
         }
+      } else if (isMapCompareQuery && mapContextData && (deviceLocationData || weatherData)) {
+        const loc1 = deviceLocationData || weatherData;
+        const loc2 = mapContextData;
+        const temp1 = Math.round(loc1.weather.current.temperature_2m);
+        const temp2 = Math.round(loc2.weather.current.temperature_2m);
+        const cond1 = getWeatherConditionLabel(loc1.weather.current.weather_code);
+        const cond2 = getWeatherConditionLabel(loc2.weather.current.weather_code);
+
+        comparisonContext = `
+GROUNDED LOCATION COMPARISON (CURRENT vs SELECTED MAP POINT):
+- Current/Local Location (${loc1.location.name}, ${loc1.location.country || ''}): ${temp1}°C, ${cond1}, ${loc1.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(loc1.weather.current.wind_speed_10m)} km/h.
+- Selected Map Location (${loc2.location.name}, ${loc2.location.country || ''}): ${temp2}°C, ${cond2}, ${loc2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(loc2.weather.current.wind_speed_10m)} km/h.
+Compare current location against the selected map location directly and clearly.`;
       } else if (requestedCity) {
         // 1. Single City Query
         try {
@@ -1429,6 +1446,12 @@ Compare both cities directly and highlight key differences in temperature, weath
         }
       }
 
+      // Check for "weather at this location" / "selected map point" / "on the map"
+      const isMapSpotQuery = /\b(?:this location|this spot|selected location|on the map|map location|map point|here on the map)\b/i.test(lastUserMsg);
+      if (isMapSpotQuery && mapContextData) {
+        targetWeatherData = mapContextData;
+      }
+
       // Check for "weather here" / "local weather" query
       const isLocalAreaQuery = /\b(?:weather here|local weather|weather in my area|my area|current location|where i am)\b/i.test(lastUserMsg);
       if (isLocalAreaQuery && deviceLocationData) {
@@ -1440,6 +1463,17 @@ Compare both cities directly and highlight key differences in temperature, weath
       const hourly = targetWeatherData?.weather?.hourly;
       const daily = targetWeatherData?.weather?.daily;
       const devLocation = deviceLocationData?.location;
+
+      // Layer explanation context
+      const activeLayerName = activeMapLayer || 'temperature';
+      const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+      const layerContext = `
+ACTIVE WEATHER MAP LAYER DATA (${activeLayerName.toUpperCase()} LAYER):
+- Active Layer Type: ${activeLayerName}
+- Temperature Layer Metrics: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20}°C (Feels like ${current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : 20}°C).
+- Rain / Precipitation Layer Metrics: Current rate ${current?.precipitation ?? 0} mm/h, peak 12h rain probability ${maxPrecipProb}%.
+- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 0} km/h, direction ${current?.wind_direction_10m ?? 0}°.
+If user asks about or asks to explain the active map layer, describe this layer accurately using these metrics.`;
 
       // Calculate local time for the target city using provider timezone
       let localTime = 'N/A';
@@ -1485,14 +1519,15 @@ Compare both cities directly and highlight key differences in temperature, weath
 You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
 
 STRICT GROUNDING & LOCATION RULES:
-1. Physical Device Location: ${devLocation?.name || 'Local Area'}${devLocation?.country ? ', ' + devLocation.country : ''}. If user asks "What's the weather here?" or "How is local weather?", answer using ${devLocation?.name || location?.name || 'this location'}.
-2. Currently Target City: ${location?.name || 'Selected City'}, ${location?.country || ''} (Local Time: ${localTime}).
-3. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
-4. Keep replies conversational, concise (1-2 sentences), and directly answer the question.
-5. Umbrella / Rain Queries: If user asks "Will it rain?" or "Should I carry an umbrella?", check precipitation volume (${precip} mm) and upcoming hourly rain percentages. Recommend an umbrella if rain probability exceeds 30% or precipitation > 0mm.
-6. Temperature Comparisons: If user asks to compare today with tomorrow, compare today's temps with tomorrow's temps from the 7-day outlook.
-7. Explain Notifications & Alerts: If user asks "Why did Atmos issue this rain notification?" or "Explain this warning", refer directly to the active alerts below. Distinguish official warnings from application forecast notifications.
-8. Daily Summaries: If user asks "Summarise the important weather changes for today", summarize temperature highs, rainfall likelihood, and wind conditions concisely.
+1. Physical Device Location: ${devLocation?.name || 'Local Area'}${devLocation?.country ? ', ' + devLocation.country : ''}. If user asks "What's the weather here?" or "How is local weather?", answer using this physical location.
+2. Currently Active Weather Location: ${location?.name || 'Selected City'}, ${location?.country || ''} (Local Time: ${localTime}).
+3. Selected Map Location Context: ${mapContextData?.location?.name ? mapContextData.location.name + (mapContextData.location.country ? ', ' + mapContextData.location.country : '') : location?.name || 'None'}.
+4. Explicit Location Override: If user names a specific city in their prompt (e.g. "What's the weather in Entebbe?"), prioritize that explicit city over map or device location.
+5. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
+6. Keep replies conversational, concise (1-2 sentences), and directly answer the question.
+7. Umbrella / Rain Queries: If user asks "Will it rain?" or "Should I carry an umbrella?", check precipitation volume (${precip} mm) and upcoming hourly rain percentages. Recommend an umbrella if rain probability exceeds 30% or precipitation > 0mm.
+8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
+9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
 
 REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
@@ -1505,7 +1540,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - Precipitation Volume: ${precip} mm
 - Surface Pressure: ${current?.surface_pressure ?? 1013} hPa
 - Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
-- 7-Day Outlook: ${dailySummary}${comparisonContext}${alertsContext}`;
+- 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
 
       // If AI client is available, try Gemini
       if (ai) {

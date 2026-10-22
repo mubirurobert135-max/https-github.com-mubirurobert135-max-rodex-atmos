@@ -11,13 +11,16 @@ import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
+import { WeatherMap } from './components/WeatherMap';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
-import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
+import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map } from 'lucide-react';
 
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
@@ -31,6 +34,8 @@ export default function App() {
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isPrivacyPortalOpen, setIsPrivacyPortalOpen] = useState<boolean>(false);
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState<boolean>(false);
+  const [mapContextLocation, setMapContextLocation] = useState<WeatherData | null>(null);
+  const [activeMapLayer, setActiveMapLayer] = useState<'temperature' | 'precipitation' | 'wind'>('temperature');
 
   const handleOpenAssistant = (prompt?: string) => {
     if (prompt) setAssistantPrompt(prompt);
@@ -235,6 +240,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-16 relative">
+      {/* Offline Status Indicator Banner */}
+      <OfflineIndicator />
+
       {/* Continuous atmospheric background across the entire app */}
       <AtmosphericBackground theme={currentTheme} />
 
@@ -257,6 +265,8 @@ export default function App() {
         onOpenPrivacyPortal={() => setIsPrivacyPortalOpen(true)}
         onOpenAlertsModal={() => setIsAlertsModalOpen(true)}
         activeAlertsCount={weatherData?.alerts?.length || 0}
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
       />
 
       {/* Main Content Container */}
@@ -380,35 +390,94 @@ export default function App() {
 
         {weatherData && !setupRequired && (
           <>
-            {/* Hero Current Weather */}
-            <CurrentWeatherCard 
-              data={weatherData} 
-              unit={unit} 
-              onGetCurrentLocation={() => initializeStartupLocation(true)}
-              locationMode={locationMode}
-              isLoading={isLoading}
-            />
+            {activeTab === 'map' ? (
+              <div className="space-y-6 animate-fade-in">
+                {/* Interactive Weather Map Component */}
+                <WeatherMap
+                  currentWeatherData={weatherData}
+                  deviceLocationData={deviceLocationData}
+                  unit={unit}
+                  onSelectCoordinates={handleSelectCoordinates}
+                  onOpenAssistant={handleOpenAssistant}
+                  locationMode={locationMode}
+                  onMapContextChange={(mapLoc, layer) => {
+                    if (mapLoc) setMapContextLocation(mapLoc);
+                    if (layer) setActiveMapLayer(layer);
+                  }}
+                />
 
-            {/* Proactive Personalised Daily Weather Briefing */}
-            <DailyBriefingCard
-              data={weatherData}
-              onOpenAssistant={handleOpenAssistant}
-            />
+                {/* Hero Current Weather Summary under map */}
+                <CurrentWeatherCard 
+                  data={weatherData} 
+                  unit={unit} 
+                  onGetCurrentLocation={() => initializeStartupLocation(true)}
+                  locationMode={locationMode}
+                  isLoading={isLoading}
+                />
 
-            {/* AI Atmospheric Insights Card */}
-            <AiInsightsCard 
-              data={weatherData} 
-              onOpenAssistant={() => handleOpenAssistant()}
-            />
+                {/* Proactive Personalised Daily Weather Briefing */}
+                <DailyBriefingCard
+                  data={weatherData}
+                  onOpenAssistant={handleOpenAssistant}
+                />
+              </div>
+            ) : (
+              <div className="space-y-6 animate-fade-in">
+                {/* Hero Current Weather */}
+                <CurrentWeatherCard 
+                  data={weatherData} 
+                  unit={unit} 
+                  onGetCurrentLocation={() => initializeStartupLocation(true)}
+                  locationMode={locationMode}
+                  isLoading={isLoading}
+                />
 
-            {/* Hourly Forecast */}
-            <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                {/* Proactive Personalised Daily Weather Briefing */}
+                <DailyBriefingCard
+                  data={weatherData}
+                  onOpenAssistant={handleOpenAssistant}
+                />
 
-            {/* Details Grid (Sunrise, Wind, Pressure) */}
-            <WeatherDetailsGrid data={weatherData} unit={unit} />
+                {/* Quick Map Teaser Banner */}
+                <div 
+                  onClick={() => setActiveTab('map')}
+                  className="glass-card rounded-3xl p-5 border border-sky-400/30 bg-gradient-to-r from-sky-500/20 via-indigo-600/20 to-purple-600/20 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4 group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-sky-500/30 border border-sky-400/40 flex items-center justify-center text-sky-300 group-hover:scale-110 transition-transform">
+                      <Globe className="w-6 h-6 animate-spin-slow" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2 font-heading">
+                        <span>Interactive Weather Map & Location Explorer</span>
+                        <span className="px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 text-[10px] font-extrabold uppercase border border-sky-400/40">New</span>
+                      </h3>
+                      <p className="text-xs text-sky-200/80">
+                        Explore temperatures, rain probabilities, and wind speeds visually across the globe.
+                      </p>
+                    </div>
+                  </div>
+                  <button className="px-4 py-2 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-lg transition btn-hover-lift shrink-0">
+                    Open Weather Map
+                  </button>
+                </div>
 
-            {/* 7-Day Weekly Forecast */}
-            <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
+                {/* AI Atmospheric Insights Card */}
+                <AiInsightsCard 
+                  data={weatherData} 
+                  onOpenAssistant={() => handleOpenAssistant()}
+                />
+
+                {/* Hourly Forecast */}
+                <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+
+                {/* Details Grid (Sunrise, Wind, Pressure) */}
+                <WeatherDetailsGrid data={weatherData} unit={unit} />
+
+                {/* 7-Day Weekly Forecast */}
+                <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
+              </div>
+            )}
           </>
         )}
 
@@ -435,6 +504,8 @@ export default function App() {
         onClose={() => setIsAssistantOpen(false)}
         weatherData={weatherData}
         deviceLocationData={deviceLocationData}
+        mapContextData={mapContextLocation || weatherData}
+        activeMapLayer={activeMapLayer}
         locationMode={locationMode}
         onSelectCityWeather={(newWeather) => {
           setWeatherData(newWeather);

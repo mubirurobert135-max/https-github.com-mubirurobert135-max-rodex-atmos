@@ -18,6 +18,8 @@ import {
 } from 'firebase/firestore';
 import { auth, db, handleFirestoreError, OperationType, testFirestoreConnection } from '../lib/firebase';
 
+import { NotificationPreferences } from '../types';
+
 export interface UserPrivacyPreferences {
   autoLocationEnabled: boolean;
   rememberLocationAcrossSessions: boolean;
@@ -34,6 +36,23 @@ export const DEFAULT_PREFERENCES: UserPrivacyPreferences = {
   temperatureUnit: 'C'
 };
 
+export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
+  enabled: true,
+  dailyBriefing: true,
+  dailyBriefingTime: '07:00',
+  alertCategories: {
+    severeWeather: true,
+    rainThunderstorms: true,
+    strongWinds: true,
+    extremeTemps: true,
+    uvWarning: true
+  },
+  browserPush: false,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '07:00'
+};
+
 export interface UserProfileData {
   uid: string;
   displayName?: string;
@@ -44,6 +63,7 @@ export interface UserProfileData {
   createdAt: string;
   updatedAt?: string;
   preferences?: UserPrivacyPreferences;
+  notificationPreferences?: NotificationPreferences;
   savedCities?: string[];
 }
 
@@ -51,6 +71,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfileData | null;
   userPreferences: UserPrivacyPreferences;
+  notificationPreferences: NotificationPreferences;
   loading: boolean;
   isGuest: boolean;
   isEmailVerified: boolean;
@@ -61,6 +82,7 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
   syncUserProfile: (additionalData?: Partial<UserProfileData>) => Promise<void>;
   updateUserPreferences: (newPrefs: Partial<UserPrivacyPreferences>) => Promise<void>;
+  updateNotificationPreferences: (newNotifPrefs: Partial<NotificationPreferences>) => Promise<void>;
   updateDisplayName: (newName: string) => Promise<void>;
   exportUserData: () => Promise<Record<string, any>>;
   deleteAccountPermanently: (passwordForReauth?: string) => Promise<void>;
@@ -174,6 +196,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentPrefs = userProfile?.preferences || DEFAULT_PREFERENCES;
     const mergedPrefs: UserPrivacyPreferences = { ...currentPrefs, ...newPrefs };
     await syncUserProfile({ preferences: mergedPrefs });
+  };
+
+  // Update notification preferences (Firestore for users, localStorage for guests)
+  const updateNotificationPreferences = async (newNotifPrefs: Partial<NotificationPreferences>) => {
+    const currentNotifPrefs = userProfile?.notificationPreferences || DEFAULT_NOTIFICATION_PREFERENCES;
+    const mergedNotifPrefs: NotificationPreferences = {
+      ...currentNotifPrefs,
+      ...newNotifPrefs,
+      alertCategories: {
+        ...currentNotifPrefs.alertCategories,
+        ...(newNotifPrefs.alertCategories || {})
+      }
+    };
+
+    if (auth.currentUser) {
+      await syncUserProfile({ notificationPreferences: mergedNotifPrefs });
+    } else {
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('rodex_atmos_notif_prefs', JSON.stringify(mergedNotifPrefs));
+      }
+    }
   };
 
   // Update display name
@@ -380,12 +423,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isVerified = isEmailVerified || isPhoneVerified;
   const userPreferences = userProfile?.preferences || DEFAULT_PREFERENCES;
 
+  const guestNotifPrefs = typeof window !== 'undefined'
+    ? (() => {
+        try {
+          const raw = localStorage.getItem('rodex_atmos_notif_prefs');
+          return raw ? JSON.parse(raw) : DEFAULT_NOTIFICATION_PREFERENCES;
+        } catch {
+          return DEFAULT_NOTIFICATION_PREFERENCES;
+        }
+      })()
+    : DEFAULT_NOTIFICATION_PREFERENCES;
+
+  const notificationPreferences = userProfile?.notificationPreferences || guestNotifPrefs;
+
   return (
     <AuthContext.Provider
       value={{
         user,
         userProfile,
         userPreferences,
+        notificationPreferences,
         loading,
         isGuest: isGuest && !user,
         isEmailVerified,
@@ -396,6 +453,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshUser,
         syncUserProfile,
         updateUserPreferences,
+        updateNotificationPreferences,
         updateDisplayName,
         exportUserData,
         deleteAccountPermanently

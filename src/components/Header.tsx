@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check, User, ShieldCheck } from 'lucide-react';
+import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check, User, ShieldCheck, Bell } from 'lucide-react';
 import { SAMPLE_CITIES } from '../utils/weatherUtils';
 import { LocationMode } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -16,6 +16,8 @@ interface HeaderProps {
   onOpenAssistant: () => void;
   onOpenAuth: () => void;
   onOpenPrivacyPortal: () => void;
+  onOpenAlertsModal?: () => void;
+  activeAlertsCount?: number;
 }
 
 interface GeocodingResult {
@@ -37,7 +39,9 @@ export const Header: React.FC<HeaderProps> = ({
   locationMode = 'gps',
   onOpenAssistant,
   onOpenAuth,
-  onOpenPrivacyPortal
+  onOpenPrivacyPortal,
+  onOpenAlertsModal,
+  activeAlertsCount = 0
 }) => {
   const { user, isVerified } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -45,6 +49,34 @@ export const Header: React.FC<HeaderProps> = ({
   const [liveSearchResults, setLiveSearchResults] = useState<GeocodingResult[]>([]);
   const [isSearchingLive, setIsSearchingLive] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
+
+  // Animated rotating placeholder state
+  const PLACEHOLDER_MESSAGES = [
+    'Search any city or country…',
+    'Discover weather anywhere…',
+    'Find your hourly forecast…',
+    'Explore the 7-day forecast…',
+    'Ask Atmos about the weather…'
+  ];
+  const [placeholderIndex, setPlaceholderIndex] = useState(0);
+  const [isInputFocused, setIsInputFocused] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
+
+  // Smooth placeholder message rotation every 3.5 seconds
+  useEffect(() => {
+    if (isInputFocused || searchTerm.length > 0) return;
+
+    const interval = setInterval(() => {
+      setIsFadingOut(true);
+      const timer = setTimeout(() => {
+        setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDER_MESSAGES.length);
+        setIsFadingOut(false);
+      }, 400);
+      return () => clearTimeout(timer);
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, [isInputFocused, searchTerm, PLACEHOLDER_MESSAGES.length]);
 
   // Debounced live geocoding search
   useEffect(() => {
@@ -104,10 +136,10 @@ export const Header: React.FC<HeaderProps> = ({
               <Compass className="w-6 h-6 animate-spin-slow" />
             </div>
             <div>
-              <h1 className="text-xl font-black tracking-wider text-white flex items-center gap-1.5">
+              <h1 className="text-xl font-black tracking-wider text-white flex items-center gap-1.5 font-heading">
                 RODEX <span className="text-sky-300 font-light">Atmos</span>
               </h1>
-              <p className="text-[11px] text-sky-200/80 font-medium">
+              <p className="text-[11px] text-sky-200/80 font-medium font-body">
                 Understand your day
               </p>
             </div>
@@ -115,34 +147,35 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Compact Mobile Utilities */}
           <div className="flex md:hidden items-center gap-2">
+            {onOpenAlertsModal && (
+              <button
+                onClick={onOpenAlertsModal}
+                className="relative p-2 rounded-xl bg-white/10 hover:bg-white/20 text-sky-200 border border-white/15 transition btn-hover-lift"
+                title="Smart Weather Alerts & Preferences"
+              >
+                <Bell className="w-4 h-4" />
+                {activeAlertsCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                    {activeAlertsCount}
+                  </span>
+                )}
+              </button>
+            )}
+
             <button
               onClick={onToggleUnit}
-              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-200 font-bold text-xs border border-white/15 transition"
+              className="px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-200 font-bold text-xs border border-white/15 transition btn-hover-lift"
             >
               °{unit}
-            </button>
-            <button
-              onClick={onOpenAssistant}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-bold text-xs shadow border border-sky-400/30 transition"
-              title="RODEX AI Assistant"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-sky-200 animate-pulse" />
-              <span>AI</span>
-            </button>
-            <button
-              onClick={onOpenAuth}
-              className={`p-2 rounded-xl border transition ${user ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400/40' : 'bg-white/10 text-white border-white/20'}`}
-              title={user ? 'Account' : 'Sign In'}
-            >
-              <User className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        {/* Search Bar with Global Geocoding Autocomplete */}
-        <div className="w-full md:w-96 relative" ref={searchRef}>
+        {/* Search Bar */}
+        <div ref={searchRef} className="relative w-full max-w-md">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-            <Search className="absolute left-3.5 w-4 h-4 text-white/60 pointer-events-none" />
+            <Search className="absolute left-3.5 w-4 h-4 text-sky-300 pointer-events-none z-10" />
+            
             <input
               type="text"
               value={searchTerm}
@@ -150,53 +183,54 @@ export const Header: React.FC<HeaderProps> = ({
                 setSearchTerm(e.target.value);
                 setShowDropdown(true);
               }}
-              onFocus={() => setShowDropdown(true)}
-              placeholder="Search city globally (e.g. Kampala, Tokyo, Paris)..."
-              className="w-full bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-2xl pl-10 pr-24 py-2 border border-white/15 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition shadow-inner"
+              onFocus={() => {
+                setIsInputFocused(true);
+                setShowDropdown(true);
+              }}
+              onBlur={() => setIsInputFocused(false)}
+              placeholder=""
+              className="w-full pl-10 pr-10 py-2.5 bg-white/10 hover:bg-white/15 focus:bg-slate-900/90 text-white text-sm rounded-2xl border border-white/20 focus:border-sky-400/60 focus:outline-none transition-all duration-300 shadow-inner"
             />
+
+            {!searchTerm && !isInputFocused && (
+              <span className={`absolute left-10 text-sm text-sky-200/60 pointer-events-none transition-opacity duration-300 ${isFadingOut ? 'opacity-0 -translate-y-1' : 'opacity-100 translate-y-0'}`}>
+                {PLACEHOLDER_MESSAGES[placeholderIndex]}
+              </span>
+            )}
+
             <button
-              type="submit"
-              className="absolute right-1.5 px-3 py-1 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-semibold shadow transition flex items-center gap-1"
+              type="button"
+              onClick={onGetCurrentLocation}
+              disabled={isLoading}
+              className="absolute right-2 p-1.5 rounded-xl hover:bg-white/20 text-sky-300 transition"
+              title="Use current location"
             >
-              {isSearchingLive ? <RefreshCw className="w-3 h-3 animate-spin" /> : null}
-              <span>Search</span>
+              <NavigationIcon isLoading={isLoading} />
             </button>
           </form>
 
-          {/* Autocomplete Dropdown */}
+          {/* Search Dropdown */}
           {showDropdown && (
-            <div className="absolute top-full mt-2 left-0 right-0 bg-slate-900/95 backdrop-blur-2xl border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-80 overflow-y-auto divide-y divide-white/10">
-              
-              {/* Option 1: Use Current Location */}
-              <button
-                onClick={() => {
-                  onGetCurrentLocation();
-                  setSearchTerm('');
-                  setShowDropdown(false);
-                }}
-                className="w-full text-left px-4 py-3 hover:bg-sky-500/20 text-sky-300 font-semibold text-xs flex items-center gap-2 transition group"
-              >
-                <Navigation className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-                <span>Use Current Device Location (GPS / Network)</span>
-              </button>
+            <div className="absolute top-full left-0 right-0 mt-2 bg-slate-900/95 border border-white/20 rounded-2xl shadow-2xl overflow-hidden z-50 max-h-60 overflow-y-auto backdrop-blur-xl">
+              {isSearchingLive && (
+                <div className="p-3 text-center text-xs text-sky-200/70 flex items-center justify-center gap-2">
+                  <RefreshCw className="w-3.5 h-3.5 animate-spin text-sky-400" />
+                  <span>Searching global locations...</span>
+                </div>
+              )}
 
-              <div className="p-2 text-[10px] uppercase font-bold text-sky-400 tracking-wider bg-white/5 px-3 flex items-center justify-between">
-                <span>Global Cities & Districts</span>
-                {isSearchingLive && <span className="text-sky-300 animate-pulse">Searching...</span>}
-              </div>
-
-              {/* Live Geocoding Results */}
-              {liveSearchResults.length > 0 && liveSearchResults.map((city, idx) => (
+              {liveSearchResults.map((city) => (
                 <button
-                  key={`live-${city.name}-${city.lat}-${idx}`}
+                  key={`${city.name}-${city.lat}-${city.lon}`}
                   onClick={() => {
                     onSelectCoordinates(city.lat, city.lon, city.name);
                     setSearchTerm('');
                     setShowDropdown(false);
                   }}
-                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 text-white text-sm flex items-center justify-between transition group"
+                  className="w-full text-left px-4 py-2.5 hover:bg-white/10 text-white text-sm flex items-center justify-between transition group border-b border-white/5 last:border-0"
                 >
-                  <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-sky-400 shrink-0" />
                     <span className="font-medium group-hover:text-sky-300 transition">{city.name}</span>
                     {city.admin1 && <span className="text-[11px] text-white/50">{city.admin1}</span>}
                   </div>
@@ -206,7 +240,6 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
               ))}
 
-              {/* Fallback Cities when search term is empty or live search returned 0 results */}
               {liveSearchResults.length === 0 && fallbackCities.map((city) => (
                 <button
                   key={`fallback-${city.name}-${city.country}`}
@@ -221,18 +254,28 @@ export const Header: React.FC<HeaderProps> = ({
                   <span className="text-xs text-white/50">{city.country}</span>
                 </button>
               ))}
-
-              {searchTerm.length >= 2 && liveSearchResults.length === 0 && !isSearchingLive && (
-                <div className="p-4 text-center text-xs text-white/60">
-                  Press <strong>Search</strong> or Enter to find "{searchTerm}"
-                </div>
-              )}
             </div>
           )}
         </div>
 
-        {/* Desktop Controls (Clean & Balanced) */}
+        {/* Desktop Controls */}
         <div className="hidden md:flex items-center gap-2.5">
+          {/* Smart Alerts Bell Icon */}
+          {onOpenAlertsModal && (
+            <button
+              onClick={onOpenAlertsModal}
+              className="relative p-2.5 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/15 text-sky-200 transition shadow-md backdrop-blur-md active:scale-95"
+              title="Smart Weather Alerts & Preferences"
+            >
+              <Bell className="w-4 h-4" />
+              {activeAlertsCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+                  {activeAlertsCount}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Temperature Unit Toggle */}
           <button
             onClick={onToggleUnit}
@@ -277,7 +320,6 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
       </div>
-
     </header>
   );
 };

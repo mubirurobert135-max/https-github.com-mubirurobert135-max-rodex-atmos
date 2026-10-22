@@ -48,6 +48,55 @@ export interface ProviderInfo {
   disclaimer: string;
 }
 
+export type AlertType = 'official' | 'forecast';
+export type AlertSeverity = 'extreme' | 'severe' | 'moderate' | 'minor' | 'info';
+
+export interface WeatherAlert {
+  id: string;
+  title: string;
+  description: string;
+  severity: AlertSeverity;
+  type: AlertType;
+  locationName: string;
+  issuingAuthority?: string;
+  effective?: string;
+  expires?: string;
+  officialUrl?: string;
+  category?: string;
+  instruction?: string;
+  createdAt: string;
+}
+
+export interface NotificationPreferences {
+  enabled: boolean;
+  dailyBriefing: boolean;
+  dailyBriefingTime: string; // e.g. "07:00"
+  alertCategories: {
+    severeWeather: boolean;
+    rainThunderstorms: boolean;
+    strongWinds: boolean;
+    extremeTemps: boolean;
+    uvWarning: boolean;
+  };
+  browserPush: boolean;
+  quietHoursEnabled: boolean;
+  quietHoursStart: string; // e.g. "22:00"
+  quietHoursEnd: string; // e.g. "07:00"
+}
+
+export interface DailyBriefing {
+  greeting: string;
+  locationName: string;
+  summary: string;
+  highTemp: number;
+  lowTemp: number;
+  rainLikelihood: string;
+  windCondition: string;
+  headlineAlert?: string;
+  recommendations: string[];
+  generatedAt: string;
+}
+
 export interface WeatherData {
   location: WeatherLocation;
   weather: {
@@ -56,6 +105,8 @@ export interface WeatherData {
     daily: DailyWeather;
     timezone: string;
   };
+  alerts?: WeatherAlert[];
+  briefing?: DailyBriefing;
   providerInfo: ProviderInfo;
   source: 'live' | 'setup_required';
 }
@@ -66,3 +117,4 @@ export interface AIInsights {
   activities: string;
   health: string;
 }
+

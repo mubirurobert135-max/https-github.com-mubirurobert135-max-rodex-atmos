@@ -16,6 +16,7 @@ interface AssistantModalProps {
   deviceLocationData?: WeatherData | null;
   locationMode?: LocationMode;
   onSelectCityWeather: (data: WeatherData) => void;
+  initialPrompt?: string;
 }
 
 interface ChatMessage {
@@ -90,7 +91,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   weatherData,
   deviceLocationData,
   locationMode = 'gps',
-  onSelectCityWeather
+  onSelectCityWeather,
+  initialPrompt
 }) => {
   const [activeTab, setActiveTab] = useState<'voice' | 'chat'>('voice');
 
@@ -99,13 +101,21 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     {
       id: 'welcome',
       role: 'assistant',
-      content: `Hello! I am RODEX AI. I can answer questions about current conditions in ${weatherData?.location.name || 'your location'}, advise what to wear, suggest outdoor plans, or look up weather anywhere in the world. How can I help you today?`,
+      content: `Hello! I am RODEX AI. I can answer questions about current conditions in ${weatherData?.location.name || 'your location'}, explain active weather warnings, or summarize today's briefing. How can I help you today?`,
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
   const [inputQuery, setInputQuery] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Auto-switch to chat and set initial query when prompt is provided
+  useEffect(() => {
+    if (isOpen && initialPrompt) {
+      setActiveTab('chat');
+      setInputQuery(initialPrompt);
+    }
+  }, [isOpen, initialPrompt]);
 
   // Live Voice State
   const [voiceState, setVoiceState] = useState<VoiceState>('idle');
@@ -966,7 +976,8 @@ Whenever the user asks about current conditions, forecasts, rain, temperature, w
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           messages: newHistory.map((m) => ({ role: m.role, content: m.content })),
-          weatherData
+          weatherData,
+          deviceLocationData
         })
       });
 

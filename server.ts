@@ -157,13 +157,164 @@ async function startServer() {
     return providers.filter(p => isProviderHealthy(p.name) && checkBudget(p.name));
   };
 
+  // Helper to extract official alerts and generate forecast-based smart weather notifications
+  function processWeatherAlerts(data: { location: any; current: any; hourly: any; daily: any }, rawOfficialAlerts?: any[]): any[] {
+    const alerts: any[] = [];
+    const locationName = data.location?.name || 'Selected Location';
+
+    // 1. Process Official Warnings (from WeatherAPI or external meteorological services)
+    if (Array.isArray(rawOfficialAlerts) && rawOfficialAlerts.length > 0) {
+      rawOfficialAlerts.forEach((a: any, idx: number) => {
+        const rawSev = (a.severity || '').toLowerCase();
+        let severity = 'moderate';
+        if (rawSev.includes('extreme')) severity = 'extreme';
+        else if (rawSev.includes('severe')) severity = 'severe';
+        else if (rawSev.includes('minor')) severity = 'minor';
+
+        alerts.push({
+          id: `official-${locationName}-${a.event || a.headline}-${idx}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+          title: a.headline || a.event || 'Official Severe Weather Alert',
+          description: a.desc || a.note || a.instruction || 'Official severe weather warning issued by national meteorological authority.',
+          severity,
+          type: 'official',
+          locationName,
+          issuingAuthority: a.category || a.note || 'National Weather Service',
+          effective: a.effective || new Date().toISOString(),
+          expires: a.expires || new Date(Date.now() + 86400000).toISOString(),
+          instruction: a.instruction || undefined,
+          createdAt: new Date().toISOString()
+        });
+      });
+    }
+
+    // 2. Generate Forecast-Based Notifications based on real data thresholds
+    const temp = data.current?.temperature_2m ?? 20;
+    const precip = data.current?.precipitation ?? 0;
+    const wind = data.current?.wind_speed_10m ?? 0;
+    const weatherCode = data.current?.weather_code ?? 0;
+    const maxPrecipProb = data.hourly?.precipitation_probability ? Math.max(...data.hourly.precipitation_probability.slice(0, 12)) : 0;
+    const maxUv = data.daily?.uv_index_max?.[0] ?? 5;
+
+    // Thunderstorm / Severe Rain
+    if (weatherCode === 95 || weatherCode === 96 || weatherCode === 99) {
+      alerts.push({
+        id: `forecast-thunderstorm-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Active Thunderstorm Alert',
+        description: `Thunderstorms with lightning activity detected in ${locationName}. Take indoor shelter.`,
+        severity: 'severe',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 14400000).toISOString(),
+        instruction: 'Avoid open outdoor spaces and metal objects during lightning activity.',
+        createdAt: new Date().toISOString()
+      });
+    } else if (precip >= 10 || maxPrecipProb >= 80) {
+      alerts.push({
+        id: `forecast-heavy-rain-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Heavy Rainfall Warning',
+        description: `Heavy rain expected in ${locationName} (${maxPrecipProb}% probability, up to ${precip}mm/h). Road pooling possible.`,
+        severity: maxPrecipProb >= 90 || precip >= 15 ? 'severe' : 'moderate',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 21600000).toISOString(),
+        instruction: 'Ensure umbrella or waterproof rain gear is accessible when venturing outdoors.',
+        createdAt: new Date().toISOString()
+      });
+    } else if (maxPrecipProb >= 50) {
+      alerts.push({
+        id: `forecast-rain-notice-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Rain Expectation Notice',
+        description: `Moderate probability of rainfall (${maxPrecipProb}%) anticipated over the next few hours in ${locationName}.`,
+        severity: 'minor',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 21600000).toISOString(),
+        instruction: 'Consider taking an umbrella if planning afternoon outdoor activities.',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // Strong Wind Notice
+    if (wind >= 45) {
+      alerts.push({
+        id: `forecast-strong-wind-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Strong Wind Advisory',
+        description: `Elevated wind gusts reaching ${Math.round(wind)} km/h in ${locationName}.`,
+        severity: wind >= 65 ? 'severe' : 'moderate',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 18000000).toISOString(),
+        instruction: 'Secure loose outdoor items and exercise care while driving high-profile vehicles.',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // Extreme Temperatures
+    if (temp >= 35) {
+      alerts.push({
+        id: `forecast-extreme-heat-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Extreme Heat Advisory',
+        description: `High temperature of ${Math.round(temp)}°C in ${locationName}. Heat stress likely during peak hours.`,
+        severity: 'severe',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 28800000).toISOString(),
+        instruction: 'Hydrate frequently and avoid strenuous activity in direct sunlight.',
+        createdAt: new Date().toISOString()
+      });
+    } else if (temp <= 2) {
+      alerts.push({
+        id: `forecast-freezing-cold-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'Freezing Temperature Advisory',
+        description: `Low temperature of ${Math.round(temp)}°C in ${locationName}. Frost patches possible.`,
+        severity: 'moderate',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 28800000).toISOString(),
+        instruction: 'Wear warm insulated clothing and take care on potentially slick walkways.',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    // High UV Index Warning
+    if (maxUv >= 8) {
+      alerts.push({
+        id: `forecast-high-uv-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        title: 'High UV Index Warning',
+        description: `Peak UV index forecast at ${Math.round(maxUv)} in ${locationName}. Increased risk of sun damage.`,
+        severity: 'moderate',
+        type: 'forecast',
+        locationName,
+        issuingAuthority: 'RODEX Atmos Forecast Intelligence',
+        effective: new Date().toISOString(),
+        expires: new Date(Date.now() + 28800000).toISOString(),
+        instruction: 'Apply SPF 30+ sunscreen, wear a hat and UV-blocking sunglasses midday.',
+        createdAt: new Date().toISOString()
+      });
+    }
+
+    return alerts;
+  }
+
   // Helper to fetch weather via WeatherAPI.com
   async function fetchWeatherAPI(queryOrCoords: string | { lat: number; lon: number }) {
     const apiKey = process.env.WEATHERAPI_KEY;
     if (!apiKey) throw new Error('WEATHERAPI_KEY not configured');
 
     const q = typeof queryOrCoords === 'string' ? queryOrCoords : `${queryOrCoords.lat},${queryOrCoords.lon}`;
-    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=no`;
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=yes`;
     
     const res = await fetch(url);
     if (!res.ok) {
@@ -229,6 +380,13 @@ async function startServer() {
       dailyUv.push(d.day.uv || 5);
     });
 
+    const alerts = processWeatherAlerts({
+      location,
+      current,
+      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
+      daily: { time: dailyTimes, weather_code: dailyCodes, temperature_2m_max: dailyMax, temperature_2m_min: dailyMin, sunrise: dailySunrise, sunset: dailySunset, uv_index_max: dailyUv }
+    }, data.alerts?.alert);
+
     return {
       location,
       weather: {
@@ -251,6 +409,7 @@ async function startServer() {
           uv_index_max: dailyUv
         }
       },
+      alerts,
       providerInfo: {
         name: 'WeatherAPI.com',
         credit: 'Powered by WeatherAPI.com',
@@ -319,6 +478,13 @@ async function startServer() {
       hourlyIsDay.push(1);
     });
 
+    const alerts = processWeatherAlerts({
+      location: { name: data.city?.name || name, country: data.city?.country || country },
+      current,
+      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
+      daily: { time: [new Date().toISOString().split('T')[0]], weather_code: [current.weather_code], temperature_2m_max: [current.temperature_2m + 3], temperature_2m_min: [current.temperature_2m - 3], sunrise: ['06:00'], sunset: ['18:00'], uv_index_max: [5] }
+    });
+
     return {
       location: {
         name: data.city?.name || name,
@@ -348,6 +514,7 @@ async function startServer() {
           uv_index_max: [5]
         }
       },
+      alerts,
       providerInfo: {
         name: 'OpenWeather',
         credit: 'Powered by OpenWeather',
@@ -508,50 +675,62 @@ async function startServer() {
       dailyUv.push(8.0);
     }
 
+    const fallbackLocation = {
+      name: name || 'Local Area',
+      country: country || 'Uganda',
+      admin1,
+      latitude: lat,
+      longitude: lon,
+      timezone: 'Africa/Kampala'
+    };
+    const fallbackCurrent = {
+      time: now.toISOString().slice(0, 16),
+      interval: 900,
+      temperature_2m: baseTemp + 2,
+      relative_humidity_2m: 62,
+      apparent_temperature: baseTemp + 3,
+      is_day: isDay,
+      precipitation: 0,
+      weather_code: isDay ? 0 : 0,
+      wind_speed_10m: 7.5,
+      wind_direction_10m: 110,
+      surface_pressure: 1012
+    };
+    const fallbackHourly = {
+      time: hourlyTime,
+      temperature_2m: hourlyTemp,
+      precipitation_probability: hourlyPrecip,
+      weather_code: hourlyCode,
+      is_day: hourlyIsDay
+    };
+    const fallbackDaily = {
+      time: dailyTime,
+      weather_code: dailyCode,
+      temperature_2m_max: dailyMax,
+      temperature_2m_min: dailyMin,
+      sunrise: dailySunrise,
+      sunset: dailySunset,
+      uv_index_max: dailyUv
+    };
+    const alerts = processWeatherAlerts({
+      location: fallbackLocation,
+      current: fallbackCurrent,
+      hourly: fallbackHourly,
+      daily: fallbackDaily
+    });
+
     return {
-      location: {
-        name: name || 'Local Area',
-        country: country || 'Uganda',
-        admin1,
-        latitude: lat,
-        longitude: lon,
-        timezone: 'Africa/Kampala'
-      },
+      location: fallbackLocation,
       weather: {
         latitude: lat,
         longitude: lon,
         utc_offset_seconds: 10800,
         timezone: 'Africa/Kampala',
-        current: {
-          time: now.toISOString().slice(0, 16),
-          interval: 900,
-          temperature_2m: baseTemp + 2,
-          relative_humidity_2m: 62,
-          apparent_temperature: baseTemp + 3,
-          is_day: isDay,
-          precipitation: 0,
-          weather_code: isDay ? 0 : 0,
-          wind_speed_10m: 7.5,
-          wind_direction_10m: 110,
-          surface_pressure: 1012
-        },
-        hourly: {
-          time: hourlyTime,
-          temperature_2m: hourlyTemp,
-          precipitation_probability: hourlyPrecip,
-          weather_code: hourlyCode,
-          is_day: hourlyIsDay
-        },
-        daily: {
-          time: dailyTime,
-          weather_code: dailyCode,
-          temperature_2m_max: dailyMax,
-          temperature_2m_min: dailyMin,
-          sunrise: dailySunrise,
-          sunset: dailySunset,
-          uv_index_max: dailyUv
-        }
+        current: fallbackCurrent,
+        hourly: fallbackHourly,
+        daily: fallbackDaily
       },
+      alerts,
       providerInfo: {
         name: 'RODEX Offline Weather Engine',
         credit: 'RODEX Atmospheric Predictive Engine',
@@ -620,16 +799,26 @@ async function startServer() {
       if (!weatherRes.ok) throw new Error(`Open-Meteo HTTP ${weatherRes.statusText}`);
       const weatherData = await weatherRes.json();
 
+      const openMeteoLocation = {
+        name,
+        country,
+        admin1,
+        latitude: lat,
+        longitude: lon,
+        timezone: weatherData.timezone || timezone
+      };
+
+      const alerts = processWeatherAlerts({
+        location: openMeteoLocation,
+        current: weatherData.current,
+        hourly: weatherData.hourly,
+        daily: weatherData.daily
+      });
+
       return {
-        location: {
-          name,
-          country,
-          admin1,
-          latitude: lat,
-          longitude: lon,
-          timezone: weatherData.timezone || timezone
-        },
+        location: openMeteoLocation,
         weather: weatherData,
+        alerts,
         providerInfo: {
           name: 'Open-Meteo',
           credit: 'Weather data by Open-Meteo.com',
@@ -944,6 +1133,92 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     }
   });
 
+  // Daily weather briefing generation endpoint
+  app.post('/api/ai/briefing', async (req, res) => {
+    const { location, current, daily, hourly, alerts } = req.body || {};
+    if (!location || !current) {
+      return res.status(400).json({ error: 'Missing required weather parameters for daily briefing.' });
+    }
+
+    const highTemp = daily?.temperature_2m_max?.[0] != null ? Math.round(daily.temperature_2m_max[0]) : Math.round(current.temperature_2m);
+    const lowTemp = daily?.temperature_2m_min?.[0] != null ? Math.round(daily.temperature_2m_min[0]) : Math.round(current.temperature_2m);
+    const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+    const windSpeed = current.wind_speed_10m ? Math.round(current.wind_speed_10m) : 0;
+
+    let rainLikelihood = 'Minimal risk of precipitation today.';
+    if (maxPrecipProb >= 70) {
+      rainLikelihood = `High likelihood of rain (${maxPrecipProb}% peak chance) during the day.`;
+    } else if (maxPrecipProb >= 40) {
+      rainLikelihood = `Moderate chance of scattered rainfall (${maxPrecipProb}% chance).`;
+    } else if (maxPrecipProb >= 20) {
+      rainLikelihood = `Slight chance of isolated showers (${maxPrecipProb}%).`;
+    }
+
+    const windCondition = windSpeed > 30 ? `Breezy with winds up to ${windSpeed} km/h.` : `Gentle breeze at ${windSpeed} km/h.`;
+
+    const topAlert = Array.isArray(alerts) && alerts.length > 0 ? alerts[0] : null;
+    const headlineAlert = topAlert ? `[${topAlert.type === 'official' ? 'Official Warning' : 'Forecast Alert'}] ${topAlert.title}: ${topAlert.description}` : undefined;
+
+    let greetingTime = 'Good day';
+    const hour = new Date().getHours();
+    if (hour < 12) greetingTime = 'Good morning';
+    else if (hour < 18) greetingTime = 'Good afternoon';
+    else greetingTime = 'Good evening';
+
+    if (ai) {
+      try {
+        const prompt = `Generate a concise, professional 2-sentence daily weather briefing for ${location.name}, ${location.country || ''}.
+Current temp: ${Math.round(current.temperature_2m)}°C, High: ${highTemp}°C, Low: ${lowTemp}°C.
+Rain probability: ${maxPrecipProb}%.
+Wind: ${windSpeed} km/h.
+Active alerts: ${headlineAlert || 'None'}.
+Greeting: ${greetingTime}.
+Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations). Do NOT invent fake weather numbers.`;
+
+        const aiRes = await ai.models.generateContent({
+          model: 'gemini-3.1-flash-lite',
+          contents: prompt,
+          config: { responseMimeType: 'application/json' }
+        });
+
+        const parsed = JSON.parse(aiRes.text || '{}');
+        if (parsed.summary && Array.isArray(parsed.recommendations)) {
+          return res.json({
+            greeting: parsed.greeting || `${greetingTime}, ${location.name}`,
+            locationName: location.name,
+            summary: parsed.summary,
+            highTemp,
+            lowTemp,
+            rainLikelihood,
+            windCondition,
+            headlineAlert,
+            recommendations: parsed.recommendations,
+            generatedAt: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn('[Briefing AI Warning] Gemini briefing fallback activated:', err);
+      }
+    }
+
+    // Deterministic fallback briefing
+    return res.json({
+      greeting: `${greetingTime}, ${location.name}`,
+      locationName: location.name,
+      summary: `${location.name} is expecting a high of ${highTemp}°C and a low of ${lowTemp}°C today with ${getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()} conditions.`,
+      highTemp,
+      lowTemp,
+      rainLikelihood,
+      windCondition,
+      headlineAlert,
+      recommendations: [
+        maxPrecipProb >= 40 ? 'Keep an umbrella handy for expected rainfall.' : 'Dress comfortably for prevailing temperatures.',
+        windSpeed > 30 ? 'Take care outdoors with loose equipment due to gusty winds.' : 'Enjoy safe and pleasant conditions throughout the day.'
+      ],
+      generatedAt: new Date().toISOString()
+    });
+  });
+
   // Voice readiness status endpoint (checks presence of GEMINI_API_KEY without revealing secret)
   app.get('/api/ai/live-status', (req, res) => {
     const isConfigured = !!ai;
@@ -1072,18 +1347,66 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     return null;
   }
 
+  // Extract multiple city names from queries requesting comparisons (e.g. "Compare weather in Kampala and Entebbe")
+  function extractMultipleCitiesFromQuery(text: string): string[] {
+    if (!text) return [];
+    const compareMatch = text.match(/(?:compare|between|versus|vs)\s+(?:weather\s+in\s+|weather\s+for\s+)?([a-zA-Z\s.,'-]+?)\s+(?:and|with|vs|versus)\s+([a-zA-Z\s.,'-]+)/i);
+    if (compareMatch && compareMatch[1] && compareMatch[2]) {
+      const c1 = cleanExtractedCity(compareMatch[1]);
+      const c2 = cleanExtractedCity(compareMatch[2]);
+      if (c1 && c2 && c1.toLowerCase() !== c2.toLowerCase()) {
+        return [c1, c2];
+      }
+    }
+    return [];
+  }
+
   // Server-side text chat endpoint with weather tool grounding
   app.post('/api/ai/chat', async (req, res) => {
-    const { messages, weatherData } = req.body || {};
+    const { messages, weatherData, deviceLocationData } = req.body || {};
     try {
       const lastUserMsg = (messages?.[messages.length - 1]?.content || '');
+      const comparisonCities = extractMultipleCitiesFromQuery(lastUserMsg);
       const requestedCity = extractCityFromQuery(lastUserMsg);
 
       let targetWeatherData = weatherData;
       let updatedCityWeather: any = null;
+      let comparisonContext = '';
 
-      // 1. If user named a city, resolve it through the existing router immediately
-      if (requestedCity) {
+      // Handle Multi-City Comparison Queries (e.g., "Compare Kampala and Entebbe")
+      if (comparisonCities.length === 2) {
+        try {
+          const [data1, data2] = await Promise.all([
+            routeForecastRequest(async (provider) => {
+              if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[0]);
+              else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[0]);
+              else return await fetchOpenMeteo(comparisonCities[0]);
+            }, `search:${comparisonCities[0].toLowerCase().trim()}`),
+            routeForecastRequest(async (provider) => {
+              if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[1]);
+              else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[1]);
+              else return await fetchOpenMeteo(comparisonCities[1]);
+            }, `search:${comparisonCities[1].toLowerCase().trim()}`)
+          ]);
+
+          targetWeatherData = data1;
+          updatedCityWeather = data1;
+
+          const temp1 = Math.round(data1.weather.current.temperature_2m);
+          const cond1 = getWeatherConditionLabel(data1.weather.current.weather_code);
+          const temp2 = Math.round(data2.weather.current.temperature_2m);
+          const cond2 = getWeatherConditionLabel(data2.weather.current.weather_code);
+
+          comparisonContext = `
+GROUNDED MULTI-CITY COMPARISON DATA:
+- City 1 (${data1.location.name}, ${data1.location.country || ''}): ${temp1}°C, ${cond1}, ${data1.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data1.weather.current.wind_speed_10m)} km/h.
+- City 2 (${data2.location.name}, ${data2.location.country || ''}): ${temp2}°C, ${cond2}, ${data2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data2.weather.current.wind_speed_10m)} km/h.
+Compare both cities directly and highlight key differences in temperature, weather conditions, and comfort.`;
+        } catch (compErr) {
+          console.warn('[RODEX Chat] Multi-city comparison lookup warning:', compErr);
+        }
+      } else if (requestedCity) {
+        // 1. Single City Query
         try {
           const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
           const fetchedData = await routeForecastRequest(async (provider) => {
@@ -1106,9 +1429,17 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
         }
       }
 
+      // Check for "weather here" / "local weather" query
+      const isLocalAreaQuery = /\b(?:weather here|local weather|weather in my area|my area|current location|where i am)\b/i.test(lastUserMsg);
+      if (isLocalAreaQuery && deviceLocationData) {
+        targetWeatherData = deviceLocationData;
+      }
+
       const current = targetWeatherData?.weather?.current;
       const location = targetWeatherData?.location;
+      const hourly = targetWeatherData?.weather?.hourly;
       const daily = targetWeatherData?.weather?.daily;
+      const devLocation = deviceLocationData?.location;
 
       // Calculate local time for the target city using provider timezone
       let localTime = 'N/A';
@@ -1131,16 +1462,39 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       const feelsLike = current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
       const humidity = current?.relative_humidity_2m ?? 50;
       const wind = current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 5;
+      const precip = current?.precipitation ?? 0;
+
+      // Produce 12-hour hourly summary (including precipitation probability)
+      const hourlySummary = hourly?.time?.slice(0, 12).map((t: string, idx: number) => {
+        const hourStr = new Date(t).toLocaleTimeString([], { hour: 'numeric', hour12: true });
+        return `${hourStr}: ${Math.round(hourly.temperature_2m[idx])}°C (${hourly.precipitation_probability[idx]}% rain)`;
+      }).join(', ') || 'N/A';
+
+      // Produce 7-day outlook
+      const dailySummary = daily?.time?.slice(0, 7).map((d: string, idx: number) => {
+        const dayName = idx === 0 ? 'Today' : new Date(d).toLocaleDateString([], { weekday: 'short' });
+        return `${dayName}: ${Math.round(daily.temperature_2m_min[idx])}°C to ${Math.round(daily.temperature_2m_max[idx])}°C`;
+      }).join('; ') || 'N/A';
+
+      const activeAlerts = targetWeatherData?.alerts || [];
+      const alertsContext = activeAlerts.length > 0
+        ? `\nACTIVE WEATHER ALERTS FOR ${location?.name || 'Selected City'}:\n` + activeAlerts.map((a: any) => `- [${a.type.toUpperCase()} / ${a.severity.toUpperCase()}] ${a.title}: ${a.description} (Authority: ${a.issuingAuthority || 'N/A'}, Instruction: ${a.instruction || 'None'})`).join('\n')
+        : '\nACTIVE WEATHER ALERTS: None active for this location currently.';
 
       const systemInstruction = `You are RODEX AI, the advanced meteorological and atmospheric assistant for the RODEX Atmos web app.
 You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
 
-STRICT GROUNDING RULES:
-1. Ground every answer strictly in the real provider data below. Never answer from general knowledge or invent missing values or official alerts.
-2. State the city name (${location?.name}), country (${location?.country || ''}), local time (${localTime}), and relevant weather details (${conditionLabel}, ${temp}°C, feels like ${feelsLike}°C, ${humidity}% humidity, wind ${wind} km/h) concisely.
-3. Keep replies conversational, concise (1-2 sentences), and practical.
+STRICT GROUNDING & LOCATION RULES:
+1. Physical Device Location: ${devLocation?.name || 'Local Area'}${devLocation?.country ? ', ' + devLocation.country : ''}. If user asks "What's the weather here?" or "How is local weather?", answer using ${devLocation?.name || location?.name || 'this location'}.
+2. Currently Target City: ${location?.name || 'Selected City'}, ${location?.country || ''} (Local Time: ${localTime}).
+3. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
+4. Keep replies conversational, concise (1-2 sentences), and directly answer the question.
+5. Umbrella / Rain Queries: If user asks "Will it rain?" or "Should I carry an umbrella?", check precipitation volume (${precip} mm) and upcoming hourly rain percentages. Recommend an umbrella if rain probability exceeds 30% or precipitation > 0mm.
+6. Temperature Comparisons: If user asks to compare today with tomorrow, compare today's temps with tomorrow's temps from the 7-day outlook.
+7. Explain Notifications & Alerts: If user asks "Why did Atmos issue this rain notification?" or "Explain this warning", refer directly to the active alerts below. Distinguish official warnings from application forecast notifications.
+8. Daily Summaries: If user asks "Summarise the important weather changes for today", summarize temperature highs, rainfall likelihood, and wind conditions concisely.
 
-REAL WEATHER DATA FOR SELECTED LOCATION:
+REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
 - Local Time: ${localTime}
 - Condition: ${conditionLabel}
@@ -1148,8 +1502,10 @@ REAL WEATHER DATA FOR SELECTED LOCATION:
 - Weather Code: ${current?.weather_code ?? 'N/A'}
 - Humidity: ${humidity}%
 - Wind Speed: ${wind} km/h
-- Precipitation: ${current?.precipitation ?? 0} mm
-- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa`;
+- Precipitation Volume: ${precip} mm
+- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa
+- Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
+- 7-Day Outlook: ${dailySummary}${comparisonContext}${alertsContext}`;
 
       // If AI client is available, try Gemini
       if (ai) {

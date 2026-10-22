@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { CurrentWeatherCard } from './components/CurrentWeatherCard';
+import { DailyBriefingCard } from './components/DailyBriefingCard';
 import { AiInsightsCard } from './components/AiInsightsCard';
 import { HourlyForecast } from './components/HourlyForecast';
 import { WeeklyForecast } from './components/WeeklyForecast';
@@ -9,13 +10,14 @@ import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
+import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X } from 'lucide-react';
 
 export default function App() {
-  const { userPreferences, updateUserPreferences } = useAuth();
+  const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
@@ -25,8 +27,15 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [assistantPrompt, setAssistantPrompt] = useState<string>('');
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isPrivacyPortalOpen, setIsPrivacyPortalOpen] = useState<boolean>(false);
+  const [isAlertsModalOpen, setIsAlertsModalOpen] = useState<boolean>(false);
+
+  const handleOpenAssistant = (prompt?: string) => {
+    if (prompt) setAssistantPrompt(prompt);
+    setIsAssistantOpen(true);
+  };
 
   // Sync temperature unit with user privacy preferences
   useEffect(() => {
@@ -243,9 +252,11 @@ export default function App() {
         isLoading={isLoading}
         currentLocationName={weatherData?.location.name || (setupRequired ? 'Setup Required' : 'Detecting Location...')}
         locationMode={locationMode}
-        onOpenAssistant={() => setIsAssistantOpen(true)}
+        onOpenAssistant={() => handleOpenAssistant()}
         onOpenAuth={() => setIsAuthOpen(true)}
         onOpenPrivacyPortal={() => setIsPrivacyPortalOpen(true)}
+        onOpenAlertsModal={() => setIsAlertsModalOpen(true)}
+        activeAlertsCount={weatherData?.alerts?.length || 0}
       />
 
       {/* Main Content Container */}
@@ -378,10 +389,16 @@ export default function App() {
               isLoading={isLoading}
             />
 
+            {/* Proactive Personalised Daily Weather Briefing */}
+            <DailyBriefingCard
+              data={weatherData}
+              onOpenAssistant={handleOpenAssistant}
+            />
+
             {/* AI Atmospheric Insights Card */}
             <AiInsightsCard 
               data={weatherData} 
-              onOpenAssistant={() => setIsAssistantOpen(true)}
+              onOpenAssistant={() => handleOpenAssistant()}
             />
 
             {/* Hourly Forecast */}
@@ -400,7 +417,7 @@ export default function App() {
       {/* Floating Action Button for RODEX AI Assistant */}
       <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40">
         <button
-          onClick={() => setIsAssistantOpen(true)}
+          onClick={() => handleOpenAssistant()}
           className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-2xl shadow-sky-500/40 border border-sky-300/40 transition transform hover:scale-105 group backdrop-blur-md"
           title="Open RODEX AI Voice & Chat"
         >
@@ -423,6 +440,16 @@ export default function App() {
           setWeatherData(newWeather);
           setLocationMode('search');
         }}
+        initialPrompt={assistantPrompt}
+      />
+
+      {/* Smart Weather Alerts & Preferences Modal */}
+      <AlertCenterModal
+        isOpen={isAlertsModalOpen}
+        onClose={() => setIsAlertsModalOpen(false)}
+        alerts={weatherData?.alerts || []}
+        locationName={weatherData?.location.name || 'Selected Location'}
+        onOpenAssistant={handleOpenAssistant}
       />
 
       {/* Account Authentication & Verification Modal */}

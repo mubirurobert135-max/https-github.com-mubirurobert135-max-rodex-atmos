@@ -1262,7 +1262,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     });
   });
 
-  // Synthesize speech using RODEX Atmos Signature custom voice (voice_nv4v693k2132)
+  // Synthesize speech using RODEX Atmos Signature voice with intelligent multi-tier fallback
   app.post('/api/ai/synthesize-speech', async (req, res) => {
     const { text, style } = req.body || {};
     if (!text || typeof text !== 'string') {
@@ -1270,74 +1270,96 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     }
 
     if (!ai) {
-      return res.status(503).json({ error: 'AI_NOT_CONFIGURED', message: 'Gemini API key is not configured.' });
+      return res.status(503).json({
+        error: 'AI_NOT_CONFIGURED',
+        fallbackToWebSpeech: true,
+        message: 'Gemini API key is not configured.'
+      });
     }
 
-    try {
-      const tStart = Date.now();
-      const styleInstruction = style || 'Warm, confident, personable, lightly playful, clear and concise';
+    const tStart = Date.now();
+    const styleInstruction = style || 'Warm, confident, personable, lightly playful, clear and concise';
 
-      let response: any;
-      try {
-        // High-efficiency, low-latency audio model
-        response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash-lite-tts',
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text,
-                  speechMetadata: {
-                    style: styleInstruction
-                  }
+    // Helper to invoke Gemini generateContent for TTS
+    const trySynthesis = async (model: string, voiceConfig: any) => {
+      return await ai!.models.generateContent({
+        model,
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                text,
+                speechMetadata: {
+                  style: styleInstruction
                 }
-              ]
-            }
-          ],
-          config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                voice: ATMOS_SIGNATURE_VOICE_ID
               }
-            }
+            ]
           }
-        });
-      } catch (liteErr) {
-        console.warn('[RODEX Speech Synthesis Notice] Fallback to gemini-3.8-flash-tts:', liteErr);
-        // Fallback to flagship audio model
-        response = await ai.models.generateContent({
-          model: 'gemini-3.8-flash-tts',
-          contents: [
-            {
-              role: 'user',
-              parts: [
-                {
-                  text,
-                  speechMetadata: {
-                    style: styleInstruction
-                  }
-                }
-              ]
-            }
-          ],
-          config: {
-            responseModalities: ['AUDIO'],
-            speechConfig: {
-              voiceConfig: {
-                voice: ATMOS_SIGNATURE_VOICE_ID
-              }
-            }
+        ],
+        config: {
+          responseModalities: ['AUDIO'],
+          speechConfig: { voiceConfig }
+        }
+      });
+    };
+
+    try {
+      let response: any = null;
+      let usedVoiceName = 'RODEX Atmos Signature (Aoede Core)';
+      let usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+
+      // Tier 1: If a custom voice ID is configured, attempt synthesis with it
+      if (ATMOS_SIGNATURE_VOICE_ID) {
+        try {
+          response = await trySynthesis('gemini-3.8-flash-lite-tts', { voice: ATMOS_SIGNATURE_VOICE_ID });
+          usedVoiceName = 'RODEX Atmos Signature';
+        } catch (customLiteErr: any) {
+          // If custom voice is not accessible or hits quota, log diagnostic and proceed to prebuilt voice
+          const errMsg = customLiteErr?.message || '';
+          if (errMsg.includes('400') || errMsg.includes('404') || errMsg.includes('NOT_FOUND') || errMsg.includes('INVALID_ARGUMENT')) {
+            console.warn('[RODEX Voice Routing] Custom voice ID unavailable or not permitted, switching to established Aoede vocal persona.');
           }
-        });
+        }
       }
 
-      const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      const mimeType = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/wav';
+      // Tier 2: Try fast flash-lite-tts with prebuilt Aoede (established warm feminine voice)
+      if (!response) {
+        try {
+          response = await trySynthesis('gemini-3.8-flash-lite-tts', {
+            prebuiltVoiceConfig: { voiceName: 'Aoede' }
+          });
+          usedVoiceName = 'RODEX Atmos Signature (Aoede Core)';
+          usedVoiceId = 'Aoede';
+        } catch (liteAoedeErr: any) {
+          // Tier 3: If flash-lite is rate-limited (e.g. 429) or unavailable, try flagship flash-tts with Aoede
+          try {
+            response = await trySynthesis('gemini-3.8-flash-tts', {
+              prebuiltVoiceConfig: { voiceName: 'Aoede' }
+            });
+            usedVoiceName = 'RODEX Atmos Signature (Aoede Flagship)';
+            usedVoiceId = 'Aoede';
+          } catch (flagshipErr: any) {
+            console.warn('[RODEX Speech Synthesis Notice] Gemini TTS quota/service temporarily unavailable:', flagshipErr?.message);
+            // Return clean non-error response informing client to use high-quality Web Speech fallback
+            return res.json({
+              audio: null,
+              fallbackToWebSpeech: true,
+              message: 'TTS quota reached. Falling back gracefully to client speech synthesis.'
+            });
+          }
+        }
+      }
+
+      const audioData = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      const mimeType = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/wav';
 
       if (!audioData) {
-        throw new Error('No audio data generated by Gemini TTS.');
+        return res.json({
+          audio: null,
+          fallbackToWebSpeech: true,
+          message: 'No audio data generated. Falling back gracefully to client speech synthesis.'
+        });
       }
 
       const latencyMs = Date.now() - tStart;
@@ -1345,14 +1367,16 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         audio: audioData,
         mimeType,
         latencyMs,
-        voiceId: ATMOS_SIGNATURE_VOICE_ID,
-        voiceName: 'RODEX Atmos Signature'
+        voiceId: usedVoiceId,
+        voiceName: usedVoiceName
       });
     } catch (err: any) {
-      console.error('[RODEX Speech Synthesis Error]', err);
-      res.status(500).json({
-        error: 'SYNTHESIS_FAILED',
-        message: err.message || 'Failed to synthesize speech.'
+      console.warn('[RODEX Speech Synthesis Warning]', err?.message || err);
+      // Gracefully signal Web Speech fallback instead of 500 error
+      res.json({
+        audio: null,
+        fallbackToWebSpeech: true,
+        message: 'Speech synthesis fell back to browser voice.'
       });
     }
   });

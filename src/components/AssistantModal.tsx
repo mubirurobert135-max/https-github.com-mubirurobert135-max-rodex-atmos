@@ -165,6 +165,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const sessionIdRef = useRef<number>(0);
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptsBottomRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
+  const isCompatModeRef = useRef<boolean>(false);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -287,6 +289,18 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         }
       } catch (e) {}
       wsRef.current = null;
+    }
+
+    // 6. Stop browser SpeechRecognition if active
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+    isCompatModeRef.current = false;
+
+    // 7. Cancel browser SpeechSynthesis TTS if speaking
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch (e) {}
     }
 
     setVoiceState(targetState);
@@ -958,6 +972,151 @@ Available Function Tools:
     }
   };
 
+  // Voice Compatibility Mode (Web Speech API STT -> Express Grounded AI -> Web Speech Synthesis TTS)
+  const startSpeechCompatibilitySession = useCallback(() => {
+    setVoiceError(null);
+    stopVoiceSession('idle');
+    isCompatModeRef.current = true;
+    setVoiceState('listening');
+
+    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionClass) {
+      setVoiceError("Voice Compatibility Mode (Web Speech API) is not supported in this browser. Please use Text Chat instead.");
+      setVoiceState('error');
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognitionClass();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let interimText = '';
+        let finalText = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalText += transcript;
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        if (interimText) {
+          setInterimUserSpeech(interimText);
+        }
+
+        if (finalText.trim()) {
+          const userQuery = finalText.trim();
+          setInterimUserSpeech('');
+          setLiveTranscripts((t) => [
+            ...t,
+            { sender: 'user', text: userQuery, id: 'user-' + Date.now() }
+          ]);
+
+          try { recognition.stop(); } catch (e) {}
+          setVoiceState('thinking');
+
+          fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [
+                ...messages.map((m) => ({ role: m.role, content: m.content })),
+                { role: 'user', content: userQuery }
+              ],
+              weatherData,
+              deviceLocationData,
+              mapContextData,
+              activeMapLayer
+            })
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.updatedCityWeather?.location) {
+                onSelectCityWeather(data.updatedCityWeather);
+              }
+
+              const replyText = data.reply || "I couldn't process that weather query right now.";
+              setCurrentAssistantSpoken(replyText);
+              setLiveTranscripts((t) => [
+                ...t,
+                { sender: 'assistant', text: replyText, id: 'ast-' + Date.now() }
+              ]);
+
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(replyText);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.0;
+
+                setVoiceState('speaking');
+
+                utterance.onend = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                utterance.onerror = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                window.speechSynthesis.speak(utterance);
+              } else {
+                setCurrentAssistantSpoken('');
+                setVoiceState('listening');
+                if (isCompatModeRef.current) {
+                  try { recognition.start(); } catch (e) {}
+                }
+              }
+            })
+            .catch((err) => {
+              console.error('[Voice Compatibility Error]', err);
+              setVoiceError('Voice compatibility mode query failed. Switch to Text Chat or try native Live voice again.');
+              setVoiceState('error');
+            });
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('[Speech Recognition Error]', event.error);
+        if (event.error === 'no-speech') return;
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setPermissionStatus('denied');
+          setVoiceError('Microphone permission was denied for Web Speech API.');
+          setVoiceState('error');
+        }
+      };
+
+      recognition.onend = () => {
+        if (isCompatModeRef.current && voiceState === 'listening') {
+          try { recognition.start(); } catch (e) {}
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error('[Failed to start SpeechRecognition]', err);
+      setVoiceError('Could not launch browser speech recognition. Please use Text Chat.');
+      setVoiceState('error');
+    }
+  }, [messages, weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, stopVoiceSession, voiceState]);
+
   // Diagnostics metrics tracking ref
   const playbackMetricsRef = useRef({
     receivedChunks: 0,
@@ -1314,16 +1473,23 @@ Available Function Tools:
                   <div className="flex-1">
                     <p className="font-semibold mb-0.5 text-white">Voice Notice</p>
                     <p className="leading-relaxed">{voiceError}</p>
-                    <div className="flex flex-wrap items-center gap-2.5 mt-2.5">
+                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
                       <button
                         onClick={startVoiceSession}
-                        className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
                       >
-                        Try Again
+                        Try Native Live Again
+                      </button>
+                      <button
+                        onClick={startSpeechCompatibilitySession}
+                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition shadow cursor-pointer flex items-center gap-1"
+                      >
+                        <Sparkles className="w-3 h-3" />
+                        <span>Voice Compatibility Mode</span>
                       </button>
                       <button
                         onClick={() => setActiveTab('chat')}
-                        className="text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 hover:text-white transition cursor-pointer"
+                        className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 hover:text-white transition cursor-pointer"
                       >
                         Switch to Text Chat →
                       </button>

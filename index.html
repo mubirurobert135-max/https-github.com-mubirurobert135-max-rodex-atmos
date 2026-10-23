@@ -1,6 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      (function() {
+        var origError = console.error;
+        console.error = function() {
+          var firstArg = arguments[0];
+          if (typeof firstArg === 'string' && (firstArg.includes('[vite]') || firstArg.includes('WebSocket closed without opened'))) {
+            return;
+          }
+          origError.apply(console, arguments);
+        };
+        window.addEventListener('error', function(e) {
+          if (e && e.message && (e.message.includes('[vite]') || e.message.includes('WebSocket closed without opened'))) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>RODEX Atmos — Weather & Atmospheric Intelligence</title>

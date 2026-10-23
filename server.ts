@@ -1593,7 +1593,10 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 
   // Setup Vite middleware for development
   const vite = await createViteServer({
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      hmr: false
+    },
     appType: 'spa',
   });
 

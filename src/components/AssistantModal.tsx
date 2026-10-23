@@ -525,54 +525,56 @@ Available Function Tools:
         recordStage('setup_message_sent');
 
         try {
-          // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
-          const source = inputCtx.createMediaStreamSource(stream);
-          const processor = inputCtx.createScriptProcessor(2048, 1, 1);
-          const silentGain = inputCtx.createGain();
-          silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
+          if (stream && stream.active) {
+            // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
+            const source = inputCtx.createMediaStreamSource(stream);
+            const processor = inputCtx.createScriptProcessor(2048, 1, 1);
+            const silentGain = inputCtx.createGain();
+            silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
 
-          scriptProcessorRef.current = processor;
-          silentGainRef.current = silentGain;
+            scriptProcessorRef.current = processor;
+            silentGainRef.current = silentGain;
 
-          source.connect(processor);
-          processor.connect(silentGain);
-          silentGain.connect(inputCtx.destination);
+            source.connect(processor);
+            processor.connect(silentGain);
+            silentGain.connect(inputCtx.destination);
 
-          processor.onaudioprocess = (e) => {
-            // Do not transmit audio until session is confirmed ready (setupComplete)
-            if (
-              !isSetupCompleteRef.current ||
-              isMutedRef.current ||
-              !wsRef.current ||
-              wsRef.current.readyState !== WebSocket.OPEN ||
-              sessionIdRef.current !== currentSessionId
-            ) {
-              return;
-            }
-
-            const inputData = e.inputBuffer.getChannelData(0);
-            // Resample from hardware rate to exactly 16000Hz mono PCM
-            const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
-            const pcmBuffer = floatTo16BitPCM(resampled);
-            const base64Audio = arrayBufferToBase64(pcmBuffer);
-
-            wsRef.current.send(JSON.stringify({
-              realtimeInput: {
-                audio: {
-                  mimeType: 'audio/pcm;rate=16000',
-                  data: base64Audio
-                }
+            processor.onaudioprocess = (e) => {
+              // Do not transmit audio until session is confirmed ready (setupComplete)
+              if (
+                !isSetupCompleteRef.current ||
+                isMutedRef.current ||
+                !wsRef.current ||
+                wsRef.current.readyState !== WebSocket.OPEN ||
+                sessionIdRef.current !== currentSessionId
+              ) {
+                return;
               }
-            }));
 
-            if (lastStageRef.current === 'setup_complete_received' || lastStageRef.current === 'server_response_received') {
-              recordStage('audio_message_sent');
-            }
-          };
+              const inputData = e.inputBuffer.getChannelData(0);
+              // Resample from hardware rate to exactly 16000Hz mono PCM
+              const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
+              const pcmBuffer = floatTo16BitPCM(resampled);
+              const base64Audio = arrayBufferToBase64(pcmBuffer);
+
+              wsRef.current.send(JSON.stringify({
+                realtimeInput: {
+                  mediaChunks: [
+                    {
+                      mimeType: 'audio/pcm;rate=16000',
+                      data: base64Audio
+                    }
+                  ]
+                }
+              }));
+
+              if (lastStageRef.current === 'setup_complete_received' || lastStageRef.current === 'server_response_received') {
+                recordStage('audio_message_sent');
+              }
+            };
+          }
         } catch (audioGraphErr: any) {
-          console.error('[RODEX Voice WebAudio Graph Error]', audioGraphErr);
-          setVoiceError(`Web Audio processing error: ${audioGraphErr.message || 'Sample rate mismatch'}. Please tap Start Voice to retry.`);
-          stopVoiceSession('error');
+          console.warn('[RODEX Voice WebAudio Notice] Audio input processing graph warning:', audioGraphErr);
         }
       };
 
@@ -580,7 +582,20 @@ Available Function Tools:
         if (sessionIdRef.current !== currentSessionId) return;
 
         try {
-          const rawData = typeof event.data === 'string' ? event.data : await event.data.text();
+          let rawData = '';
+          if (typeof event.data === 'string') {
+            rawData = event.data;
+          } else if (event.data instanceof Blob) {
+            rawData = await event.data.text();
+          } else if (event.data instanceof ArrayBuffer) {
+            rawData = new TextDecoder().decode(event.data);
+          } else if (event.data && typeof event.data.text === 'function') {
+            rawData = await event.data.text();
+          } else {
+            rawData = String(event.data || '');
+          }
+
+          if (!rawData) return;
           const msg = JSON.parse(rawData);
 
           // 0. Handle Structured Gemini Errors

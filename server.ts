@@ -1366,6 +1366,24 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     const { messages, weatherData, deviceLocationData, mapContextData, activeMapLayer } = req.body || {};
     try {
       const lastUserMsg = (messages?.[messages.length - 1]?.content || '');
+
+      // Fast conversational routing: short-circuit pure greetings or thanks without invoking geocoding/weather APIs
+      const isPureGreeting = /^\s*(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|good morning|good afternoon|good evening|howdy|sup)\s*[.?!]*$/i.test(lastUserMsg);
+      const isPureThanks = /^\s*(?:thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)\s*[.?!]*$/i.test(lastUserMsg);
+
+      if (isPureGreeting) {
+        return res.json({
+          reply: "Hey! I'm here and ready. How can I help with your weather today?",
+          updatedCityWeather: null
+        });
+      }
+      if (isPureThanks) {
+        return res.json({
+          reply: "You're very welcome! Let me know whenever you need more weather insights.",
+          updatedCityWeather: null
+        });
+      }
+
       const comparisonCities = extractMultipleCitiesFromQuery(lastUserMsg);
       const requestedCity = extractCityFromQuery(lastUserMsg);
 

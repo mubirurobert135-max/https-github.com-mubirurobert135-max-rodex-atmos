@@ -6,6 +6,13 @@ import {
 import { WeatherData } from '../types';
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array, resampleAudioBuffer } from '../utils/audioUtils';
 import { getWeatherCondition } from '../utils/weatherUtils';
+import { useAuth } from '../context/AuthContext';
+import { 
+  sanitizeUserName, 
+  getTimeOfDayGreeting, 
+  buildPersonalizedGreeting, 
+  isFastConversationalQuery 
+} from '../utils/greetingUtils';
 
 import { LocationMode } from '../types';
 
@@ -100,17 +107,24 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   initialPrompt,
   onExecuteAction
 }) => {
+  const { user, userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<'voice' | 'chat'>('voice');
 
-  // Text Chat State
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: `Hello! I am RODEX AI. I can answer questions about current conditions in ${weatherData?.location.name || 'your location'}, explain active weather warnings, or summarize today's briefing. How can I help you today?`,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  // Personalized name from current authenticated profile
+  const authenticatedFirstName = sanitizeUserName(userProfile?.displayName || user?.displayName);
+
+  // Text Chat State with personalized initial greeting
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const greeting = authenticatedFirstName ? `Hello ${authenticatedFirstName}!` : 'Hello!';
+    return [
+      {
+        id: 'welcome',
+        role: 'assistant',
+        content: `${greeting} I am RODEX AI. I can answer questions about current conditions in ${weatherData?.location.name || 'your location'}, explain active weather warnings, or summarize today's briefing. How can I help you today?`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+  });
   const [inputQuery, setInputQuery] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
@@ -133,6 +147,69 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const [currentAssistantSpoken, setCurrentAssistantSpoken] = useState('');
   const [interimUserSpeech, setInterimUserSpeech] = useState('');
   const [isAutoRecovering, setIsAutoRecovering] = useState(false);
+
+  // Greet once per active voice session
+  const hasGreetedInSessionRef = useRef(false);
+
+  // Session diagnostics metrics tracking
+  const sessionDiagnosticsRef = useRef({
+    sessionStartTime: 0,
+    timeToReadyMs: 0,
+    micFramesCaptured: 0,
+    audioChunksSent: 0,
+    audioChunksReceived: 0,
+    inputTranscriptionsReceived: 0,
+    outputTranscriptionsReceived: 0,
+    interruptionsCount: 0,
+    playbackUnderruns: 0
+  });
+
+  // Speak personalized time-aware greeting in warm feminine voice and auto-transition to listening
+  const speakGreeting = useCallback((text: string, onDone?: () => void) => {
+    setCurrentAssistantSpoken(text);
+    setLiveTranscripts((prev) => [
+      ...prev,
+      { sender: 'assistant', text, id: 'greeting-' + Date.now() }
+    ]);
+    setVoiceState('speaking');
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 1.0;
+      utterance.pitch = 1.05;
+
+      const voices = window.speechSynthesis.getVoices();
+      const preferredVoice = voices.find((v) =>
+        v.lang.startsWith('en') &&
+        (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
+      ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      utterance.onend = () => {
+        setCurrentAssistantSpoken('');
+        setVoiceState('listening');
+        if (onDone) onDone();
+      };
+
+      utterance.onerror = () => {
+        setCurrentAssistantSpoken('');
+        setVoiceState('listening');
+        if (onDone) onDone();
+      };
+
+      window.speechSynthesis.speak(utterance);
+    } else {
+      setTimeout(() => {
+        setCurrentAssistantSpoken('');
+        setVoiceState('listening');
+        if (onDone) onDone();
+      }, 1500);
+    }
+  }, []);
 
   // Helper to safely record sequential diagnostic stages
   const recordStage = useCallback((stage: LiveConnectionStage) => {
@@ -310,14 +387,19 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
 
+    if (targetState === 'idle' || targetState === 'ended') {
+      hasGreetedInSessionRef.current = false;
+    }
+
     setVoiceState(targetState);
     setCurrentAssistantSpoken('');
     setInterimUserSpeech('');
   }, []);
 
-  // Stop voice if modal closes
+  // Stop voice and reset greeting flag if modal closes
   useEffect(() => {
     if (!isOpen) {
+      hasGreetedInSessionRef.current = false;
       stopVoiceSession('idle');
     }
   }, [isOpen, stopVoiceSession]);
@@ -535,7 +617,19 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       };
 
       recognitionRef.current = recognition;
-      recognition.start();
+
+      // Personalized time-aware initial greeting
+      if (!hasGreetedInSessionRef.current) {
+        hasGreetedInSessionRef.current = true;
+        const greetingText = buildPersonalizedGreeting(userProfile || user, weatherData?.location?.timezone);
+        speakGreeting(greetingText, () => {
+          if (isCompatModeRef.current) {
+            try { recognition.start(); } catch (e) {}
+          }
+        });
+      } else {
+        recognition.start();
+      }
     } catch (err: any) {
       console.warn('[Speech Recognition Launch Notice]', err);
       setVoiceError('Could not launch voice recognition. Tap Retry Voice to try again.');
@@ -708,14 +802,21 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
         recordStage('websocket_opened');
 
-        // Send Initial Setup with Weather Grounding, Map Context & Device Location Awareness
+        // Send Initial Setup with Weather Grounding, Map Context, Authenticated User Identity & Concise Speech Rules
         const location = weatherData?.location;
         const current = weatherData?.weather?.current;
         const devLoc = deviceLocationData?.location;
         const mapLoc = mapContextData?.location;
         const mapCurr = mapContextData?.weather?.current;
+        const authenticatedName = sanitizeUserName(userProfile?.displayName || user?.displayName);
 
-        const systemPrompt = `You are Hey Atmos, the expert meteorologist and voice assistant for RODEX Atmos. Listen carefully and respond naturally, promptly and clearly in concise conversational sentences (1 to 3 short sentences max).
+        const systemPrompt = `You are Hey Atmos, the expert meteorologist and voice assistant for RODEX Atmos.
+${authenticatedName ? `The user is authenticated as ${authenticatedName}. Address them naturally as ${authenticatedName}.` : 'Address the user warmly.'}
+
+CONVERSATIONAL SPEECH RULES:
+1. Always respond concisely in 1 to 2 short conversational sentences (strictly under 30 spoken words).
+2. Never recite capabilities or speak robotic disclaimers. Speak naturally in a warm, friendly feminine tone.
+3. If the user simply says hello, thank you, or greets you, respond conversationally in one short sentence without calling tools.
 
 Location Context Hierarchy & Rules:
 1. User's Detected Physical Location: ${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}. (Use when user asks "What's the weather here?" or "How is my local weather?").
@@ -783,8 +884,10 @@ Available Function Tools:
         try {
           if (stream && stream.active) {
             // Connect audio graph with silent gain node to prevent user microphone feedback into speakers
+            // Buffer size: 1024 samples at 48kHz is ~21ms (within the 20-40ms chunk streaming window)
             const source = inputCtx.createMediaStreamSource(stream);
-            const processor = inputCtx.createScriptProcessor(2048, 1, 1);
+            const bufferSize = inputCtx.sampleRate >= 32000 ? 1024 : 512;
+            const processor = inputCtx.createScriptProcessor(bufferSize, 1, 1);
             const silentGain = inputCtx.createGain();
             silentGain.gain.setValueAtTime(0, inputCtx.currentTime);
 
@@ -807,11 +910,20 @@ Available Function Tools:
                 return;
               }
 
+              // Do not send mic audio while the assistant is currently speaking the greeting or active audio
+              if (activeSourcesRef.current.length > 0) {
+                return;
+              }
+
+              sessionDiagnosticsRef.current.micFramesCaptured += 1;
+
               const inputData = e.inputBuffer.getChannelData(0);
               // Resample from hardware rate to exactly 16000Hz mono PCM
               const resampled = resampleAudioBuffer(inputData, inputCtx.sampleRate, 16000);
               const pcmBuffer = floatTo16BitPCM(resampled);
               const base64Audio = arrayBufferToBase64(pcmBuffer);
+
+              sessionDiagnosticsRef.current.audioChunksSent += 1;
 
               wsRef.current.send(JSON.stringify({
                 realtimeInput: {
@@ -880,7 +992,7 @@ Available Function Tools:
             }
             isSetupCompleteRef.current = true;
             recordStage('setup_complete_received');
-            setVoiceState('listening');
+            sessionDiagnosticsRef.current.timeToReadyMs = Math.round(tSetupComplete - tStart);
 
             console.log('[RODEX Voice Startup Benchmark]', {
               audioCtxResumeMs: Math.round(tAudioCtxReady - tStart),
@@ -889,10 +1001,26 @@ Available Function Tools:
               parallelPrerequisitesMs: Math.round(performance.now() - tStart),
               totalTimeToReadyMs: Math.round(tSetupComplete - tStart)
             });
+
+            // Trigger personalized, time-aware initial spoken greeting once per session
+            if (!hasGreetedInSessionRef.current) {
+              hasGreetedInSessionRef.current = true;
+              const greetingText = buildPersonalizedGreeting(
+                userProfile || user,
+                weatherData?.location?.timezone
+              );
+              speakGreeting(greetingText);
+            } else {
+              setVoiceState('listening');
+            }
           }
 
           // 2. Handle Model Interruption (Barge-in)
           if (msg.serverContent?.interrupted) {
+            sessionDiagnosticsRef.current.interruptionsCount += 1;
+            if (typeof window !== 'undefined' && window.speechSynthesis) {
+              try { window.speechSynthesis.cancel(); } catch (e) {}
+            }
             activeSourcesRef.current.forEach((src) => {
               try {
                 src.stop();
@@ -940,9 +1068,20 @@ Available Function Tools:
             setVoiceState('thinking');
             for (const call of msg.toolCall.functionCalls) {
               if (call.name === 'getCityWeather') {
-                const cityName = call.args?.city || 'Kampala';
+                const rawCity = (call.args?.city || '').trim();
+                const invalidCities = ['atmos', 'hey atmos', 'hello', 'hi', 'weather', 'none', 'unknown'];
+                const cityName = (!rawCity || invalidCities.includes(rawCity.toLowerCase())) 
+                  ? (weatherData?.location.name || 'Kampala')
+                  : rawCity;
+
                 try {
-                  const searchRes = await fetch(`/api/weather/search?query=${encodeURIComponent(cityName)}`);
+                  const controller = new AbortController();
+                  const timeoutId = setTimeout(() => controller.abort(), 5000);
+                  const searchRes = await fetch(`/api/weather/search?query=${encodeURIComponent(cityName)}`, {
+                    signal: controller.signal
+                  });
+                  clearTimeout(timeoutId);
+
                   if (!searchRes.ok) {
                     const errJson = await searchRes.json().catch(() => ({}));
                     throw new Error(errJson.message || `City "${cityName}" not found`);
@@ -1005,7 +1144,7 @@ Available Function Tools:
                           name: call.name,
                           response: {
                             output: {
-                              error: `City "${cityName}" could not be resolved or found. Explain to the user that the city could not be retrieved and ask for country or spelling.`
+                              error: `City "${cityName}" could not be resolved or weather request timed out.`
                             }
                           }
                         }
@@ -1017,10 +1156,18 @@ Available Function Tools:
                 const city1 = call.args?.city1 || 'Kampala';
                 const city2 = call.args?.city2 || 'Entebbe';
                 try {
+                  const controller1 = new AbortController();
+                  const controller2 = new AbortController();
+                  const tId1 = setTimeout(() => controller1.abort(), 5000);
+                  const tId2 = setTimeout(() => controller2.abort(), 5000);
+
                   const [res1, res2] = await Promise.all([
-                    fetch(`/api/weather/search?query=${encodeURIComponent(city1)}`),
-                    fetch(`/api/weather/search?query=${encodeURIComponent(city2)}`)
+                    fetch(`/api/weather/search?query=${encodeURIComponent(city1)}`, { signal: controller1.signal }),
+                    fetch(`/api/weather/search?query=${encodeURIComponent(city2)}`, { signal: controller2.signal })
                   ]);
+                  clearTimeout(tId1);
+                  clearTimeout(tId2);
+
                   const data1: WeatherData = await res1.json();
                   const data2: WeatherData = await res2.json();
 

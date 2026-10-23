@@ -19,6 +19,7 @@ interface AssistantModalProps {
   locationMode?: LocationMode;
   onSelectCityWeather: (data: WeatherData) => void;
   initialPrompt?: string;
+  onExecuteAction?: (action: 'SWITCH_TAB' | 'SET_MAP_LAYER' | 'RESET_GPS' | 'SEARCH_CITY', payload?: any) => void;
 }
 
 interface ChatMessage {
@@ -96,7 +97,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   activeMapLayer = 'temperature',
   locationMode = 'gps',
   onSelectCityWeather,
-  initialPrompt
+  initialPrompt,
+  onExecuteAction
 }) => {
   const [activeTab, setActiveTab] = useState<'voice' | 'chat'>('voice');
 
@@ -850,7 +852,7 @@ Available Function Tools:
 
         setVoiceError((prev) =>
           prev ||
-          `Live voice socket interrupted at stage [${STAGE_LABELS[lastStageRef.current]}] (State: ${stateStr}). Tap Start Voice to retry or switch to text chat.`
+          `Live voice connection was interrupted. Tap Try Again to reconnect or switch to Text Chat.`
         );
         stopVoiceSession('error');
       };
@@ -870,7 +872,7 @@ Available Function Tools:
         if (!isClean && lastStageRef.current !== 'assistant_audio_played' && lastStageRef.current !== 'model_response_received') {
           setVoiceError((prev) =>
             prev ||
-            `Live voice socket closed at stage [${STAGE_LABELS[lastStageRef.current]}] (${closeCode}: ${closeReason}). Tap Start Voice to reconnect.`
+            `Live voice connection was closed. Tap Try Again to reconnect or switch to Text Chat.`
           );
           stopVoiceSession('error');
         } else {
@@ -913,28 +915,28 @@ Available Function Tools:
       if (isPolicyBlocked) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone access is restricted by the embedded frame's Permissions Policy [${errName}: ${errMsg}]. Please click "Open in New Tab" below to allow microphone access directly on the page, or check "requestFramePermissions" in metadata.json.`
+          `Microphone access is restricted by the browser frame policy. Please allow microphone access in your browser settings or tap Switch to Text Chat.`
         );
       } else if (isUserDenied) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone permission was denied by browser settings [${errName}: ${errMsg}]. To enable voice, click the lock/tune icon in your browser address bar and set Microphone to "Allow", or click "Open in New Tab" below to grant permissions directly.`
+          `Microphone permission was denied. To enable live voice, allow microphone permissions in your browser address bar and tap Try Again, or switch to Text Chat.`
         );
       } else if (isNoDevice) {
         setVoiceError(
-          `No microphone hardware detected on your device [${errName}: ${errMsg}]. Please connect an audio input device or switch to Text Chat.`
+          `No microphone detected on your device. Please connect an audio input device or switch to Text Chat.`
         );
       } else if (isDeviceInUse) {
         setVoiceError(
-          `Microphone hardware could not be initialized [${errName}: ${errMsg}]. The microphone may be in use by another application (e.g. Zoom or Discord). Please close competing apps and try again.`
+          `Microphone hardware could not be initialized. The microphone may be in use by another application. Please close competing apps and try again.`
         );
       } else if (isOverconstrained) {
         setVoiceError(
-          `Microphone audio constraints failed [${errName}: ${errMsg}]. Please check your input audio device settings.`
+          `Microphone audio constraints failed. Please check your input audio device settings.`
         );
       } else {
         setVoiceError(
-          `Microphone initialisation failed [${errName}: ${errMsg}]. Please check your browser audio settings or switch to Text Chat.`
+          `Microphone initialisation failed. Please check your browser audio settings or switch to Text Chat.`
         );
       }
       stopVoiceSession('error');
@@ -1300,23 +1302,13 @@ Available Function Tools:
                     <div className="flex flex-wrap items-center gap-2.5 mt-2.5">
                       <button
                         onClick={startVoiceSession}
-                        className="text-[11px] font-bold px-3 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
+                        className="text-[11px] font-bold px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
                       >
                         Try Again
                       </button>
-                      {typeof window !== 'undefined' && window.self !== window.top && (
-                        <a
-                          href={window.location.href}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] font-bold px-3 py-1 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white transition shadow cursor-pointer"
-                        >
-                          <ArrowUpRight className="w-3 h-3" /> Open in New Tab
-                        </a>
-                      )}
                       <button
                         onClick={() => setActiveTab('chat')}
-                        className="text-[11px] font-semibold text-sky-300 hover:text-white transition cursor-pointer"
+                        className="text-[11px] font-semibold px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 hover:text-white transition cursor-pointer"
                       >
                         Switch to Text Chat →
                       </button>
@@ -1463,6 +1455,55 @@ Available Function Tools:
                 )}
                 <div ref={chatBottomRef} />
               </div>
+
+              {/* In-App Interactive Action Triggers */}
+              {onExecuteAction && (
+                <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-xs border-b border-white/10 mb-2">
+                  <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider shrink-0 self-center mr-1">
+                    In-App Actions:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExecuteAction('SWITCH_TAB', 'map');
+                      onClose();
+                    }}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-200 hover:text-white border border-sky-400/30 transition flex items-center gap-1 font-semibold"
+                  >
+                    <span>🗺️ Switch to Weather Map</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExecuteAction('SET_MAP_LAYER', 'precipitation');
+                      onClose();
+                    }}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white border border-blue-400/30 transition flex items-center gap-1 font-semibold"
+                  >
+                    <span>🌧️ Rain Layer</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExecuteAction('SET_MAP_LAYER', 'wind');
+                      onClose();
+                    }}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500 text-teal-200 hover:text-white border border-teal-400/30 transition flex items-center gap-1 font-semibold"
+                  >
+                    <span>💨 Wind Layer</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onExecuteAction('RESET_GPS');
+                      onClose();
+                    }}
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-200 hover:text-white border border-emerald-400/30 transition flex items-center gap-1 font-semibold"
+                  >
+                    <span>📍 Recenter to My Location</span>
+                  </button>
+                </div>
+              )}
 
               {/* Quick Prompt Chips */}
               <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-xs">

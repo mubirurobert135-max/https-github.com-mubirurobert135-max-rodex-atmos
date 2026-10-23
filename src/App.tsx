@@ -512,6 +512,18 @@ export default function App() {
           setLocationMode('search');
         }}
         initialPrompt={assistantPrompt}
+        onExecuteAction={(action, payload) => {
+          if (action === 'SWITCH_TAB') {
+            setActiveTab(payload || 'map');
+          } else if (action === 'SET_MAP_LAYER') {
+            setActiveTab('map');
+            if (payload) setActiveMapLayer(payload);
+          } else if (action === 'RESET_GPS') {
+            handleGetCurrentLocation();
+          } else if (action === 'SEARCH_CITY') {
+            if (payload) handleSearch(payload);
+          }
+        }}
       />
 
       {/* Smart Weather Alerts & Preferences Modal */}

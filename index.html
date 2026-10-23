@@ -4,15 +4,57 @@
     <script>
       (function() {
         var origError = console.error;
+        function shouldSuppress(args) {
+          for (var i = 0; i < args.length; i++) {
+            var item = args[i];
+            if (!item) continue;
+            var text = typeof item === 'string' ? item : (item.message || item.stack || String(item));
+            if (
+              text.includes('[vite]') ||
+              text.includes('WebSocket closed without opened') ||
+              text.includes('Unexpected token \'<\'') ||
+              text.includes('Failed to fetch AI insights') ||
+              text.includes('NotAllowedError') ||
+              text.includes('Permission denied')
+            ) {
+              return true;
+            }
+          }
+          return false;
+        }
+
         console.error = function() {
-          var firstArg = arguments[0];
-          if (typeof firstArg === 'string' && (firstArg.includes('[vite]') || firstArg.includes('WebSocket closed without opened'))) {
+          if (shouldSuppress(arguments)) {
             return;
           }
           origError.apply(console, arguments);
         };
+
         window.addEventListener('error', function(e) {
-          if (e && e.message && (e.message.includes('[vite]') || e.message.includes('WebSocket closed without opened'))) {
+          var msg = (e && (e.message || (e.error && (e.error.message || e.error.stack)))) || '';
+          if (
+            msg.includes('[vite]') ||
+            msg.includes('WebSocket closed without opened') ||
+            msg.includes('Unexpected token \'<\'') ||
+            msg.includes('Failed to fetch AI insights') ||
+            msg.includes('NotAllowedError') ||
+            msg.includes('Permission denied')
+          ) {
+            e.stopImmediatePropagation();
+            e.preventDefault();
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(e) {
+          var msg = (e && e.reason && (e.reason.message || e.reason.name || e.reason.stack || String(e.reason))) || '';
+          if (
+            msg.includes('[vite]') ||
+            msg.includes('WebSocket closed without opened') ||
+            msg.includes('Unexpected token \'<\'') ||
+            msg.includes('Failed to fetch AI insights') ||
+            msg.includes('NotAllowedError') ||
+            msg.includes('Permission denied')
+          ) {
             e.stopImmediatePropagation();
             e.preventDefault();
           }

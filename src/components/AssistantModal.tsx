@@ -132,6 +132,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const [liveTranscripts, setLiveTranscripts] = useState<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
   const [currentAssistantSpoken, setCurrentAssistantSpoken] = useState('');
   const [interimUserSpeech, setInterimUserSpeech] = useState('');
+  const [isAutoRecovering, setIsAutoRecovering] = useState(false);
 
   // Helper to safely record sequential diagnostic stages
   const recordStage = useCallback((stage: LiveConnectionStage) => {
@@ -167,6 +168,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const transcriptsBottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
   const isCompatModeRef = useRef<boolean>(false);
+  const liveTranscriptsRef = useRef<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
+
+  useEffect(() => {
+    liveTranscriptsRef.current = liveTranscripts;
+  }, [liveTranscripts]);
 
   useEffect(() => {
     isMutedRef.current = isMuted;
@@ -235,6 +241,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     // Invalidate inflight callbacks and setup state
     sessionIdRef.current += 1;
     isSetupCompleteRef.current = false;
+    setIsAutoRecovering(false);
 
     // Clear connection & setup timer
     if (connectionTimeoutRef.current) {
@@ -322,13 +329,245 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     };
   }, [stopVoiceSession]);
 
+  // Stop native WebSocket & WebAudio pipeline only (releasing hardware tracks & contexts without stopping the overall voice session)
+  const stopNativeVoicePipeline = useCallback(() => {
+    if (connectionTimeoutRef.current) {
+      clearTimeout(connectionTimeoutRef.current);
+      connectionTimeoutRef.current = null;
+    }
+
+    if (wsRef.current) {
+      wsRef.current.onclose = null;
+      wsRef.current.onerror = null;
+      wsRef.current.onmessage = null;
+      try {
+        if (wsRef.current.readyState === WebSocket.OPEN) {
+          wsRef.current.close();
+        }
+      } catch (e) {}
+      wsRef.current = null;
+    }
+
+    if (scriptProcessorRef.current) {
+      scriptProcessorRef.current.disconnect();
+      scriptProcessorRef.current = null;
+    }
+    if (silentGainRef.current) {
+      silentGainRef.current.disconnect();
+      silentGainRef.current = null;
+    }
+
+    activeSourcesRef.current.forEach((src) => {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch (e) {}
+    });
+    activeSourcesRef.current = [];
+    nextStartTimeRef.current = 0;
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    if (inputAudioCtxRef.current && inputAudioCtxRef.current.state !== 'closed') {
+      inputAudioCtxRef.current.close().catch(() => {});
+      inputAudioCtxRef.current = null;
+    }
+  }, []);
+
+  // Automatic Voice Compatibility Pipeline (Web Speech API STT -> Express Grounded AI -> Feminine Web Speech Synthesis TTS)
+  const startSpeechCompatibilitySession = useCallback(() => {
+    setVoiceError(null);
+    isCompatModeRef.current = true;
+    setVoiceState('listening');
+
+    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognitionClass) {
+      setVoiceError("Voice is temporarily unavailable in this browser. Please use Text Chat.");
+      setVoiceState('error');
+      return;
+    }
+
+    try {
+      if (recognitionRef.current) {
+        try { recognitionRef.current.abort(); } catch (e) {}
+        recognitionRef.current = null;
+      }
+
+      const recognition = new SpeechRecognitionClass();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onresult = (event: any) => {
+        let interimText = '';
+        let finalText = '';
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalText += transcript;
+          } else {
+            interimText += transcript;
+          }
+        }
+
+        if (interimText) {
+          setInterimUserSpeech(interimText);
+        }
+
+        if (finalText.trim()) {
+          const userQuery = finalText.trim();
+          setInterimUserSpeech('');
+          setLiveTranscripts((t) => [
+            ...t,
+            { sender: 'user', text: userQuery, id: 'user-' + Date.now() }
+          ]);
+
+          try { recognition.stop(); } catch (e) {}
+          setVoiceState('thinking');
+
+          // Full prior conversation history from liveTranscripts to preserve dialogue context
+          const historyPayload = liveTranscriptsRef.current.map((t) => ({
+            role: t.sender === 'user' ? 'user' : 'assistant',
+            content: t.text
+          }));
+
+          fetch('/api/ai/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: [
+                ...historyPayload,
+                { role: 'user', content: userQuery }
+              ],
+              weatherData,
+              deviceLocationData,
+              mapContextData,
+              activeMapLayer
+            })
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              if (data.updatedCityWeather?.location) {
+                onSelectCityWeather(data.updatedCityWeather);
+              }
+
+              const replyText = data.reply || "I couldn't process that weather query right now.";
+              setCurrentAssistantSpoken(replyText);
+              setLiveTranscripts((t) => [
+                ...t,
+                { sender: 'assistant', text: replyText, id: 'ast-' + Date.now() }
+              ]);
+
+              // Speak response using warm, natural feminine voice
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(replyText);
+                utterance.rate = 0.98;
+                utterance.pitch = 1.05;
+
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find((v) =>
+                  v.lang.startsWith('en') &&
+                  (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
+                ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
+
+                if (preferredVoice) {
+                  utterance.voice = preferredVoice;
+                }
+
+                setVoiceState('speaking');
+
+                utterance.onend = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                utterance.onerror = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                window.speechSynthesis.speak(utterance);
+              } else {
+                setCurrentAssistantSpoken('');
+                setVoiceState('listening');
+                if (isCompatModeRef.current) {
+                  try { recognition.start(); } catch (e) {}
+                }
+              }
+            })
+            .catch((err) => {
+              console.warn('[Voice Compatibility Notice]', err);
+              setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
+              setVoiceState('error');
+            });
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('[Speech Recognition Error]', event.error);
+        if (event.error === 'no-speech') return;
+        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          setPermissionStatus('denied');
+          setVoiceError('Microphone permission was denied. Please allow microphone access in your browser settings.');
+          setVoiceState('error');
+        }
+      };
+
+      recognition.onend = () => {
+        if (isCompatModeRef.current && voiceState === 'listening') {
+          try { recognition.start(); } catch (e) {}
+        }
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.warn('[Speech Recognition Launch Notice]', err);
+      setVoiceError('Could not launch voice recognition. Tap Retry Voice to try again.');
+      setVoiceState('error');
+    }
+  }, [weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, voiceState]);
+
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
     const tStart = performance.now();
     setVoiceError(null);
+    setIsAutoRecovering(false);
     sessionIdRef.current += 1;
     const currentSessionId = sessionIdRef.current;
     isSetupCompleteRef.current = false;
+    isCompatModeRef.current = false;
+
+    // Helper to automatically recover if native WebSocket Live audio fails
+    const triggerVoiceAutoRecovery = (): boolean => {
+      const canAutoFallback = typeof window !== 'undefined' &&
+        !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+
+      if (canAutoFallback && !isCompatModeRef.current) {
+        console.log('[RODEX Voice] Live connection interrupted or failed. Seamlessly activating Atmos voice auto-recovery pipeline.');
+        setIsAutoRecovering(true);
+        setVoiceState('connecting');
+        stopNativeVoicePipeline();
+        startSpeechCompatibilitySession();
+        return true;
+      }
+      return false;
+    };
 
     // Explicitly show requesting permission state before invoking browser prompt
     setVoiceState('requesting_permission');
@@ -453,7 +692,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       }
       connectionTimeoutRef.current = setTimeout(() => {
         if (!isSetupCompleteRef.current && sessionIdRef.current === currentSessionId) {
-          setVoiceError(`Connection to Gemini Live timed out during session setup (at stage ${STAGE_LABELS[lastStageRef.current]}). Please check your network and tap Start Voice to retry.`);
+          if (triggerVoiceAutoRecovery()) {
+            return;
+          }
+          setVoiceError('Voice connection timed out. Tap Retry Voice to try again.');
           stopVoiceSession('error');
         }
       }, 15000);
@@ -495,7 +737,7 @@ Available Function Tools:
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: 'Zephyr'
+                    voiceName: 'Aoede'
                   }
                 }
               }
@@ -615,8 +857,11 @@ Available Function Tools:
           // 0. Handle Structured Gemini Errors
           if (msg.error) {
             const errText = `Gemini Error (${msg.error.code || 'API Error'}): ${msg.error.message || msg.error.status || 'Structured setup error'}`;
-            console.error('[RODEX Live Voice Server Error]', msg.error);
-            setVoiceError(`Failed at stage [${STAGE_LABELS[lastStageRef.current]}]: ${errText}`);
+            console.warn('[RODEX Live Voice Server Notice]', msg.error);
+            if (triggerVoiceAutoRecovery()) {
+              return;
+            }
+            setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
             stopVoiceSession('error');
             return;
           }
@@ -879,10 +1124,11 @@ Available Function Tools:
           url: safeUrl
         });
 
-        setVoiceError((prev) =>
-          prev ||
-          `Live voice connection was interrupted. Tap Try Again to reconnect or switch to Text Chat.`
-        );
+        if (triggerVoiceAutoRecovery()) {
+          return;
+        }
+
+        setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
         stopVoiceSession('error');
       };
 
@@ -899,10 +1145,10 @@ Available Function Tools:
         });
 
         if (!isClean && lastStageRef.current !== 'assistant_audio_played' && lastStageRef.current !== 'model_response_received') {
-          setVoiceError((prev) =>
-            prev ||
-            `Live voice connection was closed. Tap Try Again to reconnect or switch to Text Chat.`
-          );
+          if (triggerVoiceAutoRecovery()) {
+            return;
+          }
+          setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
           stopVoiceSession('error');
         } else {
           stopVoiceSession('ended');
@@ -911,7 +1157,7 @@ Available Function Tools:
     } catch (err: any) {
       const errName = err.name || 'UnknownError';
       const errMsg = err.message || 'No detailed error message provided';
-      console.error(`[RODEX Voice Failure Diagnostic] Name: ${errName} | Message: ${errMsg}`, err);
+      console.warn(`[RODEX Voice Diagnostic] Name: ${errName} | Message: ${errMsg}`);
 
       const isPolicyBlocked =
         errName === 'SecurityError' ||
@@ -944,178 +1190,45 @@ Available Function Tools:
       if (isPolicyBlocked) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone access is restricted by the browser frame policy. Please allow microphone access in your browser settings or tap Switch to Text Chat.`
+          'Microphone access is restricted by the browser frame policy. Please allow microphone access in your browser settings.'
         );
       } else if (isUserDenied) {
         setPermissionStatus('denied');
         setVoiceError(
-          `Microphone permission was denied. To enable live voice, allow microphone permissions in your browser address bar and tap Try Again, or switch to Text Chat.`
+          'Microphone permission was denied. Please allow microphone permissions in your browser address bar and tap Retry Voice.'
         );
       } else if (isNoDevice) {
         setVoiceError(
-          `No microphone detected on your device. Please connect an audio input device or switch to Text Chat.`
+          'No microphone detected on your device. Please connect an audio input device and tap Retry Voice.'
         );
       } else if (isDeviceInUse) {
         setVoiceError(
-          `Microphone hardware could not be initialized. The microphone may be in use by another application. Please close competing apps and try again.`
+          'Microphone hardware is in use by another application. Please close competing apps and tap Retry Voice.'
         );
       } else if (isOverconstrained) {
         setVoiceError(
-          `Microphone audio constraints failed. Please check your input audio device settings.`
+          'Microphone audio constraints failed. Please check your audio settings and tap Retry Voice.'
         );
       } else {
+        if (triggerVoiceAutoRecovery()) {
+          return;
+        }
         setVoiceError(
-          `Microphone initialisation failed. Please check your browser audio settings or switch to Text Chat.`
+          'Voice is temporarily unavailable. Tap Retry Voice to try again.'
         );
       }
       stopVoiceSession('error');
     }
   };
 
-  // Voice Compatibility Mode (Web Speech API STT -> Express Grounded AI -> Web Speech Synthesis TTS)
-  const startSpeechCompatibilitySession = useCallback(() => {
-    setVoiceError(null);
-    stopVoiceSession('idle');
-    isCompatModeRef.current = true;
-    setVoiceState('listening');
-
-    const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-    if (!SpeechRecognitionClass) {
-      setVoiceError("Voice Compatibility Mode (Web Speech API) is not supported in this browser. Please use Text Chat instead.");
-      setVoiceState('error');
-      return;
+  // Single-tap voice toggle for the Atmos orb and retry button
+  const handlePrimaryVoiceTap = () => {
+    if (voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended') {
+      startVoiceSession();
+    } else {
+      stopVoiceSession('ended');
     }
-
-    try {
-      const recognition = new SpeechRecognitionClass();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
-
-      recognition.onresult = (event: any) => {
-        let interimText = '';
-        let finalText = '';
-
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalText += transcript;
-          } else {
-            interimText += transcript;
-          }
-        }
-
-        if (interimText) {
-          setInterimUserSpeech(interimText);
-        }
-
-        if (finalText.trim()) {
-          const userQuery = finalText.trim();
-          setInterimUserSpeech('');
-          setLiveTranscripts((t) => [
-            ...t,
-            { sender: 'user', text: userQuery, id: 'user-' + Date.now() }
-          ]);
-
-          try { recognition.stop(); } catch (e) {}
-          setVoiceState('thinking');
-
-          fetch('/api/ai/chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages: [
-                ...messages.map((m) => ({ role: m.role, content: m.content })),
-                { role: 'user', content: userQuery }
-              ],
-              weatherData,
-              deviceLocationData,
-              mapContextData,
-              activeMapLayer
-            })
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              if (data.updatedCityWeather?.location) {
-                onSelectCityWeather(data.updatedCityWeather);
-              }
-
-              const replyText = data.reply || "I couldn't process that weather query right now.";
-              setCurrentAssistantSpoken(replyText);
-              setLiveTranscripts((t) => [
-                ...t,
-                { sender: 'assistant', text: replyText, id: 'ast-' + Date.now() }
-              ]);
-
-              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(replyText);
-                utterance.rate = 1.0;
-                utterance.pitch = 1.0;
-
-                setVoiceState('speaking');
-
-                utterance.onend = () => {
-                  setCurrentAssistantSpoken('');
-                  if (isCompatModeRef.current) {
-                    setVoiceState('listening');
-                    try { recognition.start(); } catch (e) {}
-                  } else {
-                    setVoiceState('idle');
-                  }
-                };
-
-                utterance.onerror = () => {
-                  setCurrentAssistantSpoken('');
-                  if (isCompatModeRef.current) {
-                    setVoiceState('listening');
-                    try { recognition.start(); } catch (e) {}
-                  } else {
-                    setVoiceState('idle');
-                  }
-                };
-
-                window.speechSynthesis.speak(utterance);
-              } else {
-                setCurrentAssistantSpoken('');
-                setVoiceState('listening');
-                if (isCompatModeRef.current) {
-                  try { recognition.start(); } catch (e) {}
-                }
-              }
-            })
-            .catch((err) => {
-              console.error('[Voice Compatibility Error]', err);
-              setVoiceError('Voice compatibility mode query failed. Switch to Text Chat or try native Live voice again.');
-              setVoiceState('error');
-            });
-        }
-      };
-
-      recognition.onerror = (event: any) => {
-        console.warn('[Speech Recognition Error]', event.error);
-        if (event.error === 'no-speech') return;
-        if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
-          setPermissionStatus('denied');
-          setVoiceError('Microphone permission was denied for Web Speech API.');
-          setVoiceState('error');
-        }
-      };
-
-      recognition.onend = () => {
-        if (isCompatModeRef.current && voiceState === 'listening') {
-          try { recognition.start(); } catch (e) {}
-        }
-      };
-
-      recognitionRef.current = recognition;
-      recognition.start();
-    } catch (err: any) {
-      console.error('[Failed to start SpeechRecognition]', err);
-      setVoiceError('Could not launch browser speech recognition. Please use Text Chat.');
-      setVoiceState('error');
-    }
-  }, [messages, weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, stopVoiceSession, voiceState]);
+  };
 
   // Diagnostics metrics tracking ref
   const playbackMetricsRef = useRef({
@@ -1345,13 +1458,13 @@ Available Function Tools:
                 }`} />
                 <span className="text-xs font-medium text-white capitalize">
                   {voiceState === 'requesting_permission' && 'Requesting microphone permission...'}
-                  {voiceState === 'connecting' && 'Connecting to Gemini Live...'}
+                  {voiceState === 'connecting' && (isAutoRecovering ? 'Reconnecting Atmos voice...' : 'Connecting Atmos voice...')}
                   {voiceState === 'listening' && 'Listening to your speech...'}
-                  {voiceState === 'speaking' && 'RODEX AI is speaking...'}
-                  {voiceState === 'thinking' && 'Analyzing weather forecast...'}
-                  {voiceState === 'ended' && 'Voice chat ended • Tap Start Voice to resume'}
-                  {voiceState === 'idle' && (permissionStatus === 'denied' ? 'Microphone Permission Needed' : 'Voice Ready • Tap Start Voice')}
-                  {voiceState === 'error' && 'Session Interrupted'}
+                  {voiceState === 'speaking' && 'RODEX Atmos is speaking...'}
+                  {voiceState === 'thinking' && 'Analyzing atmospheric data...'}
+                  {voiceState === 'ended' && 'Voice ended • Tap orb to resume'}
+                  {voiceState === 'idle' && (permissionStatus === 'denied' ? 'Microphone Permission Needed' : 'Tap orb to start conversation')}
+                  {voiceState === 'error' && 'Voice Temporarily Unavailable'}
                 </span>
               </div>
 
@@ -1407,11 +1520,7 @@ Available Function Tools:
 
                 {/* Primary Mic Trigger Button */}
                 <button
-                  onClick={
-                    voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended'
-                      ? startVoiceSession
-                      : () => stopVoiceSession('ended')
-                  }
+                  onClick={handlePrimaryVoiceTap}
                   className={`w-28 h-28 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 z-10 ${
                     voiceState === 'listening'
                       ? 'bg-gradient-to-tr from-emerald-500 to-sky-500 text-white shadow-emerald-500/50 scale-105 ring-4 ring-emerald-400/50'
@@ -1444,7 +1553,7 @@ Available Function Tools:
                     {voiceState === 'requesting_permission'
                       ? 'Prompting...'
                       : voiceState === 'connecting'
-                      ? 'Connecting...'
+                      ? (isAutoRecovering ? 'Reconnecting...' : 'Connecting...')
                       : voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended'
                       ? 'Start Voice'
                       : 'End Session'}
@@ -1455,43 +1564,30 @@ Available Function Tools:
                   {voiceState === 'requesting_permission'
                     ? 'Please allow microphone access in your browser prompt'
                     : voiceState === 'connecting'
-                    ? 'Setting up secure live audio stream...'
+                    ? (isAutoRecovering ? 'Reconnecting Atmos voice...' : 'Connecting Atmos voice...')
                     : voiceState === 'listening'
                     ? 'Speak naturally: ask about any city or forecast'
                     : voiceState === 'speaking'
                     ? 'Speaking live meteorological answer'
                     : voiceState === 'ended'
-                    ? 'Voice chat ended. Tap Start Voice to resume anytime'
-                    : 'Tap Start Voice to begin real-time conversation'}
+                    ? 'Voice ended • Tap orb to resume'
+                    : 'Tap orb to speak with Atmos'}
                 </p>
               </div>
 
-              {/* Error Message if Mic access failed or session encountered an error */}
+              {/* Error Message if all voice paths fail or microphone permission is denied */}
               {voiceError && (
                 <div className="w-full max-w-md p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs text-left flex items-start gap-2.5 mb-3 animate-fade-in">
                   <AlertCircle className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-semibold mb-0.5 text-white">Voice Notice</p>
                     <p className="leading-relaxed">{voiceError}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-2.5">
+                    <div className="mt-2.5">
                       <button
-                        onClick={startVoiceSession}
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
+                        onClick={handlePrimaryVoiceTap}
+                        className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
                       >
-                        Try Native Live Again
-                      </button>
-                      <button
-                        onClick={startSpeechCompatibilitySession}
-                        className="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white transition shadow cursor-pointer flex items-center gap-1"
-                      >
-                        <Sparkles className="w-3 h-3" />
-                        <span>Voice Compatibility Mode</span>
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('chat')}
-                        className="text-[11px] font-semibold px-2.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 hover:text-white transition cursor-pointer"
-                      >
-                        Switch to Text Chat →
+                        Retry Voice
                       </button>
                     </div>
                   </div>

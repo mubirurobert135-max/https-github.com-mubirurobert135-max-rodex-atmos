@@ -30,11 +30,25 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data, onOpenAssi
           daily: data.weather.daily
         })
       });
+
+      if (!res.ok) {
+        throw new Error(`Insights endpoint returned status ${res.status}`);
+      }
+
+      const contentType = res.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        throw new Error(`Expected JSON but received ${contentType}`);
+      }
+
       const json = await res.json();
-      setInsights(json);
-      setCacheKey(currentKey);
-    } catch (err) {
-      console.error('Failed to fetch AI insights:', err);
+      if (json && json.summary) {
+        setInsights(json);
+        setCacheKey(currentKey);
+      } else {
+        throw new Error('Invalid JSON payload structure');
+      }
+    } catch (err: any) {
+      console.warn('[AI Insights Notice] Using deterministic atmospheric insights fallback:', err?.message || err);
       setInsights({
         summary: `Conditions in ${data.location.name} are currently stable with a temperature of ${Math.round(data.weather.current.temperature_2m)}°C.`,
         clothing: 'Dress comfortably according to the outdoor temperature.',

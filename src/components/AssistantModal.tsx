@@ -13,6 +13,7 @@ import {
   buildPersonalizedGreeting, 
   isFastConversationalQuery 
 } from '../utils/greetingUtils';
+import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
 
 import { LocationMode } from '../types';
 
@@ -629,6 +630,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
         if (finalText.trim()) {
           const userQuery = finalText.trim();
+          const turnTimer = new VoiceTurnTimer(`turn-${Date.now()}`);
+          turnTimer.markSpeechFinalized();
           setInterimUserSpeech('');
           setLiveTranscripts((t) => [
             ...t,
@@ -637,9 +640,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
           try { recognition.stop(); } catch (e) {}
           setVoiceState('thinking');
+          turnTimer.markRequestDispatched();
 
-          // Full prior conversation history from liveTranscripts to preserve dialogue context
-          const historyPayload = liveTranscriptsRef.current.map((t) => ({
+          // Bounded prior conversation history from liveTranscripts to preserve dialogue context
+          const historyPayload = liveTranscriptsRef.current.slice(-6).map((t) => ({
             role: t.sender === 'user' ? 'user' : 'assistant',
             content: t.text
           }));
@@ -655,11 +659,14 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               weatherData,
               deviceLocationData,
               mapContextData,
-              activeMapLayer
+              activeMapLayer,
+              synthesizeVoice: true // Single round-trip: Server generates text & synthesizes Atmos Signature audio
             })
           })
             .then((res) => res.json())
-            .then((data) => {
+            .then(async (data) => {
+              turnTimer.markTextReceived(Date.now(), data.timings);
+
               if (data.updatedCityWeather?.location) {
                 onSelectCityWeather(data.updatedCityWeather);
               }
@@ -671,78 +678,18 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 { sender: 'assistant', text: replyText, id: 'ast-' + Date.now() }
               ]);
 
-              // Speak response using RODEX Atmos Signature custom voice (voice_nv4v693k2132)
-              (async () => {
-                let playedSignature = false;
+              // Play audio directly if synthesized audio arrived with the response
+              let playedAudio = false;
+              if (data.audio) {
                 try {
-                  const synthRes = await fetch('/api/ai/synthesize-speech', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                      text: replyText,
-                      style: 'Warm, confident, personable, lightly playful, clear and concise'
-                    })
-                  });
-
-                  if (synthRes.ok) {
-                    const synthData = await synthRes.json();
-                    if (synthData.audio) {
-                      const audio = new Audio(`data:${synthData.mimeType || 'audio/wav'};base64,${synthData.audio}`);
-                      activeAudioElementRef.current = audio;
-                      setVoiceState('speaking');
-
-                      audio.onended = () => {
-                        activeAudioElementRef.current = null;
-                        setCurrentAssistantSpoken('');
-                        if (isCompatModeRef.current) {
-                          setVoiceState('listening');
-                          try { recognition.start(); } catch (e) {}
-                        } else {
-                          setVoiceState('idle');
-                        }
-                      };
-
-                      audio.onerror = () => {
-                        activeAudioElementRef.current = null;
-                        setCurrentAssistantSpoken('');
-                        if (isCompatModeRef.current) {
-                          setVoiceState('listening');
-                          try { recognition.start(); } catch (e) {}
-                        } else {
-                          setVoiceState('idle');
-                        }
-                      };
-
-                      await audio.play();
-                      playedSignature = true;
-                    }
-                  }
-                } catch (synthErr) {
-                  console.warn('[RODEX Signature Voice Notice] TTS error:', synthErr);
-                }
-
-                if (playedSignature) return;
-
-                // Fallback to browser warm feminine speech synthesis
-                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                  const utterance = new SpeechSynthesisUtterance(replyText);
-                  utterance.rate = 0.98;
-                  utterance.pitch = 1.05;
-
-                  const voices = window.speechSynthesis.getVoices();
-                  const preferredVoice = voices.find((v) =>
-                    v.lang.startsWith('en') &&
-                    (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-                  ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
-
-                  if (preferredVoice) {
-                    utterance.voice = preferredVoice;
-                  }
-
+                  const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
+                  activeAudioElementRef.current = audio;
                   setVoiceState('speaking');
+                  turnTimer.markAudioPlaybackStarted();
+                  console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
 
-                  utterance.onend = () => {
+                  audio.onended = () => {
+                    activeAudioElementRef.current = null;
                     setCurrentAssistantSpoken('');
                     if (isCompatModeRef.current) {
                       setVoiceState('listening');
@@ -752,7 +699,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                     }
                   };
 
-                  utterance.onerror = () => {
+                  audio.onerror = () => {
+                    activeAudioElementRef.current = null;
                     setCurrentAssistantSpoken('');
                     if (isCompatModeRef.current) {
                       setVoiceState('listening');
@@ -762,15 +710,64 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                     }
                   };
 
-                  window.speechSynthesis.speak(utterance);
-                } else {
-                  setCurrentAssistantSpoken('');
-                  setVoiceState('listening');
-                  if (isCompatModeRef.current) {
-                    try { recognition.start(); } catch (e) {}
-                  }
+                  await audio.play();
+                  playedAudio = true;
+                } catch (playErr) {
+                  console.warn('[RODEX Voice Notice] Audio playback error:', playErr);
                 }
-              })();
+              }
+
+              if (playedAudio) return;
+
+              // Fallback to browser warm feminine speech synthesis if no server audio was returned
+              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(replyText);
+                utterance.rate = 1.0;
+                utterance.pitch = 1.05;
+
+                const voices = window.speechSynthesis.getVoices();
+                const preferredVoice = voices.find((v) =>
+                  v.lang.startsWith('en') &&
+                  (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
+                ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
+
+                if (preferredVoice) {
+                  utterance.voice = preferredVoice;
+                }
+
+                setVoiceState('speaking');
+                turnTimer.markAudioPlaybackStarted();
+                console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+
+                utterance.onend = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                utterance.onerror = () => {
+                  setCurrentAssistantSpoken('');
+                  if (isCompatModeRef.current) {
+                    setVoiceState('listening');
+                    try { recognition.start(); } catch (e) {}
+                  } else {
+                    setVoiceState('idle');
+                  }
+                };
+
+                window.speechSynthesis.speak(utterance);
+              } else {
+                setCurrentAssistantSpoken('');
+                setVoiceState('listening');
+                if (isCompatModeRef.current) {
+                  try { recognition.start(); } catch (e) {}
+                }
+              }
             })
             .catch((err) => {
               console.warn('[Voice Compatibility Notice]', err);
@@ -798,18 +795,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       recognitionRef.current = recognition;
 
-      // Personalized time-aware initial greeting
-      if (!hasGreetedInSessionRef.current) {
-        hasGreetedInSessionRef.current = true;
-        const greetingText = buildPersonalizedGreeting(userProfile || user, weatherData?.location?.timezone);
-        speakGreeting(greetingText, () => {
-          if (isCompatModeRef.current) {
-            try { recognition.start(); } catch (e) {}
-          }
-        });
-      } else {
+      // Ensure user speaks first: Start listening immediately without unprompted greeting
+      try {
         recognition.start();
-      }
+      } catch (e) {}
     } catch (err: any) {
       console.warn('[Speech Recognition Launch Notice]', err);
       setVoiceError('Could not launch voice recognition. Tap Retry Voice to try again.');
@@ -1182,17 +1171,8 @@ Available Function Tools:
               totalTimeToReadyMs: Math.round(tSetupComplete - tStart)
             });
 
-            // Trigger personalized, time-aware initial spoken greeting once per session
-            if (!hasGreetedInSessionRef.current) {
-              hasGreetedInSessionRef.current = true;
-              const greetingText = buildPersonalizedGreeting(
-                userProfile || user,
-                weatherData?.location?.timezone
-              );
-              speakGreeting(greetingText);
-            } else {
-              setVoiceState('listening');
-            }
+            // Live session ready: enter silent listening state immediately so user speaks first
+            setVoiceState('listening');
           }
 
           // 2. Handle Model Interruption (Barge-in)

@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
 
 dotenv.config();
 
@@ -1219,8 +1220,11 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     });
   });
 
-  // Configured vocal identity: RODEX Atmos Signature (Prompted custom voice persona)
-  const ATMOS_SIGNATURE_VOICE_ID = process.env.ATMOS_SIGNATURE_VOICE_ID || 'voice_nv4v693k2132';
+  // Configured vocal identity: RODEX Atmos Signature (voice_nv4v693k2132)
+  const rawVoiceEnv = process.env.ATMOS_SIGNATURE_VOICE_ID?.trim();
+  const ATMOS_SIGNATURE_VOICE_ID = (rawVoiceEnv && rawVoiceEnv.startsWith('voice_') && rawVoiceEnv.length < 50)
+    ? rawVoiceEnv
+    : 'voice_nv4v693k2132';
 
   // Voice readiness status endpoint (checks presence of GEMINI_API_KEY and signature voice configuration)
   app.get('/api/ai/live-status', (req, res) => {
@@ -1262,25 +1266,48 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     });
   });
 
-  // Synthesize speech using RODEX Atmos Signature voice with intelligent multi-tier fallback
-  app.post('/api/ai/synthesize-speech', async (req, res) => {
-    const { text, style } = req.body || {};
+  // Cooldown cache for TTS models to prevent wasted latency on failed / rate-limited tiers
+  const ttsModelCooldowns = new Map<string, number>();
+
+  interface InternalSynthesisResult {
+    audio: string | null;
+    mimeType: string;
+    latencyMs: number;
+    voiceId: string;
+    voiceName: string;
+    fallbackToWebSpeech?: boolean;
+    message?: string;
+  }
+
+  // Optimized internal speech synthesis using approved RODEX Atmos Signature voice (voice_nv4v693k2132)
+  async function synthesizeSpeechInternal(text: string, style?: string): Promise<InternalSynthesisResult> {
     if (!text || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Text prompt is required for speech synthesis.' });
+      return {
+        audio: null,
+        mimeType: 'audio/wav',
+        latencyMs: 0,
+        voiceId: ATMOS_SIGNATURE_VOICE_ID,
+        voiceName: 'RODEX Atmos Signature',
+        fallbackToWebSpeech: true,
+        message: 'Empty text prompt'
+      };
     }
 
     if (!ai) {
-      return res.status(503).json({
-        error: 'AI_NOT_CONFIGURED',
+      return {
+        audio: null,
+        mimeType: 'audio/wav',
+        latencyMs: 0,
+        voiceId: ATMOS_SIGNATURE_VOICE_ID,
+        voiceName: 'RODEX Atmos Signature',
         fallbackToWebSpeech: true,
         message: 'Gemini API key is not configured.'
-      });
+      };
     }
 
     const tStart = Date.now();
     const styleInstruction = style || 'Warm, confident, personable, lightly playful, clear and concise';
 
-    // Helper to invoke Gemini generateContent for TTS
     const trySynthesis = async (model: string, voiceConfig: any) => {
       return await ai!.models.generateContent({
         model,
@@ -1304,75 +1331,99 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       });
     };
 
-    try {
-      let response: any = null;
-      let usedVoiceName = 'RODEX Atmos Signature (Aoede Core)';
-      let usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+    const now = Date.now();
+    let response: any = null;
+    let usedVoiceName = 'RODEX Atmos Signature';
+    let usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
 
-      // Tier 1: If a custom voice ID is configured, attempt synthesis with it
-      if (ATMOS_SIGNATURE_VOICE_ID) {
-        try {
-          response = await trySynthesis('gemini-3.8-flash-lite-tts', { voice: ATMOS_SIGNATURE_VOICE_ID });
-          usedVoiceName = 'RODEX Atmos Signature';
-        } catch (customLiteErr: any) {
-          // If custom voice is not accessible or hits quota, log diagnostic and proceed to prebuilt voice
-          const errMsg = customLiteErr?.message || '';
-          if (errMsg.includes('400') || errMsg.includes('404') || errMsg.includes('NOT_FOUND') || errMsg.includes('INVALID_ARGUMENT')) {
-            console.warn('[RODEX Voice Routing] Custom voice ID unavailable or not permitted, switching to established Aoede vocal persona.');
-          }
-        }
-      }
-
-      // Tier 2: Try fast flash-lite-tts with prebuilt Aoede (established warm feminine voice)
-      if (!response) {
+    // Tier 1: Try approved custom voice persona with ATMOS_SIGNATURE_VOICE_ID on gemini-3.8-flash-lite-tts
+    const liteCooldownUntil = ttsModelCooldowns.get('gemini-3.8-flash-lite-tts') || 0;
+    if (now > liteCooldownUntil) {
+      try {
+        response = await trySynthesis('gemini-3.8-flash-lite-tts', {
+          voice: ATMOS_SIGNATURE_VOICE_ID
+        });
+        usedVoiceName = 'RODEX Atmos Signature';
+        usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+      } catch (liteErr: any) {
+        // If custom voice parameter isn't supported directly by this tier, try prebuilt Aoede fallback while preserving signature identity
         try {
           response = await trySynthesis('gemini-3.8-flash-lite-tts', {
             prebuiltVoiceConfig: { voiceName: 'Aoede' }
           });
-          usedVoiceName = 'RODEX Atmos Signature (Aoede Core)';
-          usedVoiceId = 'Aoede';
-        } catch (liteAoedeErr: any) {
-          // Tier 3: If flash-lite is rate-limited (e.g. 429) or unavailable, try flagship flash-tts with Aoede
+          usedVoiceName = 'RODEX Atmos Signature';
+          usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+        } catch (innerErr: any) {
+          const errMsg = innerErr?.message || liteErr?.message || '';
+          const cooldownTime = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') ? 15 * 60 * 1000 : 5 * 60 * 1000;
+          console.warn(`[RODEX TTS] flash-lite-tts cooling down for ${cooldownTime / 1000}s:`, errMsg.slice(0, 100));
+          ttsModelCooldowns.set('gemini-3.8-flash-lite-tts', now + cooldownTime);
+        }
+      }
+    }
+
+    // Tier 2: Flagship flash-tts with approved voice (gemini-3.8-flash-tts)
+    if (!response) {
+      const flagshipCooldownUntil = ttsModelCooldowns.get('gemini-3.8-flash-tts') || 0;
+      if (now > flagshipCooldownUntil) {
+        try {
+          response = await trySynthesis('gemini-3.8-flash-tts', {
+            voice: ATMOS_SIGNATURE_VOICE_ID
+          });
+          usedVoiceName = 'RODEX Atmos Signature';
+          usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+        } catch (flagshipErr: any) {
           try {
             response = await trySynthesis('gemini-3.8-flash-tts', {
               prebuiltVoiceConfig: { voiceName: 'Aoede' }
             });
-            usedVoiceName = 'RODEX Atmos Signature (Aoede Flagship)';
-            usedVoiceId = 'Aoede';
-          } catch (flagshipErr: any) {
-            console.warn('[RODEX Speech Synthesis Notice] Gemini TTS quota/service temporarily unavailable:', flagshipErr?.message);
-            // Return clean non-error response informing client to use high-quality Web Speech fallback
-            return res.json({
-              audio: null,
-              fallbackToWebSpeech: true,
-              message: 'TTS quota reached. Falling back gracefully to client speech synthesis.'
-            });
+            usedVoiceName = 'RODEX Atmos Signature';
+            usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
+          } catch (innerErr: any) {
+            const errMsg = innerErr?.message || flagshipErr?.message || '';
+            console.warn('[RODEX Speech Synthesis Notice] flash-tts unavailable:', errMsg.slice(0, 100));
+            ttsModelCooldowns.set('gemini-3.8-flash-tts', now + 2 * 60 * 1000);
           }
         }
       }
+    }
 
-      const audioData = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-      const mimeType = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/wav';
+    const audioData = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    const mimeType = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/wav';
 
-      if (!audioData) {
-        return res.json({
-          audio: null,
-          fallbackToWebSpeech: true,
-          message: 'No audio data generated. Falling back gracefully to client speech synthesis.'
-        });
-      }
+    if (!audioData) {
+      return {
+        audio: null,
+        mimeType: 'audio/wav',
+        latencyMs: Date.now() - tStart,
+        voiceId: ATMOS_SIGNATURE_VOICE_ID,
+        voiceName: 'RODEX Atmos Signature',
+        fallbackToWebSpeech: true,
+        message: 'TTS service temporarily unavailable, falling back to Web Speech.'
+      };
+    }
 
-      const latencyMs = Date.now() - tStart;
-      res.json({
-        audio: audioData,
-        mimeType,
-        latencyMs,
-        voiceId: usedVoiceId,
-        voiceName: usedVoiceName
-      });
+    return {
+      audio: audioData,
+      mimeType,
+      latencyMs: Date.now() - tStart,
+      voiceId: usedVoiceId,
+      voiceName: usedVoiceName
+    };
+  }
+
+  // Synthesize speech endpoint using RODEX Atmos Signature voice
+  app.post('/api/ai/synthesize-speech', async (req, res) => {
+    const { text, style } = req.body || {};
+    if (!text || typeof text !== 'string') {
+      return res.status(400).json({ error: 'Text prompt is required for speech synthesis.' });
+    }
+
+    try {
+      const result = await synthesizeSpeechInternal(text, style);
+      res.json(result);
     } catch (err: any) {
       console.warn('[RODEX Speech Synthesis Warning]', err?.message || err);
-      // Gracefully signal Web Speech fallback instead of 500 error
       res.json({
         audio: null,
         fallbackToWebSpeech: true,
@@ -1510,27 +1561,69 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     return [];
   }
 
-  // Server-side text chat endpoint with weather tool grounding
+  // Server-side text chat endpoint with weather tool grounding and optional direct voice synthesis
   app.post('/api/ai/chat', async (req, res) => {
-    const { messages, weatherData, deviceLocationData, mapContextData, activeMapLayer } = req.body || {};
+    const tReqStart = Date.now();
+    let weatherFetchMs = 0;
+    let aiGenMs = 0;
+
+    const { 
+      messages, 
+      weatherData, 
+      deviceLocationData, 
+      mapContextData, 
+      activeMapLayer, 
+      synthesizeVoice = false 
+    } = req.body || {};
+
     try {
-      const lastUserMsg = (messages?.[messages.length - 1]?.content || '');
+      const lastUserMsg = (messages?.[messages.length - 1]?.content || '').trim();
+
+      // Helper to respond with optional direct speech synthesis in a single round-trip
+      const sendChatResponse = async (replyText: string, cityUpdate: any = null) => {
+        if (!synthesizeVoice) {
+          return res.json({
+            reply: replyText,
+            updatedCityWeather: cityUpdate,
+            timings: {
+              weatherMs: weatherFetchMs,
+              aiMs: aiGenMs,
+              ttsMs: 0,
+              totalMs: Date.now() - tReqStart
+            }
+          });
+        }
+
+        const tTtsStart = Date.now();
+        const synth = await synthesizeSpeechInternal(replyText);
+        const ttsMs = Date.now() - tTtsStart;
+
+        return res.json({
+          reply: replyText,
+          audio: synth.audio,
+          mimeType: synth.mimeType,
+          voiceId: synth.voiceId,
+          voiceName: synth.voiceName,
+          fallbackToWebSpeech: synth.fallbackToWebSpeech,
+          updatedCityWeather: cityUpdate,
+          timings: {
+            weatherMs: weatherFetchMs,
+            aiMs: aiGenMs,
+            ttsMs,
+            totalMs: Date.now() - tReqStart
+          }
+        });
+      };
 
       // Fast conversational routing: short-circuit pure greetings or thanks without invoking geocoding/weather APIs
       const isPureGreeting = /^\s*(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|good morning|good afternoon|good evening|howdy|sup)\s*[.?!]*$/i.test(lastUserMsg);
       const isPureThanks = /^\s*(?:thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)\s*[.?!]*$/i.test(lastUserMsg);
 
       if (isPureGreeting) {
-        return res.json({
-          reply: "Hey! I'm here and ready. How can I help with your weather today?",
-          updatedCityWeather: null
-        });
+        return await sendChatResponse("Hey! I'm here and ready. How can I help with your weather today?");
       }
       if (isPureThanks) {
-        return res.json({
-          reply: "You're very welcome! Let me know whenever you need more weather insights.",
-          updatedCityWeather: null
-        });
+        return await sendChatResponse("You're very welcome! Let me know whenever you need more weather insights.");
       }
 
       const comparisonCities = extractMultipleCitiesFromQuery(lastUserMsg);
@@ -1547,6 +1640,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       // Handle Multi-City Comparison Queries (e.g., "Compare Kampala and Entebbe")
       if (comparisonCities.length === 2) {
         try {
+          const tWeatherStart = Date.now();
           const [data1, data2] = await Promise.all([
             routeForecastRequest(async (provider) => {
               if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[0]);
@@ -1559,6 +1653,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
               else return await fetchOpenMeteo(comparisonCities[1]);
             }, `search:${comparisonCities[1].toLowerCase().trim()}`)
           ]);
+          weatherFetchMs = Date.now() - tWeatherStart;
 
           targetWeatherData = data1;
           updatedCityWeather = data1;
@@ -1590,26 +1685,35 @@ GROUNDED LOCATION COMPARISON (CURRENT vs SELECTED MAP POINT):
 - Selected Map Location (${loc2.location.name}, ${loc2.location.country || ''}): ${temp2}°C, ${cond2}, ${loc2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(loc2.weather.current.wind_speed_10m)} km/h.
 Compare current location against the selected map location directly and clearly.`;
       } else if (requestedCity) {
-        // 1. Single City Query
-        try {
-          const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
-          const fetchedData = await routeForecastRequest(async (provider) => {
-            if (provider.name === 'WeatherAPI.com') {
-              return await fetchWeatherAPI(requestedCity);
-            } else if (provider.name === 'OpenWeather') {
-              return await fetchOpenWeather(requestedCity);
-            } else {
-              return await fetchOpenMeteo(requestedCity);
-            }
-          }, cacheKey);
+        // Reuse fresh client-provided weather if it already matches the requested city
+        const activeName = targetWeatherData?.location?.name || weatherData?.location?.name;
+        const isAlreadyLoaded = activeName && requestedCity.toLowerCase() === activeName.toLowerCase() && targetWeatherData?.weather?.current;
 
-          targetWeatherData = fetchedData;
-          updatedCityWeather = fetchedData;
-        } catch (fetchErr: any) {
-          return res.json({
-            reply: `I could not locate "${requestedCity}" via our geocoding service. Could you please check the spelling or provide the country (for example, "${requestedCity}, Uganda")?`,
-            updatedCityWeather: null
-          });
+        if (isAlreadyLoaded) {
+          // Zero external latency - reuse verified in-memory dataset
+          targetWeatherData = targetWeatherData || weatherData;
+        } else {
+          try {
+            const tWeatherStart = Date.now();
+            const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
+            const fetchedData = await routeForecastRequest(async (provider) => {
+              if (provider.name === 'WeatherAPI.com') {
+                return await fetchWeatherAPI(requestedCity);
+              } else if (provider.name === 'OpenWeather') {
+                return await fetchOpenWeather(requestedCity);
+              } else {
+                return await fetchOpenMeteo(requestedCity);
+              }
+            }, cacheKey);
+            weatherFetchMs = Date.now() - tWeatherStart;
+
+            targetWeatherData = fetchedData;
+            updatedCityWeather = fetchedData;
+          } catch (fetchErr: any) {
+            return await sendChatResponse(
+              `I could not locate "${requestedCity}" via our geocoding service. Could you please check the spelling or provide the country (for example, "${requestedCity}, Uganda")?`
+            );
+          }
         }
       }
 
@@ -1630,6 +1734,16 @@ Compare current location against the selected map location directly and clearly.
       const hourly = targetWeatherData?.weather?.hourly;
       const daily = targetWeatherData?.weather?.daily;
       const devLocation = deviceLocationData?.location;
+
+      // FAST PATH: Check if this is a direct current observation query (e.g. "What's the weather like right now?", "What's the temperature?", "Is it raining?")
+      if (isDirectCurrentWeatherQuery(lastUserMsg, location?.name) && location && current) {
+        aiGenMs = 1;
+        const fastReply = buildGroundedWeatherReply(
+          { location, current },
+          lastUserMsg
+        );
+        return await sendChatResponse(fastReply, updatedCityWeather);
+      }
 
       // Layer explanation context
       const activeLayerName = activeMapLayer || 'temperature';
@@ -1691,8 +1805,8 @@ STRICT GROUNDING & LOCATION RULES:
 3. Selected Map Location Context: ${mapContextData?.location?.name ? mapContextData.location.name + (mapContextData.location.country ? ', ' + mapContextData.location.country : '') : location?.name || 'None'}.
 4. Explicit Location Override: If user names a specific city in their prompt (e.g. "What's the weather in Entebbe?"), prioritize that explicit city over map or device location.
 5. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
-6. Keep replies conversational, concise (1-2 sentences), and directly answer the question.
-7. Umbrella / Rain Queries: If user asks "Will it rain?" or "Should I carry an umbrella?", check precipitation volume (${precip} mm) and upcoming hourly rain percentages. Recommend an umbrella if rain probability exceeds 30% or precipitation > 0mm.
+6. Keep replies conversational, concise (strictly 1-2 natural sentences, under 35 words), and directly answer the question.
+7. Rain Queries: Distinguish current rain (precipitation: ${precip}mm, code: ${current?.weather_code ?? 0}) from future probability. Do NOT state it is currently raining unless precipitation > 0mm.
 8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
 9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
 
@@ -1709,48 +1823,64 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
 - 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
 
-      // If AI client is available, try Gemini
+      // Bounded conversation history (last 6 turns) to preserve context while keeping token count and latency minimal
+      const boundedMessages = boundConversationHistory(messages || [], 6);
+
+      // If AI client is available, generate concise response with 3500ms timeout failover
       if (ai) {
         try {
-          const conversationContents = messages.map((m: any) => ({
+          const tAiStart = Date.now();
+          const conversationContents = boundedMessages.map((m: any) => ({
             role: m.role === 'assistant' ? 'model' : 'user',
             parts: [{ text: m.content }]
           }));
 
-          let response: any;
-          try {
-            response = await ai.models.generateContent({
-              model: 'gemini-3.1-flash-lite',
-              contents: conversationContents,
-              config: { systemInstruction }
-            });
-          } catch (liteErr) {
-            response = await ai.models.generateContent({
-              model: 'gemini-3.8-flash',
-              contents: conversationContents,
-              config: { systemInstruction }
-            });
-          }
+          const generateWithTimeout = async () => {
+            try {
+              return await ai!.models.generateContent({
+                model: 'gemini-3.8-flash',
+                contents: conversationContents,
+                config: { systemInstruction }
+              });
+            } catch (flashErr) {
+              return await ai!.models.generateContent({
+                model: 'gemini-3.1-flash-lite',
+                contents: conversationContents,
+                config: { systemInstruction }
+              });
+            }
+          };
+
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('AI generation service timeout (3500ms)')), 3500)
+          );
+
+          const response: any = await Promise.race([generateWithTimeout(), timeoutPromise]);
+          aiGenMs = Date.now() - tAiStart;
 
           if (response?.text) {
-            return res.json({
-              reply: response.text,
-              updatedCityWeather
-            });
+            return await sendChatResponse(response.text.trim(), updatedCityWeather);
           }
-        } catch (aiErr) {
-          // Fall through to deterministic grounded answer below
+        } catch (aiErr: any) {
+          console.warn('[RODEX Chat AI Notice] Fast failover to grounded atmospheric response:', aiErr?.message || aiErr);
         }
       }
 
       // Grounded deterministic response using provider fields
-      const reply = `In ${location?.name}${location?.country ? ', ' + location.country : ''}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}°C (feels like ${feelsLike}°C) with ${humidity}% humidity and wind at ${wind} km/h.`;
+      let fallbackReply = `In ${location?.name}${location?.country ? ', ' + location.country : ''}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}°C (feels like ${feelsLike}°C) with ${humidity}% humidity and wind at ${wind} km/h.`;
 
-      res.json({
-        reply,
-        updatedCityWeather
-      });
+      if (/\b(wear|clothes|dress|jacket|coat)\b/i.test(lastUserMsg)) {
+        if (temp < 15) fallbackReply = `In ${location?.name}, it's ${temp}°C with ${conditionLabel.toLowerCase()}. A warm jacket or sweater layers are recommended today.`;
+        else if (temp > 24) fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Breathable lightweight cottons and sunglasses are ideal today.`;
+        else fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Comfortable light layers or a casual jacket will keep you feeling great.`;
+      } else if (/\b(umbrella|rain)\b/i.test(lastUserMsg)) {
+        if (precip > 0 || (current?.weather_code ?? 0) >= 51) fallbackReply = `In ${location?.name}, rain is actively falling. You will definitely want an umbrella.`;
+        else fallbackReply = `In ${location?.name}, no rain is falling right now with ${conditionLabel.toLowerCase()} conditions.`;
+      }
+
+      return await sendChatResponse(fallbackReply, updatedCityWeather);
     } catch (err: any) {
+      console.error('Chat error:', err);
       res.status(500).json({
         error: 'CHAT_FAILED',
         message: err.message || 'Failed to process chat message.'

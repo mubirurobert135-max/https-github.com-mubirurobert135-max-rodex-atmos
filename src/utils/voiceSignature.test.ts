@@ -1,21 +1,35 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {
+  ATMOS_SIGNATURE_VOICE_ID,
+  ATMOS_SIGNATURE_VOICE_NAME,
+  ATMOS_SIGNATURE_GENDER,
+  ATMOS_SIGNATURE_TTS_MODEL,
+  ATMOS_SIGNATURE_LIVE_VOICE,
+  ATMOS_SIGNATURE_STYLE,
+  ATMOS_SIGNATURE_AUDITION_URL,
+  ATMOS_SIGNATURE_METADATA
+} from './voiceSignature';
 
 test('RODEX Atmos Signature voice metadata and configuration constants', () => {
-  const VOICE_ID = 'voice_nv4v693k2132';
-  const VOICE_NAME = 'RODEX Atmos Signature';
-  const GENDER = 'female';
-  const LIVE_FALLBACK_VOICE = 'Aoede';
+  assert.equal(ATMOS_SIGNATURE_VOICE_ID, 'voice_nv4v693k2132');
+  assert.equal(ATMOS_SIGNATURE_VOICE_NAME, 'RODEX Atmos Signature');
+  assert.equal(ATMOS_SIGNATURE_GENDER, 'female');
+  assert.equal(ATMOS_SIGNATURE_TTS_MODEL, 'gemini-3.8-flash-lite-tts');
+  assert.equal(ATMOS_SIGNATURE_LIVE_VOICE, 'Aoede');
+  assert.equal(ATMOS_SIGNATURE_AUDITION_URL, '/atmos-signature-audition.wav');
+});
 
-  assert.equal(VOICE_ID.startsWith('voice_'), true);
-  assert.equal(VOICE_NAME, 'RODEX Atmos Signature');
-  assert.equal(GENDER, 'female');
-  assert.equal(LIVE_FALLBACK_VOICE, 'Aoede');
+test('RODEX Atmos Signature metadata structure matches API contract', () => {
+  assert.equal(ATMOS_SIGNATURE_METADATA.id, 'voice_nv4v693k2132');
+  assert.equal(ATMOS_SIGNATURE_METADATA.displayName, 'RODEX Atmos Signature');
+  assert.equal(ATMOS_SIGNATURE_METADATA.gender, 'female');
+  assert.equal(ATMOS_SIGNATURE_METADATA.hasAuditionSample, true);
+  assert.equal(ATMOS_SIGNATURE_METADATA.auditionUrl, '/atmos-signature-audition.wav');
 });
 
 test('Speech style instruction conforms to natural delivery specifications', () => {
-  const defaultStyle = 'Warm, confident, personable, lightly playful, clear and concise';
-  assert.equal(defaultStyle.includes('Warm'), true);
-  assert.equal(defaultStyle.includes('confident'), true);
-  assert.equal(defaultStyle.includes('concise'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('Warm'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('confident'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('concise'), true);
 });

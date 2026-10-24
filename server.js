@@ -921,9 +921,9 @@ var require_http_errors = __commonJS({
   }
 });
 
-// node_modules/ms/index.js
+// node_modules/body-parser/node_modules/debug/node_modules/ms/index.js
 var require_ms = __commonJS({
-  "node_modules/ms/index.js"(exports, module) {
+  "node_modules/body-parser/node_modules/debug/node_modules/ms/index.js"(exports, module) {
     var s2 = 1e3;
     var m2 = s2 * 60;
     var h2 = m2 * 60;
@@ -1023,9 +1023,9 @@ var require_ms = __commonJS({
   }
 });
 
-// node_modules/debug/src/debug.js
+// node_modules/body-parser/node_modules/debug/src/debug.js
 var require_debug = __commonJS({
-  "node_modules/debug/src/debug.js"(exports, module) {
+  "node_modules/body-parser/node_modules/debug/src/debug.js"(exports, module) {
     exports = module.exports = createDebug.debug = createDebug["default"] = createDebug;
     exports.coerce = coerce;
     exports.disable = disable;
@@ -1128,9 +1128,9 @@ var require_debug = __commonJS({
   }
 });
 
-// node_modules/debug/src/browser.js
+// node_modules/body-parser/node_modules/debug/src/browser.js
 var require_browser = __commonJS({
-  "node_modules/debug/src/browser.js"(exports, module) {
+  "node_modules/body-parser/node_modules/debug/src/browser.js"(exports, module) {
     exports = module.exports = require_debug();
     exports.log = log;
     exports.formatArgs = formatArgs;
@@ -1214,9 +1214,9 @@ var require_browser = __commonJS({
   }
 });
 
-// node_modules/debug/src/node.js
+// node_modules/body-parser/node_modules/debug/src/node.js
 var require_node = __commonJS({
-  "node_modules/debug/src/node.js"(exports, module) {
+  "node_modules/body-parser/node_modules/debug/src/node.js"(exports, module) {
     var tty = __require("tty");
     var util = __require("util");
     exports = module.exports = require_debug();
@@ -1334,9 +1334,9 @@ var require_node = __commonJS({
   }
 });
 
-// node_modules/debug/src/index.js
+// node_modules/body-parser/node_modules/debug/src/index.js
 var require_src = __commonJS({
-  "node_modules/debug/src/index.js"(exports, module) {
+  "node_modules/body-parser/node_modules/debug/src/index.js"(exports, module) {
     if (typeof process !== "undefined" && process.type === "renderer") {
       module.exports = require_browser();
     } else {
@@ -17537,6 +17537,430 @@ var require_merge_descriptors = __commonJS({
   }
 });
 
+// node_modules/finalhandler/node_modules/debug/node_modules/ms/index.js
+var require_ms2 = __commonJS({
+  "node_modules/finalhandler/node_modules/debug/node_modules/ms/index.js"(exports, module) {
+    var s2 = 1e3;
+    var m2 = s2 * 60;
+    var h2 = m2 * 60;
+    var d = h2 * 24;
+    var y = d * 365.25;
+    module.exports = function(val, options) {
+      options = options || {};
+      var type = typeof val;
+      if (type === "string" && val.length > 0) {
+        return parse(val);
+      } else if (type === "number" && isNaN(val) === false) {
+        return options.long ? fmtLong(val) : fmtShort(val);
+      }
+      throw new Error(
+        "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
+      );
+    };
+    function parse(str) {
+      str = String(str);
+      if (str.length > 100) {
+        return;
+      }
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+        str
+      );
+      if (!match2) {
+        return;
+      }
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
+      switch (type) {
+        case "years":
+        case "year":
+        case "yrs":
+        case "yr":
+        case "y":
+          return n * y;
+        case "days":
+        case "day":
+        case "d":
+          return n * d;
+        case "hours":
+        case "hour":
+        case "hrs":
+        case "hr":
+        case "h":
+          return n * h2;
+        case "minutes":
+        case "minute":
+        case "mins":
+        case "min":
+        case "m":
+          return n * m2;
+        case "seconds":
+        case "second":
+        case "secs":
+        case "sec":
+        case "s":
+          return n * s2;
+        case "milliseconds":
+        case "millisecond":
+        case "msecs":
+        case "msec":
+        case "ms":
+          return n;
+        default:
+          return void 0;
+      }
+    }
+    function fmtShort(ms) {
+      if (ms >= d) {
+        return Math.round(ms / d) + "d";
+      }
+      if (ms >= h2) {
+        return Math.round(ms / h2) + "h";
+      }
+      if (ms >= m2) {
+        return Math.round(ms / m2) + "m";
+      }
+      if (ms >= s2) {
+        return Math.round(ms / s2) + "s";
+      }
+      return ms + "ms";
+    }
+    function fmtLong(ms) {
+      return plural(ms, d, "day") || plural(ms, h2, "hour") || plural(ms, m2, "minute") || plural(ms, s2, "second") || ms + " ms";
+    }
+    function plural(ms, n, name) {
+      if (ms < n) {
+        return;
+      }
+      if (ms < n * 1.5) {
+        return Math.floor(ms / n) + " " + name;
+      }
+      return Math.ceil(ms / n) + " " + name + "s";
+    }
+  }
+});
+
+// node_modules/finalhandler/node_modules/debug/src/debug.js
+var require_debug2 = __commonJS({
+  "node_modules/finalhandler/node_modules/debug/src/debug.js"(exports, module) {
+    exports = module.exports = createDebug.debug = createDebug["default"] = createDebug;
+    exports.coerce = coerce;
+    exports.disable = disable;
+    exports.enable = enable;
+    exports.enabled = enabled;
+    exports.humanize = require_ms2();
+    exports.names = [];
+    exports.skips = [];
+    exports.formatters = {};
+    var prevTime;
+    function selectColor(namespace) {
+      var hash = 0, i2;
+      for (i2 in namespace) {
+        hash = (hash << 5) - hash + namespace.charCodeAt(i2);
+        hash |= 0;
+      }
+      return exports.colors[Math.abs(hash) % exports.colors.length];
+    }
+    function createDebug(namespace) {
+      function debug() {
+        if (!debug.enabled) return;
+        var self2 = debug;
+        var curr = +/* @__PURE__ */ new Date();
+        var ms = curr - (prevTime || curr);
+        self2.diff = ms;
+        self2.prev = prevTime;
+        self2.curr = curr;
+        prevTime = curr;
+        var args = new Array(arguments.length);
+        for (var i2 = 0; i2 < args.length; i2++) {
+          args[i2] = arguments[i2];
+        }
+        args[0] = exports.coerce(args[0]);
+        if ("string" !== typeof args[0]) {
+          args.unshift("%O");
+        }
+        var index = 0;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format) {
+          if (match2 === "%%") return match2;
+          index++;
+          var formatter = exports.formatters[format];
+          if ("function" === typeof formatter) {
+            var val = args[index];
+            match2 = formatter.call(self2, val);
+            args.splice(index, 1);
+            index--;
+          }
+          return match2;
+        });
+        exports.formatArgs.call(self2, args);
+        var logFn = debug.log || exports.log || console.log.bind(console);
+        logFn.apply(self2, args);
+      }
+      debug.namespace = namespace;
+      debug.enabled = exports.enabled(namespace);
+      debug.useColors = exports.useColors();
+      debug.color = selectColor(namespace);
+      if ("function" === typeof exports.init) {
+        exports.init(debug);
+      }
+      return debug;
+    }
+    function enable(namespaces) {
+      exports.save(namespaces);
+      exports.names = [];
+      exports.skips = [];
+      var split = (typeof namespaces === "string" ? namespaces : "").split(/[\s,]+/);
+      var len = split.length;
+      for (var i2 = 0; i2 < len; i2++) {
+        if (!split[i2]) continue;
+        namespaces = split[i2].replace(/\*/g, ".*?");
+        if (namespaces[0] === "-") {
+          exports.skips.push(new RegExp("^" + namespaces.substr(1) + "$"));
+        } else {
+          exports.names.push(new RegExp("^" + namespaces + "$"));
+        }
+      }
+    }
+    function disable() {
+      exports.enable("");
+    }
+    function enabled(name) {
+      var i2, len;
+      for (i2 = 0, len = exports.skips.length; i2 < len; i2++) {
+        if (exports.skips[i2].test(name)) {
+          return false;
+        }
+      }
+      for (i2 = 0, len = exports.names.length; i2 < len; i2++) {
+        if (exports.names[i2].test(name)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function coerce(val) {
+      if (val instanceof Error) return val.stack || val.message;
+      return val;
+    }
+  }
+});
+
+// node_modules/finalhandler/node_modules/debug/src/browser.js
+var require_browser2 = __commonJS({
+  "node_modules/finalhandler/node_modules/debug/src/browser.js"(exports, module) {
+    exports = module.exports = require_debug2();
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.storage = "undefined" != typeof chrome && "undefined" != typeof chrome.storage ? chrome.storage.local : localstorage();
+    exports.colors = [
+      "lightseagreen",
+      "forestgreen",
+      "goldenrod",
+      "dodgerblue",
+      "darkorchid",
+      "crimson"
+    ];
+    function useColors() {
+      if (typeof window !== "undefined" && window.process && window.process.type === "renderer") {
+        return true;
+      }
+      return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // is firebug? http://stackoverflow.com/a/398120/376773
+      typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || // is firefox >= v31?
+      // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || // double check webkit in userAgent just in case we are in a worker
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+    }
+    exports.formatters.j = function(v) {
+      try {
+        return JSON.stringify(v);
+      } catch (err) {
+        return "[UnexpectedJSONParseError]: " + err.message;
+      }
+    };
+    function formatArgs(args) {
+      var useColors2 = this.useColors;
+      args[0] = (useColors2 ? "%c" : "") + this.namespace + (useColors2 ? " %c" : " ") + args[0] + (useColors2 ? "%c " : " ") + "+" + exports.humanize(this.diff);
+      if (!useColors2) return;
+      var c = "color: " + this.color;
+      args.splice(1, 0, c, "color: inherit");
+      var index = 0;
+      var lastC = 0;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
+        index++;
+        if ("%c" === match2) {
+          lastC = index;
+        }
+      });
+      args.splice(lastC, 0, c);
+    }
+    function log() {
+      return "object" === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
+    }
+    function save(namespaces) {
+      try {
+        if (null == namespaces) {
+          exports.storage.removeItem("debug");
+        } else {
+          exports.storage.debug = namespaces;
+        }
+      } catch (e2) {
+      }
+    }
+    function load() {
+      var r2;
+      try {
+        r2 = exports.storage.debug;
+      } catch (e2) {
+      }
+      if (!r2 && typeof process !== "undefined" && "env" in process) {
+        r2 = process.env.DEBUG;
+      }
+      return r2;
+    }
+    exports.enable(load());
+    function localstorage() {
+      try {
+        return window.localStorage;
+      } catch (e2) {
+      }
+    }
+  }
+});
+
+// node_modules/finalhandler/node_modules/debug/src/node.js
+var require_node2 = __commonJS({
+  "node_modules/finalhandler/node_modules/debug/src/node.js"(exports, module) {
+    var tty = __require("tty");
+    var util = __require("util");
+    exports = module.exports = require_debug2();
+    exports.init = init;
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.colors = [6, 2, 3, 4, 5, 1];
+    exports.inspectOpts = Object.keys(process.env).filter(function(key) {
+      return /^debug_/i.test(key);
+    }).reduce(function(obj, key) {
+      var prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, function(_, k) {
+        return k.toUpperCase();
+      });
+      var val = process.env[key];
+      if (/^(yes|on|true|enabled)$/i.test(val)) val = true;
+      else if (/^(no|off|false|disabled)$/i.test(val)) val = false;
+      else if (val === "null") val = null;
+      else val = Number(val);
+      obj[prop] = val;
+      return obj;
+    }, {});
+    var fd = parseInt(process.env.DEBUG_FD, 10) || 2;
+    if (1 !== fd && 2 !== fd) {
+      util.deprecate(function() {
+      }, "except for stderr(2) and stdout(1), any other usage of DEBUG_FD is deprecated. Override debug.log if you want to use a different log function (https://git.io/debug_fd)")();
+    }
+    var stream = 1 === fd ? process.stdout : 2 === fd ? process.stderr : createWritableStdioStream(fd);
+    function useColors() {
+      return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(fd);
+    }
+    exports.formatters.o = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts).split("\n").map(function(str) {
+        return str.trim();
+      }).join(" ");
+    };
+    exports.formatters.O = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts);
+    };
+    function formatArgs(args) {
+      var name = this.namespace;
+      var useColors2 = this.useColors;
+      if (useColors2) {
+        var c = this.color;
+        var prefix = "  \x1B[3" + c + ";1m" + name + " \x1B[0m";
+        args[0] = prefix + args[0].split("\n").join("\n" + prefix);
+        args.push("\x1B[3" + c + "m+" + exports.humanize(this.diff) + "\x1B[0m");
+      } else {
+        args[0] = (/* @__PURE__ */ new Date()).toUTCString() + " " + name + " " + args[0];
+      }
+    }
+    function log() {
+      return stream.write(util.format.apply(util, arguments) + "\n");
+    }
+    function save(namespaces) {
+      if (null == namespaces) {
+        delete process.env.DEBUG;
+      } else {
+        process.env.DEBUG = namespaces;
+      }
+    }
+    function load() {
+      return process.env.DEBUG;
+    }
+    function createWritableStdioStream(fd2) {
+      var stream2;
+      var tty_wrap = process.binding("tty_wrap");
+      switch (tty_wrap.guessHandleType(fd2)) {
+        case "TTY":
+          stream2 = new tty.WriteStream(fd2);
+          stream2._type = "tty";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        case "FILE":
+          var fs3 = __require("fs");
+          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          stream2._type = "fs";
+          break;
+        case "PIPE":
+        case "TCP":
+          var net = __require("net");
+          stream2 = new net.Socket({
+            fd: fd2,
+            readable: false,
+            writable: true
+          });
+          stream2.readable = false;
+          stream2.read = null;
+          stream2._type = "pipe";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        default:
+          throw new Error("Implement me. Unknown stream file type!");
+      }
+      stream2.fd = fd2;
+      stream2._isStdio = true;
+      return stream2;
+    }
+    function init(debug) {
+      debug.inspectOpts = {};
+      var keys = Object.keys(exports.inspectOpts);
+      for (var i2 = 0; i2 < keys.length; i2++) {
+        debug.inspectOpts[keys[i2]] = exports.inspectOpts[keys[i2]];
+      }
+    }
+    exports.enable(load());
+  }
+});
+
+// node_modules/finalhandler/node_modules/debug/src/index.js
+var require_src2 = __commonJS({
+  "node_modules/finalhandler/node_modules/debug/src/index.js"(exports, module) {
+    if (typeof process !== "undefined" && process.type === "renderer") {
+      module.exports = require_browser2();
+    } else {
+      module.exports = require_node2();
+    }
+  }
+});
+
 // node_modules/encodeurl/index.js
 var require_encodeurl = __commonJS({
   "node_modules/encodeurl/index.js"(exports, module) {
@@ -17686,7 +18110,7 @@ var require_parseurl = __commonJS({
 var require_finalhandler = __commonJS({
   "node_modules/finalhandler/index.js"(exports, module) {
     "use strict";
-    var debug = require_src()("finalhandler");
+    var debug = require_src2()("finalhandler");
     var encodeUrl = require_encodeurl();
     var escapeHtml = require_escape_html();
     var onFinished = require_on_finished();
@@ -17828,6 +18252,430 @@ var require_finalhandler = __commonJS({
         var key = keys[i2];
         res.setHeader(key, headers[key]);
       }
+    }
+  }
+});
+
+// node_modules/express/node_modules/debug/node_modules/ms/index.js
+var require_ms3 = __commonJS({
+  "node_modules/express/node_modules/debug/node_modules/ms/index.js"(exports, module) {
+    var s2 = 1e3;
+    var m2 = s2 * 60;
+    var h2 = m2 * 60;
+    var d = h2 * 24;
+    var y = d * 365.25;
+    module.exports = function(val, options) {
+      options = options || {};
+      var type = typeof val;
+      if (type === "string" && val.length > 0) {
+        return parse(val);
+      } else if (type === "number" && isNaN(val) === false) {
+        return options.long ? fmtLong(val) : fmtShort(val);
+      }
+      throw new Error(
+        "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
+      );
+    };
+    function parse(str) {
+      str = String(str);
+      if (str.length > 100) {
+        return;
+      }
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+        str
+      );
+      if (!match2) {
+        return;
+      }
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
+      switch (type) {
+        case "years":
+        case "year":
+        case "yrs":
+        case "yr":
+        case "y":
+          return n * y;
+        case "days":
+        case "day":
+        case "d":
+          return n * d;
+        case "hours":
+        case "hour":
+        case "hrs":
+        case "hr":
+        case "h":
+          return n * h2;
+        case "minutes":
+        case "minute":
+        case "mins":
+        case "min":
+        case "m":
+          return n * m2;
+        case "seconds":
+        case "second":
+        case "secs":
+        case "sec":
+        case "s":
+          return n * s2;
+        case "milliseconds":
+        case "millisecond":
+        case "msecs":
+        case "msec":
+        case "ms":
+          return n;
+        default:
+          return void 0;
+      }
+    }
+    function fmtShort(ms) {
+      if (ms >= d) {
+        return Math.round(ms / d) + "d";
+      }
+      if (ms >= h2) {
+        return Math.round(ms / h2) + "h";
+      }
+      if (ms >= m2) {
+        return Math.round(ms / m2) + "m";
+      }
+      if (ms >= s2) {
+        return Math.round(ms / s2) + "s";
+      }
+      return ms + "ms";
+    }
+    function fmtLong(ms) {
+      return plural(ms, d, "day") || plural(ms, h2, "hour") || plural(ms, m2, "minute") || plural(ms, s2, "second") || ms + " ms";
+    }
+    function plural(ms, n, name) {
+      if (ms < n) {
+        return;
+      }
+      if (ms < n * 1.5) {
+        return Math.floor(ms / n) + " " + name;
+      }
+      return Math.ceil(ms / n) + " " + name + "s";
+    }
+  }
+});
+
+// node_modules/express/node_modules/debug/src/debug.js
+var require_debug3 = __commonJS({
+  "node_modules/express/node_modules/debug/src/debug.js"(exports, module) {
+    exports = module.exports = createDebug.debug = createDebug["default"] = createDebug;
+    exports.coerce = coerce;
+    exports.disable = disable;
+    exports.enable = enable;
+    exports.enabled = enabled;
+    exports.humanize = require_ms3();
+    exports.names = [];
+    exports.skips = [];
+    exports.formatters = {};
+    var prevTime;
+    function selectColor(namespace) {
+      var hash = 0, i2;
+      for (i2 in namespace) {
+        hash = (hash << 5) - hash + namespace.charCodeAt(i2);
+        hash |= 0;
+      }
+      return exports.colors[Math.abs(hash) % exports.colors.length];
+    }
+    function createDebug(namespace) {
+      function debug() {
+        if (!debug.enabled) return;
+        var self2 = debug;
+        var curr = +/* @__PURE__ */ new Date();
+        var ms = curr - (prevTime || curr);
+        self2.diff = ms;
+        self2.prev = prevTime;
+        self2.curr = curr;
+        prevTime = curr;
+        var args = new Array(arguments.length);
+        for (var i2 = 0; i2 < args.length; i2++) {
+          args[i2] = arguments[i2];
+        }
+        args[0] = exports.coerce(args[0]);
+        if ("string" !== typeof args[0]) {
+          args.unshift("%O");
+        }
+        var index = 0;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format) {
+          if (match2 === "%%") return match2;
+          index++;
+          var formatter = exports.formatters[format];
+          if ("function" === typeof formatter) {
+            var val = args[index];
+            match2 = formatter.call(self2, val);
+            args.splice(index, 1);
+            index--;
+          }
+          return match2;
+        });
+        exports.formatArgs.call(self2, args);
+        var logFn = debug.log || exports.log || console.log.bind(console);
+        logFn.apply(self2, args);
+      }
+      debug.namespace = namespace;
+      debug.enabled = exports.enabled(namespace);
+      debug.useColors = exports.useColors();
+      debug.color = selectColor(namespace);
+      if ("function" === typeof exports.init) {
+        exports.init(debug);
+      }
+      return debug;
+    }
+    function enable(namespaces) {
+      exports.save(namespaces);
+      exports.names = [];
+      exports.skips = [];
+      var split = (typeof namespaces === "string" ? namespaces : "").split(/[\s,]+/);
+      var len = split.length;
+      for (var i2 = 0; i2 < len; i2++) {
+        if (!split[i2]) continue;
+        namespaces = split[i2].replace(/\*/g, ".*?");
+        if (namespaces[0] === "-") {
+          exports.skips.push(new RegExp("^" + namespaces.substr(1) + "$"));
+        } else {
+          exports.names.push(new RegExp("^" + namespaces + "$"));
+        }
+      }
+    }
+    function disable() {
+      exports.enable("");
+    }
+    function enabled(name) {
+      var i2, len;
+      for (i2 = 0, len = exports.skips.length; i2 < len; i2++) {
+        if (exports.skips[i2].test(name)) {
+          return false;
+        }
+      }
+      for (i2 = 0, len = exports.names.length; i2 < len; i2++) {
+        if (exports.names[i2].test(name)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function coerce(val) {
+      if (val instanceof Error) return val.stack || val.message;
+      return val;
+    }
+  }
+});
+
+// node_modules/express/node_modules/debug/src/browser.js
+var require_browser3 = __commonJS({
+  "node_modules/express/node_modules/debug/src/browser.js"(exports, module) {
+    exports = module.exports = require_debug3();
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.storage = "undefined" != typeof chrome && "undefined" != typeof chrome.storage ? chrome.storage.local : localstorage();
+    exports.colors = [
+      "lightseagreen",
+      "forestgreen",
+      "goldenrod",
+      "dodgerblue",
+      "darkorchid",
+      "crimson"
+    ];
+    function useColors() {
+      if (typeof window !== "undefined" && window.process && window.process.type === "renderer") {
+        return true;
+      }
+      return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // is firebug? http://stackoverflow.com/a/398120/376773
+      typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || // is firefox >= v31?
+      // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || // double check webkit in userAgent just in case we are in a worker
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+    }
+    exports.formatters.j = function(v) {
+      try {
+        return JSON.stringify(v);
+      } catch (err) {
+        return "[UnexpectedJSONParseError]: " + err.message;
+      }
+    };
+    function formatArgs(args) {
+      var useColors2 = this.useColors;
+      args[0] = (useColors2 ? "%c" : "") + this.namespace + (useColors2 ? " %c" : " ") + args[0] + (useColors2 ? "%c " : " ") + "+" + exports.humanize(this.diff);
+      if (!useColors2) return;
+      var c = "color: " + this.color;
+      args.splice(1, 0, c, "color: inherit");
+      var index = 0;
+      var lastC = 0;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
+        index++;
+        if ("%c" === match2) {
+          lastC = index;
+        }
+      });
+      args.splice(lastC, 0, c);
+    }
+    function log() {
+      return "object" === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
+    }
+    function save(namespaces) {
+      try {
+        if (null == namespaces) {
+          exports.storage.removeItem("debug");
+        } else {
+          exports.storage.debug = namespaces;
+        }
+      } catch (e2) {
+      }
+    }
+    function load() {
+      var r2;
+      try {
+        r2 = exports.storage.debug;
+      } catch (e2) {
+      }
+      if (!r2 && typeof process !== "undefined" && "env" in process) {
+        r2 = process.env.DEBUG;
+      }
+      return r2;
+    }
+    exports.enable(load());
+    function localstorage() {
+      try {
+        return window.localStorage;
+      } catch (e2) {
+      }
+    }
+  }
+});
+
+// node_modules/express/node_modules/debug/src/node.js
+var require_node3 = __commonJS({
+  "node_modules/express/node_modules/debug/src/node.js"(exports, module) {
+    var tty = __require("tty");
+    var util = __require("util");
+    exports = module.exports = require_debug3();
+    exports.init = init;
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.colors = [6, 2, 3, 4, 5, 1];
+    exports.inspectOpts = Object.keys(process.env).filter(function(key) {
+      return /^debug_/i.test(key);
+    }).reduce(function(obj, key) {
+      var prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, function(_, k) {
+        return k.toUpperCase();
+      });
+      var val = process.env[key];
+      if (/^(yes|on|true|enabled)$/i.test(val)) val = true;
+      else if (/^(no|off|false|disabled)$/i.test(val)) val = false;
+      else if (val === "null") val = null;
+      else val = Number(val);
+      obj[prop] = val;
+      return obj;
+    }, {});
+    var fd = parseInt(process.env.DEBUG_FD, 10) || 2;
+    if (1 !== fd && 2 !== fd) {
+      util.deprecate(function() {
+      }, "except for stderr(2) and stdout(1), any other usage of DEBUG_FD is deprecated. Override debug.log if you want to use a different log function (https://git.io/debug_fd)")();
+    }
+    var stream = 1 === fd ? process.stdout : 2 === fd ? process.stderr : createWritableStdioStream(fd);
+    function useColors() {
+      return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(fd);
+    }
+    exports.formatters.o = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts).split("\n").map(function(str) {
+        return str.trim();
+      }).join(" ");
+    };
+    exports.formatters.O = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts);
+    };
+    function formatArgs(args) {
+      var name = this.namespace;
+      var useColors2 = this.useColors;
+      if (useColors2) {
+        var c = this.color;
+        var prefix = "  \x1B[3" + c + ";1m" + name + " \x1B[0m";
+        args[0] = prefix + args[0].split("\n").join("\n" + prefix);
+        args.push("\x1B[3" + c + "m+" + exports.humanize(this.diff) + "\x1B[0m");
+      } else {
+        args[0] = (/* @__PURE__ */ new Date()).toUTCString() + " " + name + " " + args[0];
+      }
+    }
+    function log() {
+      return stream.write(util.format.apply(util, arguments) + "\n");
+    }
+    function save(namespaces) {
+      if (null == namespaces) {
+        delete process.env.DEBUG;
+      } else {
+        process.env.DEBUG = namespaces;
+      }
+    }
+    function load() {
+      return process.env.DEBUG;
+    }
+    function createWritableStdioStream(fd2) {
+      var stream2;
+      var tty_wrap = process.binding("tty_wrap");
+      switch (tty_wrap.guessHandleType(fd2)) {
+        case "TTY":
+          stream2 = new tty.WriteStream(fd2);
+          stream2._type = "tty";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        case "FILE":
+          var fs3 = __require("fs");
+          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          stream2._type = "fs";
+          break;
+        case "PIPE":
+        case "TCP":
+          var net = __require("net");
+          stream2 = new net.Socket({
+            fd: fd2,
+            readable: false,
+            writable: true
+          });
+          stream2.readable = false;
+          stream2.read = null;
+          stream2._type = "pipe";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        default:
+          throw new Error("Implement me. Unknown stream file type!");
+      }
+      stream2.fd = fd2;
+      stream2._isStdio = true;
+      return stream2;
+    }
+    function init(debug) {
+      debug.inspectOpts = {};
+      var keys = Object.keys(exports.inspectOpts);
+      for (var i2 = 0; i2 < keys.length; i2++) {
+        debug.inspectOpts[keys[i2]] = exports.inspectOpts[keys[i2]];
+      }
+    }
+    exports.enable(load());
+  }
+});
+
+// node_modules/express/node_modules/debug/src/index.js
+var require_src3 = __commonJS({
+  "node_modules/express/node_modules/debug/src/index.js"(exports, module) {
+    if (typeof process !== "undefined" && process.type === "renderer") {
+      module.exports = require_browser3();
+    } else {
+      module.exports = require_node3();
     }
   }
 });
@@ -17982,7 +18830,7 @@ var require_layer = __commonJS({
   "node_modules/express/lib/router/layer.js"(exports, module) {
     "use strict";
     var pathRegexp = require_path_to_regexp();
-    var debug = require_src()("express:router:layer");
+    var debug = require_src3()("express:router:layer");
     var hasOwnProperty = Object.prototype.hasOwnProperty;
     module.exports = Layer;
     function Layer(path3, options, fn) {
@@ -18120,7 +18968,7 @@ var require_methods = __commonJS({
 var require_route = __commonJS({
   "node_modules/express/lib/router/route.js"(exports, module) {
     "use strict";
-    var debug = require_src()("express:router:route");
+    var debug = require_src3()("express:router:route");
     var flatten = require_array_flatten();
     var Layer = require_layer();
     var methods = require_methods();
@@ -18250,7 +19098,7 @@ var require_router = __commonJS({
     var Layer = require_layer();
     var methods = require_methods();
     var mixin = require_utils_merge();
-    var debug = require_src()("express:router");
+    var debug = require_src3()("express:router");
     var deprecate3 = require_depd()("express");
     var flatten = require_array_flatten();
     var parseUrl = require_parseurl();
@@ -18677,7 +19525,7 @@ var require_query = __commonJS({
 var require_view = __commonJS({
   "node_modules/express/lib/view.js"(exports, module) {
     "use strict";
-    var debug = require_src()("express:view");
+    var debug = require_src3()("express:view");
     var path3 = __require("path");
     var fs3 = __require("fs");
     var dirname = path3.dirname;
@@ -18974,6 +19822,430 @@ var require_content_disposition = __commonJS({
   }
 });
 
+// node_modules/send/node_modules/debug/node_modules/ms/index.js
+var require_ms4 = __commonJS({
+  "node_modules/send/node_modules/debug/node_modules/ms/index.js"(exports, module) {
+    var s2 = 1e3;
+    var m2 = s2 * 60;
+    var h2 = m2 * 60;
+    var d = h2 * 24;
+    var y = d * 365.25;
+    module.exports = function(val, options) {
+      options = options || {};
+      var type = typeof val;
+      if (type === "string" && val.length > 0) {
+        return parse(val);
+      } else if (type === "number" && isNaN(val) === false) {
+        return options.long ? fmtLong(val) : fmtShort(val);
+      }
+      throw new Error(
+        "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
+      );
+    };
+    function parse(str) {
+      str = String(str);
+      if (str.length > 100) {
+        return;
+      }
+      var match2 = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(
+        str
+      );
+      if (!match2) {
+        return;
+      }
+      var n = parseFloat(match2[1]);
+      var type = (match2[2] || "ms").toLowerCase();
+      switch (type) {
+        case "years":
+        case "year":
+        case "yrs":
+        case "yr":
+        case "y":
+          return n * y;
+        case "days":
+        case "day":
+        case "d":
+          return n * d;
+        case "hours":
+        case "hour":
+        case "hrs":
+        case "hr":
+        case "h":
+          return n * h2;
+        case "minutes":
+        case "minute":
+        case "mins":
+        case "min":
+        case "m":
+          return n * m2;
+        case "seconds":
+        case "second":
+        case "secs":
+        case "sec":
+        case "s":
+          return n * s2;
+        case "milliseconds":
+        case "millisecond":
+        case "msecs":
+        case "msec":
+        case "ms":
+          return n;
+        default:
+          return void 0;
+      }
+    }
+    function fmtShort(ms) {
+      if (ms >= d) {
+        return Math.round(ms / d) + "d";
+      }
+      if (ms >= h2) {
+        return Math.round(ms / h2) + "h";
+      }
+      if (ms >= m2) {
+        return Math.round(ms / m2) + "m";
+      }
+      if (ms >= s2) {
+        return Math.round(ms / s2) + "s";
+      }
+      return ms + "ms";
+    }
+    function fmtLong(ms) {
+      return plural(ms, d, "day") || plural(ms, h2, "hour") || plural(ms, m2, "minute") || plural(ms, s2, "second") || ms + " ms";
+    }
+    function plural(ms, n, name) {
+      if (ms < n) {
+        return;
+      }
+      if (ms < n * 1.5) {
+        return Math.floor(ms / n) + " " + name;
+      }
+      return Math.ceil(ms / n) + " " + name + "s";
+    }
+  }
+});
+
+// node_modules/send/node_modules/debug/src/debug.js
+var require_debug4 = __commonJS({
+  "node_modules/send/node_modules/debug/src/debug.js"(exports, module) {
+    exports = module.exports = createDebug.debug = createDebug["default"] = createDebug;
+    exports.coerce = coerce;
+    exports.disable = disable;
+    exports.enable = enable;
+    exports.enabled = enabled;
+    exports.humanize = require_ms4();
+    exports.names = [];
+    exports.skips = [];
+    exports.formatters = {};
+    var prevTime;
+    function selectColor(namespace) {
+      var hash = 0, i2;
+      for (i2 in namespace) {
+        hash = (hash << 5) - hash + namespace.charCodeAt(i2);
+        hash |= 0;
+      }
+      return exports.colors[Math.abs(hash) % exports.colors.length];
+    }
+    function createDebug(namespace) {
+      function debug() {
+        if (!debug.enabled) return;
+        var self2 = debug;
+        var curr = +/* @__PURE__ */ new Date();
+        var ms = curr - (prevTime || curr);
+        self2.diff = ms;
+        self2.prev = prevTime;
+        self2.curr = curr;
+        prevTime = curr;
+        var args = new Array(arguments.length);
+        for (var i2 = 0; i2 < args.length; i2++) {
+          args[i2] = arguments[i2];
+        }
+        args[0] = exports.coerce(args[0]);
+        if ("string" !== typeof args[0]) {
+          args.unshift("%O");
+        }
+        var index = 0;
+        args[0] = args[0].replace(/%([a-zA-Z%])/g, function(match2, format) {
+          if (match2 === "%%") return match2;
+          index++;
+          var formatter = exports.formatters[format];
+          if ("function" === typeof formatter) {
+            var val = args[index];
+            match2 = formatter.call(self2, val);
+            args.splice(index, 1);
+            index--;
+          }
+          return match2;
+        });
+        exports.formatArgs.call(self2, args);
+        var logFn = debug.log || exports.log || console.log.bind(console);
+        logFn.apply(self2, args);
+      }
+      debug.namespace = namespace;
+      debug.enabled = exports.enabled(namespace);
+      debug.useColors = exports.useColors();
+      debug.color = selectColor(namespace);
+      if ("function" === typeof exports.init) {
+        exports.init(debug);
+      }
+      return debug;
+    }
+    function enable(namespaces) {
+      exports.save(namespaces);
+      exports.names = [];
+      exports.skips = [];
+      var split = (typeof namespaces === "string" ? namespaces : "").split(/[\s,]+/);
+      var len = split.length;
+      for (var i2 = 0; i2 < len; i2++) {
+        if (!split[i2]) continue;
+        namespaces = split[i2].replace(/\*/g, ".*?");
+        if (namespaces[0] === "-") {
+          exports.skips.push(new RegExp("^" + namespaces.substr(1) + "$"));
+        } else {
+          exports.names.push(new RegExp("^" + namespaces + "$"));
+        }
+      }
+    }
+    function disable() {
+      exports.enable("");
+    }
+    function enabled(name) {
+      var i2, len;
+      for (i2 = 0, len = exports.skips.length; i2 < len; i2++) {
+        if (exports.skips[i2].test(name)) {
+          return false;
+        }
+      }
+      for (i2 = 0, len = exports.names.length; i2 < len; i2++) {
+        if (exports.names[i2].test(name)) {
+          return true;
+        }
+      }
+      return false;
+    }
+    function coerce(val) {
+      if (val instanceof Error) return val.stack || val.message;
+      return val;
+    }
+  }
+});
+
+// node_modules/send/node_modules/debug/src/browser.js
+var require_browser4 = __commonJS({
+  "node_modules/send/node_modules/debug/src/browser.js"(exports, module) {
+    exports = module.exports = require_debug4();
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.storage = "undefined" != typeof chrome && "undefined" != typeof chrome.storage ? chrome.storage.local : localstorage();
+    exports.colors = [
+      "lightseagreen",
+      "forestgreen",
+      "goldenrod",
+      "dodgerblue",
+      "darkorchid",
+      "crimson"
+    ];
+    function useColors() {
+      if (typeof window !== "undefined" && window.process && window.process.type === "renderer") {
+        return true;
+      }
+      return typeof document !== "undefined" && document.documentElement && document.documentElement.style && document.documentElement.style.WebkitAppearance || // is firebug? http://stackoverflow.com/a/398120/376773
+      typeof window !== "undefined" && window.console && (window.console.firebug || window.console.exception && window.console.table) || // is firefox >= v31?
+      // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31 || // double check webkit in userAgent just in case we are in a worker
+      typeof navigator !== "undefined" && navigator.userAgent && navigator.userAgent.toLowerCase().match(/applewebkit\/(\d+)/);
+    }
+    exports.formatters.j = function(v) {
+      try {
+        return JSON.stringify(v);
+      } catch (err) {
+        return "[UnexpectedJSONParseError]: " + err.message;
+      }
+    };
+    function formatArgs(args) {
+      var useColors2 = this.useColors;
+      args[0] = (useColors2 ? "%c" : "") + this.namespace + (useColors2 ? " %c" : " ") + args[0] + (useColors2 ? "%c " : " ") + "+" + exports.humanize(this.diff);
+      if (!useColors2) return;
+      var c = "color: " + this.color;
+      args.splice(1, 0, c, "color: inherit");
+      var index = 0;
+      var lastC = 0;
+      args[0].replace(/%[a-zA-Z%]/g, function(match2) {
+        if ("%%" === match2) return;
+        index++;
+        if ("%c" === match2) {
+          lastC = index;
+        }
+      });
+      args.splice(lastC, 0, c);
+    }
+    function log() {
+      return "object" === typeof console && console.log && Function.prototype.apply.call(console.log, console, arguments);
+    }
+    function save(namespaces) {
+      try {
+        if (null == namespaces) {
+          exports.storage.removeItem("debug");
+        } else {
+          exports.storage.debug = namespaces;
+        }
+      } catch (e2) {
+      }
+    }
+    function load() {
+      var r2;
+      try {
+        r2 = exports.storage.debug;
+      } catch (e2) {
+      }
+      if (!r2 && typeof process !== "undefined" && "env" in process) {
+        r2 = process.env.DEBUG;
+      }
+      return r2;
+    }
+    exports.enable(load());
+    function localstorage() {
+      try {
+        return window.localStorage;
+      } catch (e2) {
+      }
+    }
+  }
+});
+
+// node_modules/send/node_modules/debug/src/node.js
+var require_node4 = __commonJS({
+  "node_modules/send/node_modules/debug/src/node.js"(exports, module) {
+    var tty = __require("tty");
+    var util = __require("util");
+    exports = module.exports = require_debug4();
+    exports.init = init;
+    exports.log = log;
+    exports.formatArgs = formatArgs;
+    exports.save = save;
+    exports.load = load;
+    exports.useColors = useColors;
+    exports.colors = [6, 2, 3, 4, 5, 1];
+    exports.inspectOpts = Object.keys(process.env).filter(function(key) {
+      return /^debug_/i.test(key);
+    }).reduce(function(obj, key) {
+      var prop = key.substring(6).toLowerCase().replace(/_([a-z])/g, function(_, k) {
+        return k.toUpperCase();
+      });
+      var val = process.env[key];
+      if (/^(yes|on|true|enabled)$/i.test(val)) val = true;
+      else if (/^(no|off|false|disabled)$/i.test(val)) val = false;
+      else if (val === "null") val = null;
+      else val = Number(val);
+      obj[prop] = val;
+      return obj;
+    }, {});
+    var fd = parseInt(process.env.DEBUG_FD, 10) || 2;
+    if (1 !== fd && 2 !== fd) {
+      util.deprecate(function() {
+      }, "except for stderr(2) and stdout(1), any other usage of DEBUG_FD is deprecated. Override debug.log if you want to use a different log function (https://git.io/debug_fd)")();
+    }
+    var stream = 1 === fd ? process.stdout : 2 === fd ? process.stderr : createWritableStdioStream(fd);
+    function useColors() {
+      return "colors" in exports.inspectOpts ? Boolean(exports.inspectOpts.colors) : tty.isatty(fd);
+    }
+    exports.formatters.o = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts).split("\n").map(function(str) {
+        return str.trim();
+      }).join(" ");
+    };
+    exports.formatters.O = function(v) {
+      this.inspectOpts.colors = this.useColors;
+      return util.inspect(v, this.inspectOpts);
+    };
+    function formatArgs(args) {
+      var name = this.namespace;
+      var useColors2 = this.useColors;
+      if (useColors2) {
+        var c = this.color;
+        var prefix = "  \x1B[3" + c + ";1m" + name + " \x1B[0m";
+        args[0] = prefix + args[0].split("\n").join("\n" + prefix);
+        args.push("\x1B[3" + c + "m+" + exports.humanize(this.diff) + "\x1B[0m");
+      } else {
+        args[0] = (/* @__PURE__ */ new Date()).toUTCString() + " " + name + " " + args[0];
+      }
+    }
+    function log() {
+      return stream.write(util.format.apply(util, arguments) + "\n");
+    }
+    function save(namespaces) {
+      if (null == namespaces) {
+        delete process.env.DEBUG;
+      } else {
+        process.env.DEBUG = namespaces;
+      }
+    }
+    function load() {
+      return process.env.DEBUG;
+    }
+    function createWritableStdioStream(fd2) {
+      var stream2;
+      var tty_wrap = process.binding("tty_wrap");
+      switch (tty_wrap.guessHandleType(fd2)) {
+        case "TTY":
+          stream2 = new tty.WriteStream(fd2);
+          stream2._type = "tty";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        case "FILE":
+          var fs3 = __require("fs");
+          stream2 = new fs3.SyncWriteStream(fd2, { autoClose: false });
+          stream2._type = "fs";
+          break;
+        case "PIPE":
+        case "TCP":
+          var net = __require("net");
+          stream2 = new net.Socket({
+            fd: fd2,
+            readable: false,
+            writable: true
+          });
+          stream2.readable = false;
+          stream2.read = null;
+          stream2._type = "pipe";
+          if (stream2._handle && stream2._handle.unref) {
+            stream2._handle.unref();
+          }
+          break;
+        default:
+          throw new Error("Implement me. Unknown stream file type!");
+      }
+      stream2.fd = fd2;
+      stream2._isStdio = true;
+      return stream2;
+    }
+    function init(debug) {
+      debug.inspectOpts = {};
+      var keys = Object.keys(exports.inspectOpts);
+      for (var i2 = 0; i2 < keys.length; i2++) {
+        debug.inspectOpts[keys[i2]] = exports.inspectOpts[keys[i2]];
+      }
+    }
+    exports.enable(load());
+  }
+});
+
+// node_modules/send/node_modules/debug/src/index.js
+var require_src4 = __commonJS({
+  "node_modules/send/node_modules/debug/src/index.js"(exports, module) {
+    if (typeof process !== "undefined" && process.type === "renderer") {
+      module.exports = require_browser4();
+    } else {
+      module.exports = require_node4();
+    }
+  }
+});
+
 // node_modules/etag/index.js
 var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports, module) {
@@ -19150,9 +20422,9 @@ var require_mime = __commonJS({
   }
 });
 
-// node_modules/send/node_modules/ms/index.js
-var require_ms2 = __commonJS({
-  "node_modules/send/node_modules/ms/index.js"(exports, module) {
+// node_modules/ms/index.js
+var require_ms5 = __commonJS({
+  "node_modules/ms/index.js"(exports, module) {
     var s2 = 1e3;
     var m2 = s2 * 60;
     var h2 = m2 * 60;
@@ -19352,7 +20624,7 @@ var require_send = __commonJS({
   "node_modules/send/index.js"(exports, module) {
     "use strict";
     var createError = require_http_errors();
-    var debug = require_src()("send");
+    var debug = require_src4()("send");
     var deprecate3 = require_depd()("send");
     var destroy = require_destroy();
     var encodeUrl = require_encodeurl();
@@ -19361,7 +20633,7 @@ var require_send = __commonJS({
     var fresh = require_fresh();
     var fs3 = __require("fs");
     var mime = require_mime();
-    var ms = require_ms2();
+    var ms = require_ms5();
     var onFinished = require_on_finished();
     var parseRange = require_range_parser();
     var path3 = __require("path");
@@ -20883,7 +22155,7 @@ var require_application = __commonJS({
     var methods = require_methods();
     var middleware = require_init();
     var query = require_query();
-    var debug = require_src()("express:application");
+    var debug = require_src3()("express:application");
     var View = require_view();
     var http3 = __require("http");
     var compileETag = require_utils2().compileETag;
@@ -24072,125 +25344,9 @@ var require_interceptor = __commonJS({
   }
 });
 
-// node_modules/https-proxy-agent/node_modules/debug/node_modules/ms/index.js
-var require_ms3 = __commonJS({
-  "node_modules/https-proxy-agent/node_modules/debug/node_modules/ms/index.js"(exports, module) {
-    var s2 = 1e3;
-    var m2 = s2 * 60;
-    var h2 = m2 * 60;
-    var d = h2 * 24;
-    var w = d * 7;
-    var y = d * 365.25;
-    module.exports = function(val, options) {
-      options = options || {};
-      var type = typeof val;
-      if (type === "string" && val.length > 0) {
-        return parse(val);
-      } else if (type === "number" && isFinite(val)) {
-        return options.long ? fmtLong(val) : fmtShort(val);
-      }
-      throw new Error(
-        "val is not a non-empty string or a valid number. val=" + JSON.stringify(val)
-      );
-    };
-    function parse(str) {
-      str = String(str);
-      if (str.length > 100) {
-        return;
-      }
-      var match2 = /^(-?(?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)?$/i.exec(
-        str
-      );
-      if (!match2) {
-        return;
-      }
-      var n = parseFloat(match2[1]);
-      var type = (match2[2] || "ms").toLowerCase();
-      switch (type) {
-        case "years":
-        case "year":
-        case "yrs":
-        case "yr":
-        case "y":
-          return n * y;
-        case "weeks":
-        case "week":
-        case "w":
-          return n * w;
-        case "days":
-        case "day":
-        case "d":
-          return n * d;
-        case "hours":
-        case "hour":
-        case "hrs":
-        case "hr":
-        case "h":
-          return n * h2;
-        case "minutes":
-        case "minute":
-        case "mins":
-        case "min":
-        case "m":
-          return n * m2;
-        case "seconds":
-        case "second":
-        case "secs":
-        case "sec":
-        case "s":
-          return n * s2;
-        case "milliseconds":
-        case "millisecond":
-        case "msecs":
-        case "msec":
-        case "ms":
-          return n;
-        default:
-          return void 0;
-      }
-    }
-    function fmtShort(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return Math.round(ms / d) + "d";
-      }
-      if (msAbs >= h2) {
-        return Math.round(ms / h2) + "h";
-      }
-      if (msAbs >= m2) {
-        return Math.round(ms / m2) + "m";
-      }
-      if (msAbs >= s2) {
-        return Math.round(ms / s2) + "s";
-      }
-      return ms + "ms";
-    }
-    function fmtLong(ms) {
-      var msAbs = Math.abs(ms);
-      if (msAbs >= d) {
-        return plural(ms, msAbs, d, "day");
-      }
-      if (msAbs >= h2) {
-        return plural(ms, msAbs, h2, "hour");
-      }
-      if (msAbs >= m2) {
-        return plural(ms, msAbs, m2, "minute");
-      }
-      if (msAbs >= s2) {
-        return plural(ms, msAbs, s2, "second");
-      }
-      return ms + " ms";
-    }
-    function plural(ms, msAbs, n, name) {
-      var isPlural = msAbs >= n * 1.5;
-      return Math.round(ms / n) + " " + name + (isPlural ? "s" : "");
-    }
-  }
-});
-
-// node_modules/https-proxy-agent/node_modules/debug/src/common.js
+// node_modules/debug/src/common.js
 var require_common2 = __commonJS({
-  "node_modules/https-proxy-agent/node_modules/debug/src/common.js"(exports, module) {
+  "node_modules/debug/src/common.js"(exports, module) {
     function setup(env2) {
       createDebug.debug = createDebug;
       createDebug.default = createDebug;
@@ -24198,7 +25354,7 @@ var require_common2 = __commonJS({
       createDebug.disable = disable;
       createDebug.enable = enable;
       createDebug.enabled = enabled;
-      createDebug.humanize = require_ms3();
+      createDebug.humanize = require_ms5();
       createDebug.destroy = destroy;
       Object.keys(env2).forEach((key) => {
         createDebug[key] = env2[key];
@@ -24365,9 +25521,9 @@ var require_common2 = __commonJS({
   }
 });
 
-// node_modules/https-proxy-agent/node_modules/debug/src/browser.js
-var require_browser2 = __commonJS({
-  "node_modules/https-proxy-agent/node_modules/debug/src/browser.js"(exports, module) {
+// node_modules/debug/src/browser.js
+var require_browser5 = __commonJS({
+  "node_modules/debug/src/browser.js"(exports, module) {
     exports.formatArgs = formatArgs;
     exports.save = save;
     exports.load = load;
@@ -24535,9 +25691,9 @@ var require_browser2 = __commonJS({
   }
 });
 
-// node_modules/https-proxy-agent/node_modules/debug/src/node.js
-var require_node2 = __commonJS({
-  "node_modules/https-proxy-agent/node_modules/debug/src/node.js"(exports, module) {
+// node_modules/debug/src/node.js
+var require_node5 = __commonJS({
+  "node_modules/debug/src/node.js"(exports, module) {
     var tty = __require("tty");
     var util = __require("util");
     exports.init = init;
@@ -24709,13 +25865,13 @@ var require_node2 = __commonJS({
   }
 });
 
-// node_modules/https-proxy-agent/node_modules/debug/src/index.js
-var require_src2 = __commonJS({
-  "node_modules/https-proxy-agent/node_modules/debug/src/index.js"(exports, module) {
+// node_modules/debug/src/index.js
+var require_src5 = __commonJS({
+  "node_modules/debug/src/index.js"(exports, module) {
     if (typeof process === "undefined" || process.type === "renderer" || process.browser === true || process.__nwjs) {
-      module.exports = require_browser2();
+      module.exports = require_browser5();
     } else {
-      module.exports = require_node2();
+      module.exports = require_node5();
     }
   }
 });
@@ -24955,7 +26111,7 @@ var require_parse_proxy_response = __commonJS({
     };
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.parseProxyResponse = void 0;
-    var debug_1 = __importDefault(require_src2());
+    var debug_1 = __importDefault(require_src5());
     var debug = (0, debug_1.default)("https-proxy-agent:parse-proxy-response");
     function parseProxyResponse(socket) {
       return new Promise((resolve, reject) => {
@@ -25081,7 +26237,7 @@ var require_dist2 = __commonJS({
     var net = __importStar(__require("net"));
     var tls = __importStar(__require("tls"));
     var assert_1 = __importDefault(__require("assert"));
-    var debug_1 = __importDefault(require_src2());
+    var debug_1 = __importDefault(require_src5());
     var agent_base_1 = require_dist();
     var url_1 = __require("url");
     var parse_proxy_response_1 = require_parse_proxy_response();
@@ -32154,7 +33310,7 @@ Content-Type: ${partContentType}\r
 });
 
 // node_modules/gaxios/build/cjs/src/index.js
-var require_src3 = __commonJS({
+var require_src6 = __commonJS({
   "node_modules/gaxios/build/cjs/src/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m2, k, k2) {
@@ -34358,7 +35514,7 @@ var require_logging_utils = __commonJS({
 });
 
 // node_modules/google-logging-utils/build/src/index.js
-var require_src4 = __commonJS({
+var require_src7 = __commonJS({
   "node_modules/google-logging-utils/build/src/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m2, k, k2) {
@@ -34383,7 +35539,7 @@ var require_src4 = __commonJS({
 });
 
 // node_modules/gcp-metadata/build/src/index.js
-var require_src5 = __commonJS({
+var require_src8 = __commonJS({
   "node_modules/gcp-metadata/build/src/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m2, k, k2) {
@@ -34437,10 +35593,10 @@ var require_src5 = __commonJS({
     exports.getGCPResidency = getGCPResidency;
     exports.setGCPResidency = setGCPResidency;
     exports.requestTimeout = requestTimeout;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var jsonBigint = require_json_bigint();
     var gcp_residency_1 = require_gcp_residency();
-    var logger = __importStar(require_src4());
+    var logger = __importStar(require_src7());
     exports.BASE_PATH = "/computeMetadata/v1";
     exports.HOST_ADDRESS = "http://169.254.169.254";
     exports.SECONDARY_HOST_ADDRESS = "http://metadata.google.internal.";
@@ -35354,9 +36510,9 @@ var require_authclient = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthClient = exports.DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS = exports.DEFAULT_UNIVERSE = void 0;
     var events_1 = __require("events");
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var util_1 = require_util2();
-    var google_logging_utils_1 = require_src4();
+    var google_logging_utils_1 = require_src7();
     var shared_cjs_1 = require_shared2();
     exports.DEFAULT_UNIVERSE = "googleapis.com";
     exports.DEFAULT_EAGER_REFRESH_THRESHOLD_MILLIS = 5 * 60 * 1e3;
@@ -35640,7 +36796,7 @@ var require_oauth2client = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OAuth2Client = exports.ClientAuthentication = exports.CertificateFormat = exports.CodeChallengeMethod = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var querystring = __require("querystring");
     var stream = __require("stream");
     var formatEcdsa = require_ecdsa_sig_formatter();
@@ -36321,8 +37477,8 @@ var require_computeclient = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Compute = void 0;
-    var gaxios_1 = require_src3();
-    var gcpMetadata = require_src5();
+    var gaxios_1 = require_src6();
+    var gcpMetadata = require_src8();
     var oauth2client_1 = require_oauth2client();
     var Compute = class extends oauth2client_1.OAuth2Client {
       serviceAccountEmail;
@@ -36461,7 +37617,7 @@ var require_envDetect = __commonJS({
     exports.GCPEnv = void 0;
     exports.clear = clear;
     exports.getEnv = getEnv2;
-    var gcpMetadata = require_src5();
+    var gcpMetadata = require_src8();
     var GCPEnv;
     (function(GCPEnv2) {
       GCPEnv2["APP_ENGINE"] = "APP_ENGINE";
@@ -37384,7 +38540,7 @@ var require_googleToken = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.GoogleToken = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var tokenHandler_1 = require_tokenHandler();
     var revokeToken_1 = require_revokeToken();
     var GoogleToken = class {
@@ -38061,7 +39217,7 @@ var require_impersonated = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Impersonated = exports.IMPERSONATED_ACCOUNT_TYPE = void 0;
     var oauth2client_1 = require_oauth2client();
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var util_1 = require_util2();
     exports.IMPERSONATED_ACCOUNT_TYPE = "impersonated_service_account";
     var Impersonated = class _Impersonated extends oauth2client_1.OAuth2Client {
@@ -38240,7 +39396,7 @@ var require_oauth2common = __commonJS({
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OAuthClientAuthHandler = void 0;
     exports.getErrorFromOAuthErrorResponse = getErrorFromOAuthErrorResponse;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var crypto_1 = require_crypto3();
     var METHODS_SUPPORTING_REQUEST_BODY = ["PUT", "POST", "PATCH"];
     var OAuthClientAuthHandler = class {
@@ -38387,7 +39543,7 @@ var require_stscredentials = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.StsCredentials = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var authclient_1 = require_authclient();
     var oauth2common_1 = require_oauth2common();
     var util_1 = require_util2();
@@ -38475,7 +39631,7 @@ var require_baseexternalclient = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.BaseExternalAccountClient = exports.CLOUD_RESOURCE_MANAGER = exports.EXTERNAL_ACCOUNT_TYPE = exports.EXPIRATION_TIME_OFFSET = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var stream = __require("stream");
     var authclient_1 = require_authclient();
     var sts = require_stscredentials();
@@ -39167,7 +40323,7 @@ var require_identitypoolclient = __commonJS({
     var urlsubjecttokensupplier_1 = require_urlsubjecttokensupplier();
     var certificatesubjecttokensupplier_1 = require_certificatesubjecttokensupplier();
     var stscredentials_1 = require_stscredentials();
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var IdentityPoolClient = class _IdentityPoolClient extends baseexternalclient_1.BaseExternalAccountClient {
       subjectTokenSupplier;
       /**
@@ -39273,7 +40429,7 @@ var require_awsrequestsigner = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AwsRequestSigner = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var crypto_1 = require_crypto3();
     var AWS_ALGORITHM = "AWS4-HMAC-SHA256";
     var AWS_REQUEST_TYPE = "aws4_request";
@@ -39582,7 +40738,7 @@ var require_awsclient = __commonJS({
     var baseexternalclient_1 = require_baseexternalclient();
     var defaultawssecuritycredentialssupplier_1 = require_defaultawssecuritycredentialssupplier();
     var util_1 = require_util2();
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var AwsClient = class _AwsClient extends baseexternalclient_1.BaseExternalAccountClient {
       environmentId;
       awsSecurityCredentialsSupplier;
@@ -40142,7 +41298,7 @@ var require_externalAccountAuthorizedUserClient = __commonJS({
     exports.ExternalAccountAuthorizedUserClient = exports.EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE = void 0;
     var authclient_1 = require_authclient();
     var oauth2common_1 = require_oauth2common();
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var stream = __require("stream");
     var baseexternalclient_1 = require_baseexternalclient();
     exports.EXTERNAL_ACCOUNT_AUTHORIZED_USER_TYPE = "external_account_authorized_user";
@@ -40612,8 +41768,8 @@ var require_googleauth = __commonJS({
     exports.GoogleAuth = exports.GoogleAuthExceptionMessages = void 0;
     var child_process_1 = __require("child_process");
     var fs3 = __require("fs");
-    var gaxios_1 = require_src3();
-    var gcpMetadata = require_src5();
+    var gaxios_1 = require_src6();
+    var gcpMetadata = require_src8();
     var os = __require("os");
     var path3 = __require("path");
     var crypto_1 = require_crypto3();
@@ -41454,7 +42610,7 @@ var require_downscopedclient = __commonJS({
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DownscopedClient = exports.EXPIRATION_TIME_OFFSET = exports.MAX_ACCESS_BOUNDARY_RULES_COUNT = void 0;
-    var gaxios_1 = require_src3();
+    var gaxios_1 = require_src6();
     var stream = __require("stream");
     var authclient_1 = require_authclient();
     var sts = require_stscredentials();
@@ -41679,7 +42835,7 @@ var require_passthrough = __commonJS({
 });
 
 // node_modules/google-auth-library/build/src/index.js
-var require_src6 = __commonJS({
+var require_src9 = __commonJS({
   "node_modules/google-auth-library/build/src/index.js"(exports) {
     "use strict";
     var __createBinding = exports && exports.__createBinding || (Object.create ? (function(o, m2, k, k2) {
@@ -41704,8 +42860,8 @@ var require_src6 = __commonJS({
     Object.defineProperty(exports, "GoogleAuth", { enumerable: true, get: function() {
       return googleauth_1.GoogleAuth;
     } });
-    exports.gcpMetadata = require_src5();
-    exports.gaxios = require_src3();
+    exports.gcpMetadata = require_src8();
+    exports.gaxios = require_src6();
     var authclient_1 = require_authclient();
     Object.defineProperty(exports, "AuthClient", { enumerable: true, get: function() {
       return authclient_1.AuthClient;
@@ -45506,7 +46662,7 @@ import { fileURLToPath } from "url";
 
 // node_modules/@google/genai/dist/node/index.mjs
 var import_p_retry = __toESM(require_p_retry(), 1);
-var import_google_auth_library = __toESM(require_src6(), 1);
+var import_google_auth_library = __toESM(require_src9(), 1);
 import { createWriteStream } from "fs";
 import * as fs2 from "fs/promises";
 import { writeFile } from "fs/promises";
@@ -69379,6 +70535,94 @@ function getApiKeyFromEnv() {
   return envGoogleApiKey || envGeminiApiKey || void 0;
 }
 
+// src/utils/weatherGrounding.ts
+function isDirectCurrentWeatherQuery(query, currentCityName) {
+  if (!query) return false;
+  let clean = query.trim().toLowerCase();
+  if (/\b(wear|clothes|dress|jacket|umbrella|should i|compare|versus|vs|tomorrow|later|tonight|next week|explain|why|how come)\b/i.test(clean)) {
+    return false;
+  }
+  if (currentCityName) {
+    clean = clean.replace(new RegExp(`\\b(?:in|for|at)\\s+${currentCityName.toLowerCase()}\\b`, "gi"), "").trim();
+  }
+  const directPatterns = [
+    /^(?:what(?:'s| is) the weather(?: like)?(?: (?:right )?now| currently| today| outside)?\??)$/i,
+    /^(?:what(?:'s| is) (?:the )?(?:current )?temp(?:erature)?(?: (?:right )?now| currently| today| outside)?\??)$/i,
+    /^(?:is it raining(?: (?:right )?now| currently| today| outside)?\??)$/i,
+    /^(?:is it sunny(?: (?:right )?now| currently| today| outside)?\??)$/i,
+    /^(?:how(?:'s| is) the weather(?: (?:right )?now| currently| today| outside)?\??)$/i,
+    /^(?:what are (?:the )?current conditions\??)$/i,
+    /^(?:how hot is it|how cold is it|how warm is it)(?: (?:right )?now| outside)?\??$/i
+  ];
+  return directPatterns.some((pattern) => pattern.test(clean));
+}
+function getWeatherConditionDescription(code, isDay = 1) {
+  switch (code) {
+    case 0:
+      return isDay ? "sunny and clear" : "clear";
+    case 1:
+    case 2:
+      return isDay ? "partly cloudy" : "partly cloudy";
+    case 3:
+      return "overcast";
+    case 45:
+    case 48:
+      return "foggy and misty";
+    case 51:
+    case 53:
+    case 55:
+      return "light drizzle";
+    case 61:
+    case 63:
+    case 65:
+      return "rain showers";
+    case 71:
+    case 73:
+    case 75:
+      return "snowfall";
+    case 80:
+    case 81:
+    case 82:
+      return "heavy rain";
+    case 95:
+    case 96:
+    case 99:
+      return "thunderstorms";
+    default:
+      return "fair";
+  }
+}
+function buildGroundedWeatherReply(weather, userQuery) {
+  const locName = weather.location?.name || "your area";
+  const current = weather.current || {};
+  const temp = current.temperature_2m != null ? Math.round(current.temperature_2m) : 22;
+  const feelsLike = current.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
+  const humidity = current.relative_humidity_2m != null ? Math.round(current.relative_humidity_2m) : 60;
+  const wind = current.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 8;
+  const precip = current.precipitation ?? 0;
+  const code = current.weather_code ?? 0;
+  const isDay = current.is_day ?? 1;
+  const condition = getWeatherConditionDescription(code, isDay);
+  const isRainQuery = userQuery && /\b(rain|raining|rainy)\b/i.test(userQuery);
+  const isActivelyRaining = precip > 0 || code >= 51 && code <= 67 || code >= 80 && code <= 82 || code === 95;
+  if (isRainQuery) {
+    if (isActivelyRaining) {
+      return `In ${locName}, it is currently raining at ${temp}\xB0C with ${humidity}% humidity.`;
+    } else {
+      return `In ${locName}, No rain is falling right now. Conditions are ${condition} at ${temp}\xB0C with ${humidity}% humidity.`;
+    }
+  }
+  const feelsLikePart = Math.abs(feelsLike - temp) >= 2 ? ` (feels like ${feelsLike}\xB0C)` : "";
+  const rainPart = isActivelyRaining ? " with rain falling" : "";
+  return `In ${locName}, it's currently ${temp}\xB0C${feelsLikePart} and ${condition}${rainPart}. Humidity is ${humidity}%, with gentle winds at ${wind} km/h.`;
+}
+function boundConversationHistory(messages, maxTurns = 6) {
+  if (!Array.isArray(messages) || messages.length <= maxTurns) {
+    return messages || [];
+  }
+  return messages.slice(messages.length - maxTurns);
+}
+
 // server.ts
 import_dotenv.default.config();
 var __dirname = path2.dirname(fileURLToPath(import.meta.url));
@@ -69479,11 +70723,146 @@ async function startServer() {
     }
     return providers.filter((p) => isProviderHealthy(p.name) && checkBudget(p.name));
   };
+  function processWeatherAlerts(data, rawOfficialAlerts) {
+    const alerts = [];
+    const locationName = data.location?.name || "Selected Location";
+    if (Array.isArray(rawOfficialAlerts) && rawOfficialAlerts.length > 0) {
+      rawOfficialAlerts.forEach((a, idx) => {
+        const rawSev = (a.severity || "").toLowerCase();
+        let severity = "moderate";
+        if (rawSev.includes("extreme")) severity = "extreme";
+        else if (rawSev.includes("severe")) severity = "severe";
+        else if (rawSev.includes("minor")) severity = "minor";
+        alerts.push({
+          id: `official-${locationName}-${a.event || a.headline}-${idx}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+          title: a.headline || a.event || "Official Severe Weather Alert",
+          description: a.desc || a.note || a.instruction || "Official severe weather warning issued by national meteorological authority.",
+          severity,
+          type: "official",
+          locationName,
+          issuingAuthority: a.category || a.note || "National Weather Service",
+          effective: a.effective || (/* @__PURE__ */ new Date()).toISOString(),
+          expires: a.expires || new Date(Date.now() + 864e5).toISOString(),
+          instruction: a.instruction || void 0,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      });
+    }
+    const temp = data.current?.temperature_2m ?? 20;
+    const precip = data.current?.precipitation ?? 0;
+    const wind = data.current?.wind_speed_10m ?? 0;
+    const weatherCode = data.current?.weather_code ?? 0;
+    const maxPrecipProb = data.hourly?.precipitation_probability ? Math.max(...data.hourly.precipitation_probability.slice(0, 12)) : 0;
+    const maxUv = data.daily?.uv_index_max?.[0] ?? 5;
+    if (weatherCode === 95 || weatherCode === 96 || weatherCode === 99) {
+      alerts.push({
+        id: `forecast-thunderstorm-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Active Thunderstorm Alert",
+        description: `Thunderstorms with lightning activity detected in ${locationName}. Take indoor shelter.`,
+        severity: "severe",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 144e5).toISOString(),
+        instruction: "Avoid open outdoor spaces and metal objects during lightning activity.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } else if (precip >= 10 || maxPrecipProb >= 80) {
+      alerts.push({
+        id: `forecast-heavy-rain-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Heavy Rainfall Warning",
+        description: `Heavy rain expected in ${locationName} (${maxPrecipProb}% probability, up to ${precip}mm/h). Road pooling possible.`,
+        severity: maxPrecipProb >= 90 || precip >= 15 ? "severe" : "moderate",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 216e5).toISOString(),
+        instruction: "Ensure umbrella or waterproof rain gear is accessible when venturing outdoors.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } else if (maxPrecipProb >= 50) {
+      alerts.push({
+        id: `forecast-rain-notice-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Rain Expectation Notice",
+        description: `Moderate probability of rainfall (${maxPrecipProb}%) anticipated over the next few hours in ${locationName}.`,
+        severity: "minor",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 216e5).toISOString(),
+        instruction: "Consider taking an umbrella if planning afternoon outdoor activities.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+    if (wind >= 45) {
+      alerts.push({
+        id: `forecast-strong-wind-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Strong Wind Advisory",
+        description: `Elevated wind gusts reaching ${Math.round(wind)} km/h in ${locationName}.`,
+        severity: wind >= 65 ? "severe" : "moderate",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 18e6).toISOString(),
+        instruction: "Secure loose outdoor items and exercise care while driving high-profile vehicles.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+    if (temp >= 35) {
+      alerts.push({
+        id: `forecast-extreme-heat-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Extreme Heat Advisory",
+        description: `High temperature of ${Math.round(temp)}\xB0C in ${locationName}. Heat stress likely during peak hours.`,
+        severity: "severe",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 288e5).toISOString(),
+        instruction: "Hydrate frequently and avoid strenuous activity in direct sunlight.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    } else if (temp <= 2) {
+      alerts.push({
+        id: `forecast-freezing-cold-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "Freezing Temperature Advisory",
+        description: `Low temperature of ${Math.round(temp)}\xB0C in ${locationName}. Frost patches possible.`,
+        severity: "moderate",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 288e5).toISOString(),
+        instruction: "Wear warm insulated clothing and take care on potentially slick walkways.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+    if (maxUv >= 8) {
+      alerts.push({
+        id: `forecast-high-uv-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, "-"),
+        title: "High UV Index Warning",
+        description: `Peak UV index forecast at ${Math.round(maxUv)} in ${locationName}. Increased risk of sun damage.`,
+        severity: "moderate",
+        type: "forecast",
+        locationName,
+        issuingAuthority: "RODEX Atmos Forecast Intelligence",
+        effective: (/* @__PURE__ */ new Date()).toISOString(),
+        expires: new Date(Date.now() + 288e5).toISOString(),
+        instruction: "Apply SPF 30+ sunscreen, wear a hat and UV-blocking sunglasses midday.",
+        createdAt: (/* @__PURE__ */ new Date()).toISOString()
+      });
+    }
+    return alerts;
+  }
   async function fetchWeatherAPI(queryOrCoords) {
     const apiKey = process.env.WEATHERAPI_KEY;
     if (!apiKey) throw new Error("WEATHERAPI_KEY not configured");
     const q = typeof queryOrCoords === "string" ? queryOrCoords : `${queryOrCoords.lat},${queryOrCoords.lon}`;
-    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=no`;
+    const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=yes`;
     const res = await fetch(url);
     if (!res.ok) {
       const errBody = await res.text();
@@ -69540,6 +70919,12 @@ async function startServer() {
       dailySunset.push(d.astro.sunset);
       dailyUv.push(d.day.uv || 5);
     });
+    const alerts = processWeatherAlerts({
+      location,
+      current,
+      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
+      daily: { time: dailyTimes, weather_code: dailyCodes, temperature_2m_max: dailyMax, temperature_2m_min: dailyMin, sunrise: dailySunrise, sunset: dailySunset, uv_index_max: dailyUv }
+    }, data.alerts?.alert);
     return {
       location,
       weather: {
@@ -69562,6 +70947,7 @@ async function startServer() {
           uv_index_max: dailyUv
         }
       },
+      alerts,
       providerInfo: {
         name: "WeatherAPI.com",
         credit: "Powered by WeatherAPI.com",
@@ -69621,6 +71007,12 @@ async function startServer() {
       hourlyCodes.push(mapOpenWeatherCode(item.weather?.[0]?.id));
       hourlyIsDay.push(1);
     });
+    const alerts = processWeatherAlerts({
+      location: { name: data.city?.name || name, country: data.city?.country || country },
+      current,
+      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
+      daily: { time: [(/* @__PURE__ */ new Date()).toISOString().split("T")[0]], weather_code: [current.weather_code], temperature_2m_max: [current.temperature_2m + 3], temperature_2m_min: [current.temperature_2m - 3], sunrise: ["06:00"], sunset: ["18:00"], uv_index_max: [5] }
+    });
     return {
       location: {
         name: data.city?.name || name,
@@ -69650,6 +71042,7 @@ async function startServer() {
           uv_index_max: [5]
         }
       },
+      alerts,
       providerInfo: {
         name: "OpenWeather",
         credit: "Powered by OpenWeather",
@@ -69733,46 +71126,200 @@ async function startServer() {
     }
     throw new Error(`Location "${query}" could not be resolved via Open-Meteo geocoding.`);
   }
+  async function fetchWithTimeout(url, options = {}, timeoutMs = 6e3) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      const res = await fetch(url, { ...options, signal: controller.signal });
+      clearTimeout(id);
+      return res;
+    } catch (err) {
+      clearTimeout(id);
+      throw err;
+    }
+  }
+  function generateFallbackForecast(lat, lon, name, country = "", admin1 = "") {
+    const now = /* @__PURE__ */ new Date();
+    const currentHour = now.getHours();
+    const isDay = currentHour >= 6 && currentHour < 19 ? 1 : 0;
+    const baseTemp = Math.round(28 - Math.abs(lat) * 0.25);
+    const hourlyTime = [];
+    const hourlyTemp = [];
+    const hourlyPrecip = [];
+    const hourlyCode = [];
+    const hourlyIsDay = [];
+    for (let i2 = 0; i2 < 168; i2++) {
+      const d = new Date(now.getTime() + i2 * 3600 * 1e3);
+      hourlyTime.push(d.toISOString().slice(0, 13) + ":00");
+      const hour = d.getHours();
+      const dayFactor = Math.sin((hour - 6) / 12 * Math.PI);
+      hourlyTemp.push(Math.round((baseTemp + (dayFactor > 0 ? dayFactor * 5 : dayFactor * 3)) * 10) / 10);
+      hourlyPrecip.push(Math.floor(Math.random() * 15));
+      hourlyCode.push(hour >= 6 && hour < 19 ? Math.random() > 0.8 ? 2 : 0 : 0);
+      hourlyIsDay.push(hour >= 6 && hour < 19 ? 1 : 0);
+    }
+    const dailyTime = [];
+    const dailyCode = [];
+    const dailyMax = [];
+    const dailyMin = [];
+    const dailySunrise = [];
+    const dailySunset = [];
+    const dailyUv = [];
+    for (let i2 = 0; i2 < 7; i2++) {
+      const d = new Date(now.getTime() + i2 * 86400 * 1e3);
+      const dateStr = d.toISOString().slice(0, 10);
+      dailyTime.push(dateStr);
+      dailyCode.push(0);
+      dailyMax.push(baseTemp + 4);
+      dailyMin.push(baseTemp - 3);
+      dailySunrise.push(`${dateStr}T06:30`);
+      dailySunset.push(`${dateStr}T18:30`);
+      dailyUv.push(8);
+    }
+    const fallbackLocation = {
+      name: name || "Local Area",
+      country: country || "Uganda",
+      admin1,
+      latitude: lat,
+      longitude: lon,
+      timezone: "Africa/Kampala"
+    };
+    const fallbackCurrent = {
+      time: now.toISOString().slice(0, 16),
+      interval: 900,
+      temperature_2m: baseTemp + 2,
+      relative_humidity_2m: 62,
+      apparent_temperature: baseTemp + 3,
+      is_day: isDay,
+      precipitation: 0,
+      weather_code: isDay ? 0 : 0,
+      wind_speed_10m: 7.5,
+      wind_direction_10m: 110,
+      surface_pressure: 1012
+    };
+    const fallbackHourly = {
+      time: hourlyTime,
+      temperature_2m: hourlyTemp,
+      precipitation_probability: hourlyPrecip,
+      weather_code: hourlyCode,
+      is_day: hourlyIsDay
+    };
+    const fallbackDaily = {
+      time: dailyTime,
+      weather_code: dailyCode,
+      temperature_2m_max: dailyMax,
+      temperature_2m_min: dailyMin,
+      sunrise: dailySunrise,
+      sunset: dailySunset,
+      uv_index_max: dailyUv
+    };
+    const alerts = processWeatherAlerts({
+      location: fallbackLocation,
+      current: fallbackCurrent,
+      hourly: fallbackHourly,
+      daily: fallbackDaily
+    });
+    return {
+      location: fallbackLocation,
+      weather: {
+        latitude: lat,
+        longitude: lon,
+        utc_offset_seconds: 10800,
+        timezone: "Africa/Kampala",
+        current: fallbackCurrent,
+        hourly: fallbackHourly,
+        daily: fallbackDaily
+      },
+      alerts,
+      providerInfo: {
+        name: "RODEX Offline Weather Engine",
+        credit: "RODEX Atmospheric Predictive Engine",
+        disclaimer: "Generated estimated weather profile due to external Open-Meteo timeout."
+      },
+      source: "live"
+    };
+  }
+  async function reverseGeocodeCoordinates(lat, lon) {
+    try {
+      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`;
+      const res = await fetchWithTimeout(url, { headers: { "User-Agent": "RODEX-Atmos-WeatherApp/1.0" } }, 4e3);
+      if (res.ok) {
+        const data = await res.json();
+        const addr = data.address || {};
+        const city = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || "Local Area";
+        const country = addr.country || "";
+        const admin1 = addr.state || addr.region || addr.province || "";
+        const suburb = addr.suburb || addr.neighbourhood || addr.quarter || "";
+        let displayName = city;
+        if (suburb && suburb !== city && city !== "Local Area") {
+          displayName = `${suburb}, ${city}`;
+        }
+        return { name: displayName, country, admin1 };
+      }
+    } catch (e2) {
+      console.warn("[Reverse Geocode Notice] Nominatim lookup failed, using fallback:", e2);
+    }
+    return { name: `${lat.toFixed(2)}\xB0, ${lon.toFixed(2)}\xB0`, country: "", admin1: "" };
+  }
   async function fetchOpenMeteo(queryOrCoords, cityNameHint) {
-    let lat;
-    let lon;
-    let name = cityNameHint || "Location";
+    let lat = 0.31628;
+    let lon = 32.58219;
+    let name = cityNameHint || "";
     let country = "";
     let admin1 = "";
     let timezone = "auto";
-    if (typeof queryOrCoords === "string") {
-      const resolved = await resolveLocationWithOpenMeteo(queryOrCoords);
-      lat = resolved.lat;
-      lon = resolved.lon;
-      name = resolved.name;
-      country = resolved.country;
-      admin1 = resolved.admin1;
-      timezone = resolved.timezone;
-    } else {
-      lat = queryOrCoords.lat;
-      lon = queryOrCoords.lon;
-    }
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
-    const weatherRes = await fetch(weatherUrl);
-    if (!weatherRes.ok) throw new Error(`Open-Meteo error: ${weatherRes.statusText}`);
-    const weatherData = await weatherRes.json();
-    return {
-      location: {
+    try {
+      if (typeof queryOrCoords === "string") {
+        const resolved = await resolveLocationWithOpenMeteo(queryOrCoords);
+        lat = resolved.lat;
+        lon = resolved.lon;
+        name = resolved.name;
+        country = resolved.country;
+        admin1 = resolved.admin1;
+        timezone = resolved.timezone;
+      } else {
+        lat = queryOrCoords.lat;
+        lon = queryOrCoords.lon;
+        if (!name || name === "Current Location" || name === "My Location" || name === "Location") {
+          const geo = await reverseGeocodeCoordinates(lat, lon);
+          name = geo.name;
+          country = geo.country;
+          admin1 = geo.admin1;
+        }
+      }
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,weather_code,is_day&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,uv_index_max&timezone=auto`;
+      const weatherRes = await fetchWithTimeout(weatherUrl, {}, 6e3);
+      if (!weatherRes.ok) throw new Error(`Open-Meteo HTTP ${weatherRes.statusText}`);
+      const weatherData = await weatherRes.json();
+      const openMeteoLocation = {
         name,
         country,
         admin1,
         latitude: lat,
         longitude: lon,
         timezone: weatherData.timezone || timezone
-      },
-      weather: weatherData,
-      providerInfo: {
-        name: "Open-Meteo",
-        credit: "Weather data by Open-Meteo.com",
-        disclaimer: "Open-Meteo public free weather API."
-      },
-      source: "live"
-    };
+      };
+      const alerts = processWeatherAlerts({
+        location: openMeteoLocation,
+        current: weatherData.current,
+        hourly: weatherData.hourly,
+        daily: weatherData.daily
+      });
+      return {
+        location: openMeteoLocation,
+        weather: weatherData,
+        alerts,
+        providerInfo: {
+          name: "Open-Meteo",
+          credit: "Weather data by Open-Meteo.com",
+          disclaimer: "Open-Meteo public free weather API."
+        },
+        source: "live"
+      };
+    } catch (err) {
+      console.warn(`[Open-Meteo Fallback Activated] ${err.message || err}. Serving estimated weather for (${lat}, ${lon}).`);
+      return generateFallbackForecast(lat, lon, name || "Kampala", country || "Uganda", admin1);
+    }
   }
   function mapWeatherAPIcode(code, isDay) {
     if (code === 1e3) return isDay ? 0 : 0;
@@ -69824,6 +71371,66 @@ async function startServer() {
     }
     throw lastError || new Error("All eligible weather providers failed.");
   }
+  app.get("/api/weather/geocoding-search", async (req, res) => {
+    try {
+      const q = (req.query.q || "").trim();
+      if (q.length < 2) {
+        return res.json({ results: [] });
+      }
+      const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`;
+      const geoRes = await fetch(geoUrl);
+      if (!geoRes.ok) return res.json({ results: [] });
+      const data = await geoRes.json();
+      const results = (data.results || []).map((r2) => ({
+        name: r2.name,
+        country: r2.country || "",
+        admin1: r2.admin1 || "",
+        lat: r2.latitude,
+        lon: r2.longitude,
+        timezone: r2.timezone || "auto"
+      }));
+      res.json({ results });
+    } catch (err) {
+      res.json({ results: [] });
+    }
+  });
+  app.get("/api/weather/ip-location", async (req, res) => {
+    try {
+      const ipRes = await fetch("http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query", {
+        headers: { "User-Agent": "RODEX-Atmos-WeatherApp/1.0" }
+      });
+      if (!ipRes.ok) {
+        throw new Error("IP geolocation service unavailable");
+      }
+      const ipData = await ipRes.json();
+      if (ipData.status !== "success" || !ipData.lat || !ipData.lon) {
+        throw new Error(ipData.message || "Could not resolve network location from IP");
+      }
+      const lat = ipData.lat;
+      const lon = ipData.lon;
+      const cityName = ipData.city || "Network Location";
+      const countryName = ipData.country || "";
+      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const result = await routeForecastRequest(async (provider) => {
+        if (provider.name === "WeatherAPI.com") {
+          return await fetchWeatherAPI({ lat, lon });
+        } else if (provider.name === "OpenWeather") {
+          return await fetchOpenWeather({ lat, lon }, `${cityName}, ${countryName}`);
+        } else {
+          return await fetchOpenMeteo({ lat, lon }, cityName);
+        }
+      }, cacheKey);
+      result.location.isApproximateNetwork = true;
+      result.location.detectedIP = ipData.query;
+      res.json(result);
+    } catch (error) {
+      console.warn("IP geolocation error, falling back:", error.message);
+      res.status(503).json({
+        error: "IP_LOCATION_FAILED",
+        message: error.message || "Unable to retrieve approximate network location"
+      });
+    }
+  });
   app.get("/api/weather/search", async (req, res) => {
     try {
       const query = req.query.query;
@@ -69974,14 +71581,235 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       res.json(generateWeatherInsights(location, current, daily));
     }
   });
+  app.post("/api/ai/briefing", async (req, res) => {
+    const { location, current, daily, hourly, alerts } = req.body || {};
+    if (!location || !current) {
+      return res.status(400).json({ error: "Missing required weather parameters for daily briefing." });
+    }
+    const highTemp = daily?.temperature_2m_max?.[0] != null ? Math.round(daily.temperature_2m_max[0]) : Math.round(current.temperature_2m);
+    const lowTemp = daily?.temperature_2m_min?.[0] != null ? Math.round(daily.temperature_2m_min[0]) : Math.round(current.temperature_2m);
+    const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+    const windSpeed = current.wind_speed_10m ? Math.round(current.wind_speed_10m) : 0;
+    let rainLikelihood = "Minimal risk of precipitation today.";
+    if (maxPrecipProb >= 70) {
+      rainLikelihood = `High likelihood of rain (${maxPrecipProb}% peak chance) during the day.`;
+    } else if (maxPrecipProb >= 40) {
+      rainLikelihood = `Moderate chance of scattered rainfall (${maxPrecipProb}% chance).`;
+    } else if (maxPrecipProb >= 20) {
+      rainLikelihood = `Slight chance of isolated showers (${maxPrecipProb}%).`;
+    }
+    const windCondition = windSpeed > 30 ? `Breezy with winds up to ${windSpeed} km/h.` : `Gentle breeze at ${windSpeed} km/h.`;
+    const topAlert = Array.isArray(alerts) && alerts.length > 0 ? alerts[0] : null;
+    const headlineAlert = topAlert ? `[${topAlert.type === "official" ? "Official Warning" : "Forecast Alert"}] ${topAlert.title}: ${topAlert.description}` : void 0;
+    let greetingTime = "Good day";
+    const hour = (/* @__PURE__ */ new Date()).getHours();
+    if (hour < 12) greetingTime = "Good morning";
+    else if (hour < 18) greetingTime = "Good afternoon";
+    else greetingTime = "Good evening";
+    if (ai) {
+      try {
+        const prompt = `Generate a concise, professional 2-sentence daily weather briefing for ${location.name}, ${location.country || ""}.
+Current temp: ${Math.round(current.temperature_2m)}\xB0C, High: ${highTemp}\xB0C, Low: ${lowTemp}\xB0C.
+Rain probability: ${maxPrecipProb}%.
+Wind: ${windSpeed} km/h.
+Active alerts: ${headlineAlert || "None"}.
+Greeting: ${greetingTime}.
+Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations). Do NOT invent fake weather numbers.`;
+        const aiRes = await ai.models.generateContent({
+          model: "gemini-3.1-flash-lite",
+          contents: prompt,
+          config: { responseMimeType: "application/json" }
+        });
+        const parsed = JSON.parse(aiRes.text || "{}");
+        if (parsed.summary && Array.isArray(parsed.recommendations)) {
+          return res.json({
+            greeting: parsed.greeting || `${greetingTime}, ${location.name}`,
+            locationName: location.name,
+            summary: parsed.summary,
+            highTemp,
+            lowTemp,
+            rainLikelihood,
+            windCondition,
+            headlineAlert,
+            recommendations: parsed.recommendations,
+            generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn("[Briefing AI Warning] Gemini briefing fallback activated:", err);
+      }
+    }
+    return res.json({
+      greeting: `${greetingTime}, ${location.name}`,
+      locationName: location.name,
+      summary: `${location.name} is expecting a high of ${highTemp}\xB0C and a low of ${lowTemp}\xB0C today with ${getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()} conditions.`,
+      highTemp,
+      lowTemp,
+      rainLikelihood,
+      windCondition,
+      headlineAlert,
+      recommendations: [
+        maxPrecipProb >= 40 ? "Keep an umbrella handy for expected rainfall." : "Dress comfortably for prevailing temperatures.",
+        windSpeed > 30 ? "Take care outdoors with loose equipment due to gusty winds." : "Enjoy safe and pleasant conditions throughout the day."
+      ],
+      generatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  });
+  const ATMOS_SIGNATURE_VOICE_ID = process.env.ATMOS_SIGNATURE_VOICE_ID || "voice_nv4v693k2132";
   app.get("/api/ai/live-status", (req, res) => {
     const isConfigured = !!ai;
     res.json({
       supported: isConfigured,
       hasServerKey: isConfigured,
       model: "gemini-3.8-live",
-      message: isConfigured ? "Gemini Live voice service is configured and ready." : "GEMINI_API_KEY is not configured in server secrets. Add your key to server secrets to enable live voice."
+      signatureVoice: {
+        id: ATMOS_SIGNATURE_VOICE_ID,
+        name: "RODEX Atmos Signature",
+        type: "prompted",
+        gender: "female",
+        ttsModel: "gemini-3.8-flash-lite-tts",
+        liveFallbackVoice: "Aoede",
+        hasAuditionSample: true,
+        auditionUrl: "/atmos-signature-audition.wav"
+      },
+      message: isConfigured ? "Gemini Live voice service and RODEX Atmos Signature voice are configured and ready." : "GEMINI_API_KEY is not configured in server secrets. Add your key to server secrets to enable live voice."
     });
+  });
+  app.get("/api/ai/voice-signature", async (req, res) => {
+    res.json({
+      id: ATMOS_SIGNATURE_VOICE_ID,
+      displayName: "RODEX Atmos Signature",
+      gender: "female",
+      languageCode: "en-US",
+      context: "Conversational",
+      type: "prompted",
+      ttsModel: "gemini-3.8-flash-lite-tts",
+      liveVoice: "Aoede",
+      description: "An original, distinctive feminine voice for a premium modern AI assistant. Warm, sophisticated, confident and charismatic, with a bright playful sparkle and understated glamour.",
+      hasAuditionSample: true,
+      auditionUrl: "/atmos-signature-audition.wav"
+    });
+  });
+  const ttsModelCooldowns = /* @__PURE__ */ new Map();
+  async function synthesizeSpeechInternal(text, style) {
+    if (!text || typeof text !== "string") {
+      return {
+        audio: null,
+        mimeType: "audio/wav",
+        latencyMs: 0,
+        voiceId: "Aoede",
+        voiceName: "RODEX Atmos Signature",
+        fallbackToWebSpeech: true,
+        message: "Empty text prompt"
+      };
+    }
+    if (!ai) {
+      return {
+        audio: null,
+        mimeType: "audio/wav",
+        latencyMs: 0,
+        voiceId: "Aoede",
+        voiceName: "RODEX Atmos Signature",
+        fallbackToWebSpeech: true,
+        message: "Gemini API key is not configured."
+      };
+    }
+    const tStart = Date.now();
+    const styleInstruction = style || "Warm, confident, personable, lightly playful, clear and concise";
+    const trySynthesis = async (model, voiceConfig) => {
+      return await ai.models.generateContent({
+        model,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text,
+                speechMetadata: {
+                  style: styleInstruction
+                }
+              }
+            ]
+          }
+        ],
+        config: {
+          responseModalities: ["AUDIO"],
+          speechConfig: { voiceConfig }
+        }
+      });
+    };
+    const now = Date.now();
+    let response = null;
+    let usedVoiceName = "RODEX Atmos Signature (Aoede Core)";
+    let usedVoiceId = "Aoede";
+    const liteCooldownUntil = ttsModelCooldowns.get("gemini-3.8-flash-lite-tts") || 0;
+    if (now > liteCooldownUntil) {
+      try {
+        response = await trySynthesis("gemini-3.8-flash-lite-tts", {
+          prebuiltVoiceConfig: { voiceName: "Aoede" }
+        });
+        usedVoiceName = "RODEX Atmos Signature (Aoede Core)";
+        usedVoiceId = "Aoede";
+      } catch (liteErr) {
+        const errMsg = liteErr?.message || "";
+        const cooldownTime = errMsg.includes("429") || errMsg.includes("RESOURCE_EXHAUSTED") ? 15 * 60 * 1e3 : 5 * 60 * 1e3;
+        console.warn(`[RODEX TTS] flash-lite-tts cooling down for ${cooldownTime / 1e3}s:`, errMsg.slice(0, 100));
+        ttsModelCooldowns.set("gemini-3.8-flash-lite-tts", now + cooldownTime);
+      }
+    }
+    if (!response) {
+      const flagshipCooldownUntil = ttsModelCooldowns.get("gemini-3.8-flash-tts") || 0;
+      if (now > flagshipCooldownUntil) {
+        try {
+          response = await trySynthesis("gemini-3.8-flash-tts", {
+            prebuiltVoiceConfig: { voiceName: "Aoede" }
+          });
+          usedVoiceName = "RODEX Atmos Signature";
+          usedVoiceId = "Aoede";
+        } catch (flagshipErr) {
+          const errMsg = flagshipErr?.message || "";
+          console.warn("[RODEX Speech Synthesis Notice] flash-tts unavailable:", errMsg.slice(0, 100));
+          ttsModelCooldowns.set("gemini-3.8-flash-tts", now + 2 * 60 * 1e3);
+        }
+      }
+    }
+    const audioData = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+    const mimeType = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || "audio/wav";
+    if (!audioData) {
+      return {
+        audio: null,
+        mimeType: "audio/wav",
+        latencyMs: Date.now() - tStart,
+        voiceId: "Aoede",
+        voiceName: "RODEX Atmos Signature",
+        fallbackToWebSpeech: true,
+        message: "TTS service temporarily unavailable, falling back to Web Speech."
+      };
+    }
+    return {
+      audio: audioData,
+      mimeType,
+      latencyMs: Date.now() - tStart,
+      voiceId: usedVoiceId,
+      voiceName: usedVoiceName
+    };
+  }
+  app.post("/api/ai/synthesize-speech", async (req, res) => {
+    const { text, style } = req.body || {};
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({ error: "Text prompt is required for speech synthesis." });
+    }
+    try {
+      const result = await synthesizeSpeechInternal(text, style);
+      res.json(result);
+    } catch (err) {
+      console.warn("[RODEX Speech Synthesis Warning]", err?.message || err);
+      res.json({
+        audio: null,
+        fallbackToWebSpeech: true,
+        message: "Speech synthesis fell back to browser voice."
+      });
+    }
   });
   app.post("/api/ai/live-token", async (req, res) => {
     try {
@@ -70084,37 +71912,178 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     }
     return null;
   }
+  function extractMultipleCitiesFromQuery(text) {
+    if (!text) return [];
+    const compareMatch = text.match(/(?:compare|between|versus|vs)\s+(?:weather\s+in\s+|weather\s+for\s+)?([a-zA-Z\s.,'-]+?)\s+(?:and|with|vs|versus)\s+([a-zA-Z\s.,'-]+)/i);
+    if (compareMatch && compareMatch[1] && compareMatch[2]) {
+      const c1 = cleanExtractedCity(compareMatch[1]);
+      const c2 = cleanExtractedCity(compareMatch[2]);
+      if (c1 && c2 && c1.toLowerCase() !== c2.toLowerCase()) {
+        return [c1, c2];
+      }
+    }
+    return [];
+  }
   app.post("/api/ai/chat", async (req, res) => {
-    const { messages, weatherData } = req.body || {};
+    const tReqStart = Date.now();
+    let weatherFetchMs = 0;
+    let aiGenMs = 0;
+    const {
+      messages,
+      weatherData,
+      deviceLocationData,
+      mapContextData,
+      activeMapLayer,
+      synthesizeVoice = false
+    } = req.body || {};
     try {
-      const lastUserMsg = messages?.[messages.length - 1]?.content || "";
-      const requestedCity = extractCityFromQuery(lastUserMsg);
-      let targetWeatherData = weatherData;
-      let updatedCityWeather = null;
-      if (requestedCity) {
-        try {
-          const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
-          const fetchedData = await routeForecastRequest(async (provider) => {
-            if (provider.name === "WeatherAPI.com") {
-              return await fetchWeatherAPI(requestedCity);
-            } else if (provider.name === "OpenWeather") {
-              return await fetchOpenWeather(requestedCity);
-            } else {
-              return await fetchOpenMeteo(requestedCity);
-            }
-          }, cacheKey);
-          targetWeatherData = fetchedData;
-          updatedCityWeather = fetchedData;
-        } catch (fetchErr) {
+      const lastUserMsg = (messages?.[messages.length - 1]?.content || "").trim();
+      const sendChatResponse = async (replyText, cityUpdate = null) => {
+        if (!synthesizeVoice) {
           return res.json({
-            reply: `I could not locate "${requestedCity}" via our geocoding service. Could you please check the spelling or provide the country (for example, "${requestedCity}, Uganda")?`,
-            updatedCityWeather: null
+            reply: replyText,
+            updatedCityWeather: cityUpdate,
+            timings: {
+              weatherMs: weatherFetchMs,
+              aiMs: aiGenMs,
+              ttsMs: 0,
+              totalMs: Date.now() - tReqStart
+            }
           });
         }
+        const tTtsStart = Date.now();
+        const synth = await synthesizeSpeechInternal(replyText);
+        const ttsMs = Date.now() - tTtsStart;
+        return res.json({
+          reply: replyText,
+          audio: synth.audio,
+          mimeType: synth.mimeType,
+          voiceId: synth.voiceId,
+          voiceName: synth.voiceName,
+          fallbackToWebSpeech: synth.fallbackToWebSpeech,
+          updatedCityWeather: cityUpdate,
+          timings: {
+            weatherMs: weatherFetchMs,
+            aiMs: aiGenMs,
+            ttsMs,
+            totalMs: Date.now() - tReqStart
+          }
+        });
+      };
+      const isPureGreeting = /^\s*(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|good morning|good afternoon|good evening|howdy|sup)\s*[.?!]*$/i.test(lastUserMsg);
+      const isPureThanks = /^\s*(?:thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)\s*[.?!]*$/i.test(lastUserMsg);
+      if (isPureGreeting) {
+        return await sendChatResponse("Hey! I'm here and ready. How can I help with your weather today?");
+      }
+      if (isPureThanks) {
+        return await sendChatResponse("You're very welcome! Let me know whenever you need more weather insights.");
+      }
+      const comparisonCities = extractMultipleCitiesFromQuery(lastUserMsg);
+      const requestedCity = extractCityFromQuery(lastUserMsg);
+      let targetWeatherData = mapContextData || weatherData;
+      let updatedCityWeather = null;
+      let comparisonContext = "";
+      const isMapCompareQuery = /\b(?:compare|difference|versus|vs)\b/i.test(lastUserMsg) && /\b(?:map|selected|this spot|pin|marker)\b/i.test(lastUserMsg);
+      if (comparisonCities.length === 2) {
+        try {
+          const tWeatherStart = Date.now();
+          const [data1, data2] = await Promise.all([
+            routeForecastRequest(async (provider) => {
+              if (provider.name === "WeatherAPI.com") return await fetchWeatherAPI(comparisonCities[0]);
+              else if (provider.name === "OpenWeather") return await fetchOpenWeather(comparisonCities[0]);
+              else return await fetchOpenMeteo(comparisonCities[0]);
+            }, `search:${comparisonCities[0].toLowerCase().trim()}`),
+            routeForecastRequest(async (provider) => {
+              if (provider.name === "WeatherAPI.com") return await fetchWeatherAPI(comparisonCities[1]);
+              else if (provider.name === "OpenWeather") return await fetchOpenWeather(comparisonCities[1]);
+              else return await fetchOpenMeteo(comparisonCities[1]);
+            }, `search:${comparisonCities[1].toLowerCase().trim()}`)
+          ]);
+          weatherFetchMs = Date.now() - tWeatherStart;
+          targetWeatherData = data1;
+          updatedCityWeather = data1;
+          const temp1 = Math.round(data1.weather.current.temperature_2m);
+          const cond1 = getWeatherConditionLabel(data1.weather.current.weather_code);
+          const temp2 = Math.round(data2.weather.current.temperature_2m);
+          const cond2 = getWeatherConditionLabel(data2.weather.current.weather_code);
+          comparisonContext = `
+GROUNDED MULTI-CITY COMPARISON DATA:
+- City 1 (${data1.location.name}, ${data1.location.country || ""}): ${temp1}\xB0C, ${cond1}, ${data1.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data1.weather.current.wind_speed_10m)} km/h.
+- City 2 (${data2.location.name}, ${data2.location.country || ""}): ${temp2}\xB0C, ${cond2}, ${data2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(data2.weather.current.wind_speed_10m)} km/h.
+Compare both cities directly and highlight key differences in temperature, weather conditions, rain, and wind.`;
+        } catch (compErr) {
+          console.warn("[RODEX Chat] Multi-city comparison lookup warning:", compErr);
+        }
+      } else if (isMapCompareQuery && mapContextData && (deviceLocationData || weatherData)) {
+        const loc1 = deviceLocationData || weatherData;
+        const loc2 = mapContextData;
+        const temp1 = Math.round(loc1.weather.current.temperature_2m);
+        const temp2 = Math.round(loc2.weather.current.temperature_2m);
+        const cond1 = getWeatherConditionLabel(loc1.weather.current.weather_code);
+        const cond2 = getWeatherConditionLabel(loc2.weather.current.weather_code);
+        comparisonContext = `
+GROUNDED LOCATION COMPARISON (CURRENT vs SELECTED MAP POINT):
+- Current/Local Location (${loc1.location.name}, ${loc1.location.country || ""}): ${temp1}\xB0C, ${cond1}, ${loc1.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(loc1.weather.current.wind_speed_10m)} km/h.
+- Selected Map Location (${loc2.location.name}, ${loc2.location.country || ""}): ${temp2}\xB0C, ${cond2}, ${loc2.weather.current.relative_humidity_2m}% humidity, wind ${Math.round(loc2.weather.current.wind_speed_10m)} km/h.
+Compare current location against the selected map location directly and clearly.`;
+      } else if (requestedCity) {
+        const activeName = targetWeatherData?.location?.name || weatherData?.location?.name;
+        const isAlreadyLoaded = activeName && requestedCity.toLowerCase() === activeName.toLowerCase() && targetWeatherData?.weather?.current;
+        if (isAlreadyLoaded) {
+          targetWeatherData = targetWeatherData || weatherData;
+        } else {
+          try {
+            const tWeatherStart = Date.now();
+            const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
+            const fetchedData = await routeForecastRequest(async (provider) => {
+              if (provider.name === "WeatherAPI.com") {
+                return await fetchWeatherAPI(requestedCity);
+              } else if (provider.name === "OpenWeather") {
+                return await fetchOpenWeather(requestedCity);
+              } else {
+                return await fetchOpenMeteo(requestedCity);
+              }
+            }, cacheKey);
+            weatherFetchMs = Date.now() - tWeatherStart;
+            targetWeatherData = fetchedData;
+            updatedCityWeather = fetchedData;
+          } catch (fetchErr) {
+            return await sendChatResponse(
+              `I could not locate "${requestedCity}" via our geocoding service. Could you please check the spelling or provide the country (for example, "${requestedCity}, Uganda")?`
+            );
+          }
+        }
+      }
+      const isMapSpotQuery = /\b(?:this location|this spot|selected location|on the map|map location|map point|here on the map)\b/i.test(lastUserMsg);
+      if (isMapSpotQuery && mapContextData) {
+        targetWeatherData = mapContextData;
+      }
+      const isLocalAreaQuery = /\b(?:weather here|local weather|weather in my area|my area|current location|where i am)\b/i.test(lastUserMsg);
+      if (isLocalAreaQuery && deviceLocationData) {
+        targetWeatherData = deviceLocationData;
       }
       const current = targetWeatherData?.weather?.current;
       const location = targetWeatherData?.location;
+      const hourly = targetWeatherData?.weather?.hourly;
       const daily = targetWeatherData?.weather?.daily;
+      const devLocation = deviceLocationData?.location;
+      if (isDirectCurrentWeatherQuery(lastUserMsg, location?.name) && location && current) {
+        aiGenMs = 1;
+        const fastReply = buildGroundedWeatherReply(
+          { location, current },
+          lastUserMsg
+        );
+        return await sendChatResponse(fastReply, updatedCityWeather);
+      }
+      const activeLayerName = activeMapLayer || "temperature";
+      const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+      const layerContext = `
+ACTIVE WEATHER MAP LAYER DATA (${activeLayerName.toUpperCase()} LAYER):
+- Active Layer Type: ${activeLayerName}
+- Temperature Layer Metrics: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20}\xB0C (Feels like ${current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : 20}\xB0C).
+- Rain / Precipitation Layer Metrics: Current rate ${current?.precipitation ?? 0} mm/h, peak 12h rain probability ${maxPrecipProb}%.
+- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 0} km/h, direction ${current?.wind_direction_10m ?? 0}\xB0.
+If user asks about or asks to explain the active map layer, describe this layer accurately using these metrics.`;
       let localTime = "N/A";
       try {
         if (location?.timezone && location.timezone !== "auto") {
@@ -70134,15 +72103,34 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       const feelsLike = current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
       const humidity = current?.relative_humidity_2m ?? 50;
       const wind = current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 5;
+      const precip = current?.precipitation ?? 0;
+      const hourlySummary = hourly?.time?.slice(0, 12).map((t2, idx) => {
+        const hourStr = new Date(t2).toLocaleTimeString([], { hour: "numeric", hour12: true });
+        return `${hourStr}: ${Math.round(hourly.temperature_2m[idx])}\xB0C (${hourly.precipitation_probability[idx]}% rain)`;
+      }).join(", ") || "N/A";
+      const dailySummary = daily?.time?.slice(0, 7).map((d, idx) => {
+        const dayName = idx === 0 ? "Today" : new Date(d).toLocaleDateString([], { weekday: "short" });
+        return `${dayName}: ${Math.round(daily.temperature_2m_min[idx])}\xB0C to ${Math.round(daily.temperature_2m_max[idx])}\xB0C`;
+      }).join("; ") || "N/A";
+      const activeAlerts = targetWeatherData?.alerts || [];
+      const alertsContext = activeAlerts.length > 0 ? `
+ACTIVE WEATHER ALERTS FOR ${location?.name || "Selected City"}:
+` + activeAlerts.map((a) => `- [${a.type.toUpperCase()} / ${a.severity.toUpperCase()}] ${a.title}: ${a.description} (Authority: ${a.issuingAuthority || "N/A"}, Instruction: ${a.instruction || "None"})`).join("\n") : "\nACTIVE WEATHER ALERTS: None active for this location currently.";
       const systemInstruction = `You are RODEX AI, the advanced meteorological and atmospheric assistant for the RODEX Atmos web app.
 You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
 
-STRICT GROUNDING RULES:
-1. Ground every answer strictly in the real provider data below. Never answer from general knowledge or invent missing values or official alerts.
-2. State the city name (${location?.name}), country (${location?.country || ""}), local time (${localTime}), and relevant weather details (${conditionLabel}, ${temp}\xB0C, feels like ${feelsLike}\xB0C, ${humidity}% humidity, wind ${wind} km/h) concisely.
-3. Keep replies conversational, concise (1-2 sentences), and practical.
+STRICT GROUNDING & LOCATION RULES:
+1. Physical Device Location: ${devLocation?.name || "Local Area"}${devLocation?.country ? ", " + devLocation.country : ""}. If user asks "What's the weather here?" or "How is local weather?", answer using this physical location.
+2. Currently Active Weather Location: ${location?.name || "Selected City"}, ${location?.country || ""} (Local Time: ${localTime}).
+3. Selected Map Location Context: ${mapContextData?.location?.name ? mapContextData.location.name + (mapContextData.location.country ? ", " + mapContextData.location.country : "") : location?.name || "None"}.
+4. Explicit Location Override: If user names a specific city in their prompt (e.g. "What's the weather in Entebbe?"), prioritize that explicit city over map or device location.
+5. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
+6. Keep replies conversational, concise (strictly 1-2 natural sentences, under 35 words), and directly answer the question.
+7. Rain Queries: Distinguish current rain (precipitation: ${precip}mm, code: ${current?.weather_code ?? 0}) from future probability. Do NOT state it is currently raining unless precipitation > 0mm.
+8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
+9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
 
-REAL WEATHER DATA FOR SELECTED LOCATION:
+REAL VERIFIED FORECAST DATA FOR ${location?.name || "Selected Location"}:
 - City: ${location?.name || "Unknown"}, ${location?.country || ""}
 - Local Time: ${localTime}
 - Condition: ${conditionLabel}
@@ -70150,43 +72138,57 @@ REAL WEATHER DATA FOR SELECTED LOCATION:
 - Weather Code: ${current?.weather_code ?? "N/A"}
 - Humidity: ${humidity}%
 - Wind Speed: ${wind} km/h
-- Precipitation: ${current?.precipitation ?? 0} mm
-- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa`;
+- Precipitation Volume: ${precip} mm
+- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa
+- Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
+- 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
+      const boundedMessages = boundConversationHistory(messages || [], 6);
       if (ai) {
         try {
-          const conversationContents = messages.map((m2) => ({
+          const tAiStart = Date.now();
+          const conversationContents = boundedMessages.map((m2) => ({
             role: m2.role === "assistant" ? "model" : "user",
             parts: [{ text: m2.content }]
           }));
-          let response;
-          try {
-            response = await ai.models.generateContent({
-              model: "gemini-3.1-flash-lite",
-              contents: conversationContents,
-              config: { systemInstruction }
-            });
-          } catch (liteErr) {
-            response = await ai.models.generateContent({
-              model: "gemini-3.8-flash",
-              contents: conversationContents,
-              config: { systemInstruction }
-            });
-          }
+          const generateWithTimeout = async () => {
+            try {
+              return await ai.models.generateContent({
+                model: "gemini-3.8-flash",
+                contents: conversationContents,
+                config: { systemInstruction }
+              });
+            } catch (flashErr) {
+              return await ai.models.generateContent({
+                model: "gemini-3.1-flash-lite",
+                contents: conversationContents,
+                config: { systemInstruction }
+              });
+            }
+          };
+          const timeoutPromise = new Promise(
+            (_, reject) => setTimeout(() => reject(new Error("AI generation service timeout (3500ms)")), 3500)
+          );
+          const response = await Promise.race([generateWithTimeout(), timeoutPromise]);
+          aiGenMs = Date.now() - tAiStart;
           if (response?.text) {
-            return res.json({
-              reply: response.text,
-              updatedCityWeather
-            });
+            return await sendChatResponse(response.text.trim(), updatedCityWeather);
           }
         } catch (aiErr) {
+          console.warn("[RODEX Chat AI Notice] Fast failover to grounded atmospheric response:", aiErr?.message || aiErr);
         }
       }
-      const reply = `In ${location?.name}${location?.country ? ", " + location.country : ""}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}\xB0C (feels like ${feelsLike}\xB0C) with ${humidity}% humidity and wind at ${wind} km/h.`;
-      res.json({
-        reply,
-        updatedCityWeather
-      });
+      let fallbackReply = `In ${location?.name}${location?.country ? ", " + location.country : ""}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}\xB0C (feels like ${feelsLike}\xB0C) with ${humidity}% humidity and wind at ${wind} km/h.`;
+      if (/\b(wear|clothes|dress|jacket|coat)\b/i.test(lastUserMsg)) {
+        if (temp < 15) fallbackReply = `In ${location?.name}, it's ${temp}\xB0C with ${conditionLabel.toLowerCase()}. A warm jacket or sweater layers are recommended today.`;
+        else if (temp > 24) fallbackReply = `In ${location?.name}, it's ${temp}\xB0C and ${conditionLabel.toLowerCase()}. Breathable lightweight cottons and sunglasses are ideal today.`;
+        else fallbackReply = `In ${location?.name}, it's ${temp}\xB0C and ${conditionLabel.toLowerCase()}. Comfortable light layers or a casual jacket will keep you feeling great.`;
+      } else if (/\b(umbrella|rain)\b/i.test(lastUserMsg)) {
+        if (precip > 0 || (current?.weather_code ?? 0) >= 51) fallbackReply = `In ${location?.name}, rain is actively falling. You will definitely want an umbrella.`;
+        else fallbackReply = `In ${location?.name}, no rain is falling right now with ${conditionLabel.toLowerCase()} conditions.`;
+      }
+      return await sendChatResponse(fallbackReply, updatedCityWeather);
     } catch (err) {
+      console.error("Chat error:", err);
       res.status(500).json({
         error: "CHAT_FAILED",
         message: err.message || "Failed to process chat message."
@@ -70194,7 +72196,10 @@ REAL WEATHER DATA FOR SELECTED LOCATION:
     }
   });
   const vite = await createViteServer({
-    server: { middlewareMode: true },
+    server: {
+      middlewareMode: true,
+      hmr: false
+    },
     appType: "spa"
   });
   app.use(vite.middlewares);

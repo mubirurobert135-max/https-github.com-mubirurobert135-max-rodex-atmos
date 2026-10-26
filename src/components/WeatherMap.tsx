@@ -78,6 +78,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
+  const [isSliderOpen, setIsSliderOpen] = useState<boolean>(false);
   const [inspectedLocation, setInspectedLocation] = useState<{
     lat: number;
     lon: number;
@@ -551,15 +552,15 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   };
 
   return (
-    <div className={`w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-slate-950 p-4' : 'relative my-6'}`}>
-      <div className={`w-full rounded-3xl overflow-hidden border border-white/20 bg-slate-900/90 backdrop-blur-2xl shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[550px] sm:h-[620px]'}`}>
+    <div className={`w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#050b14] p-2 sm:p-4' : 'relative my-6'}`}>
+      <div className={`w-full rounded-3xl overflow-hidden border border-white/15 bg-[#0a1324]/95 backdrop-blur-2xl shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[500px] sm:h-[620px]'}`}>
         
         {/* Map Header Controls Toolbar */}
-        <div className="p-4 bg-slate-900/95 border-b border-white/10 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 z-10">
+        <div className="p-3 sm:p-4 bg-[#0a1426] border-b border-white/10 flex flex-wrap items-center justify-between gap-2.5 z-10">
           
           {/* Left: Metric Layers Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0">
-            <span className="text-xs font-bold text-sky-200/70 mr-1 flex items-center gap-1 shrink-0 font-heading">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
+            <span className="text-xs font-bold text-sky-200/70 mr-1 hidden sm:flex items-center gap-1 shrink-0 font-heading">
               <Layers className="w-3.5 h-3.5 text-sky-400" />
               <span>Layer:</span>
             </span>
@@ -569,14 +570,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 setActiveMetric('temperature');
                 onMapContextChange?.(inspectedLocation?.weather || currentWeatherData, 'temperature');
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'temperature'
-                  ? 'bg-sky-500 text-white shadow-lg shadow-sky-500/30 border border-sky-300/40'
-                  : 'bg-white/10 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30 border border-sky-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
               }`}
             >
               <Thermometer className="w-3.5 h-3.5" />
-              <span>Temperature</span>
+              <span>Temp</span>
             </button>
 
             <button
@@ -584,14 +585,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 setActiveMetric('precipitation');
                 onMapContextChange?.(inspectedLocation?.weather || currentWeatherData, 'precipitation');
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'precipitation'
-                  ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30 border border-blue-300/40'
-                  : 'bg-white/10 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 border border-blue-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
               }`}
             >
               <CloudRain className="w-3.5 h-3.5" />
-              <span>Rain Chance</span>
+              <span>Rain</span>
             </button>
 
             <button
@@ -599,32 +600,32 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 setActiveMetric('wind');
                 onMapContextChange?.(inspectedLocation?.weather || currentWeatherData, 'wind');
               }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift ${
+              className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'wind'
-                  ? 'bg-teal-500 text-white shadow-lg shadow-teal-500/30 border border-teal-300/40'
-                  : 'bg-white/10 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-teal-500 text-white shadow-md shadow-teal-500/30 border border-teal-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
               }`}
             >
               <Wind className="w-3.5 h-3.5" />
-              <span>Wind Speed</span>
+              <span>Wind</span>
             </button>
           </div>
 
           {/* Right: Map Quick Controls & Search */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-end">
             
             {/* Inline Map Location Search */}
-            <form onSubmit={handleMapSearch} className="relative flex-1 md:w-56">
+            <form onSubmit={handleMapSearch} className="relative flex-1 sm:w-44 md:w-56 min-w-[120px]">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-sky-300 pointer-events-none" />
               <input
                 type="text"
                 value={mapSearchTerm}
                 onChange={(e) => setMapSearchTerm(e.target.value)}
-                placeholder="Jump map to city..."
-                className="w-full pl-8 pr-3 py-1.5 bg-white/10 hover:bg-white/15 focus:bg-slate-900 text-white text-xs rounded-xl border border-white/20 focus:border-sky-400 focus:outline-none transition"
+                placeholder="Jump to city..."
+                className="w-full pl-8 pr-2 py-1.5 bg-white/8 hover:bg-white/12 focus:bg-[#070e1c] text-white text-xs rounded-xl border border-white/15 focus:border-sky-400 focus:outline-none transition min-h-[36px]"
               />
               {searchResults.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-slate-900 border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1426] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
                   {searchResults.map((city) => (
                     <button
                       key={`${city.name}-${city.lat}-${city.lon}`}
@@ -650,8 +651,9 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Recenter Active City Button */}
             <button
               onClick={handleRecenterActive}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-sky-300 border border-white/15 transition btn-hover-lift"
+              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-sky-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
               title="Center Map on Selected Active City"
+              aria-label="Center map on selected city"
             >
               <Compass className="w-4 h-4" />
             </button>
@@ -659,8 +661,9 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Recenter Device GPS Button */}
             <button
               onClick={handleRecenterGPS}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-emerald-300 border border-white/15 transition btn-hover-lift"
+              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-emerald-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
               title="Center Map on My GPS Device Location"
+              aria-label="Center map on physical GPS device location"
             >
               <Navigation className="w-4 h-4" />
             </button>
@@ -668,8 +671,9 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Toggle Fullscreen Map View */}
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/15 transition btn-hover-lift"
+              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-white border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
               title={isFullscreen ? 'Exit Fullscreen Map' : 'Expand Fullscreen Map'}
+              aria-label={isFullscreen ? 'Exit Fullscreen Map' : 'Expand Fullscreen Map'}
             >
               {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
@@ -678,59 +682,74 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         </div>
 
         {/* Map Canvas Container */}
-        <div className="relative flex-1 w-full h-full">
+        <div className="relative flex-1 w-full h-full min-h-[300px]">
           <div ref={mapContainerRef} className="w-full h-full z-0" />
 
-          {/* Floating Time Forecast Offset Slider Overlay */}
-          <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 bg-slate-900/90 backdrop-blur-xl border border-white/20 rounded-2xl p-3 shadow-2xl z-10 space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-bold text-sky-200 flex items-center gap-1.5 font-heading">
+          {/* Floating Time Forecast Offset Slider (Responsive: Docked on desktop, expandable on mobile) */}
+          <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20">
+            {/* Mobile Toggle Pill */}
+            <div className="sm:hidden mb-1 flex justify-end">
+              <button
+                onClick={() => setIsSliderOpen(!isSliderOpen)}
+                className="px-3 py-1.5 rounded-xl bg-[#0a1426]/95 border border-white/20 text-sky-200 text-xs font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-md"
+              >
                 <Clock className="w-3.5 h-3.5 text-sky-400" />
-                <span>Forecast Offset</span>
-              </span>
-              <span className="font-black text-amber-300 tabular-nums">
-                {timeOffsetHours === 0 ? 'Live Current Conditions' : `+${timeOffsetHours} Hours Forecast`}
-              </span>
+                <span>{timeOffsetHours === 0 ? 'Forecast (Now)' : `+${timeOffsetHours}h Forecast`}</span>
+              </button>
             </div>
 
-            <input
-              type="range"
-              min={0}
-              max={24}
-              step={3}
-              value={timeOffsetHours}
-              onChange={(e) => setTimeOffsetHours(Number(e.target.value))}
-              className="w-full accent-sky-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
-            />
+            {/* Slider Card */}
+            <div className={`${isSliderOpen ? 'block' : 'hidden sm:block'} w-72 sm:w-80 bg-[#0a1426]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-3 shadow-2xl space-y-2`}>
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-bold text-sky-200 flex items-center gap-1.5 font-heading">
+                  <Clock className="w-3.5 h-3.5 text-sky-400" />
+                  <span>Forecast Timeline</span>
+                </span>
+                <span className="font-bold text-amber-300 tabular-nums">
+                  {timeOffsetHours === 0 ? 'Live Conditions' : `+${timeOffsetHours}h Forecast`}
+                </span>
+              </div>
 
-            <div className="flex justify-between text-[10px] text-white/50 font-medium">
-              <span>Now</span>
-              <span>+6h</span>
-              <span>+12h</span>
-              <span>+18h</span>
-              <span>+24h</span>
+              <input
+                type="range"
+                min={0}
+                max={24}
+                step={3}
+                value={timeOffsetHours}
+                onChange={(e) => setTimeOffsetHours(Number(e.target.value))}
+                className="w-full accent-sky-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
+                aria-label="Forecast offset in hours"
+              />
+
+              <div className="flex justify-between text-[10px] text-white/50 font-medium">
+                <span>Now</span>
+                <span>+6h</span>
+                <span>+12h</span>
+                <span>+18h</span>
+                <span>+24h</span>
+              </div>
             </div>
           </div>
 
-          {/* Interactive Map Hint Banner (Top Left inside canvas) */}
-          <div className="absolute top-4 left-4 hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 backdrop-blur-md border border-white/15 text-xs text-sky-200 shadow-xl pointer-events-none z-10">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0 animate-pulse" />
-            <span>Tap anywhere on the map to inspect live weather for coordinates</span>
+          {/* Interactive Map Hint Banner (Desktop only) */}
+          <div className="absolute top-3 left-3 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0a1426]/85 backdrop-blur-md border border-white/15 text-xs text-sky-200 shadow-xl pointer-events-none z-10">
+            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <span>Tap map locations to inspect live weather</span>
           </div>
         </div>
 
         {/* Footer info bar */}
-        <div className="px-4 py-2 bg-slate-950/90 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/60 gap-2 z-10">
+        <div className="px-3 py-2 bg-[#060b14] border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/60 gap-1.5 z-10">
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-sky-400" />
-            <span>Map Tile Data: OpenFreeMap / OpenStreetMap (No API key required)</span>
+            <span>Map Tile Data: OpenFreeMap / OpenStreetMap</span>
           </div>
           <button
             onClick={() => onOpenAssistant(`Give me an overview of weather patterns across the map near ${currentWeatherData?.location.name || 'my location'}.`)}
             className="text-sky-300 hover:text-sky-200 font-bold flex items-center gap-1 transition"
           >
             <Sparkles className="w-3 h-3 text-sky-400" />
-            <span>Ask RODEX AI to analyze map region</span>
+            <span>Analyze region with RODEX AI</span>
           </button>
         </div>
 

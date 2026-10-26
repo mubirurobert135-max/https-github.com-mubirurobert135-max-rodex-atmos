@@ -149,13 +149,18 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/80 backdrop-blur-xl animate-fade-in">
-      <div className="relative w-full max-w-4xl bg-slate-900/95 border border-sky-400/20 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white flex flex-col max-h-[90vh]">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="Privacy and Account Portal"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-950/85 backdrop-blur-xl animate-fade-in"
+    >
+      <div className="relative w-full max-w-4xl bg-[#0a1426]/95 border border-sky-400/25 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white flex flex-col max-h-[90dvh]">
         
         {/* Header */}
-        <div className="p-5 sm:p-6 border-b border-white/10 flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg text-white font-bold">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg text-white font-bold shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>

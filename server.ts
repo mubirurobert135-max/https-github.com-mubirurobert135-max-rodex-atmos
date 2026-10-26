@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
+import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
 
 dotenv.config();
 
@@ -1269,6 +1270,16 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
   // Cooldown cache for TTS models to prevent wasted latency on failed / rate-limited tiers
   const ttsModelCooldowns = new Map<string, number>();
 
+  // In-memory cache for approved voice synthesized audio to achieve near-instant turnaround
+  interface CachedAudioEntry {
+    audio: string;
+    mimeType: string;
+    voiceId: string;
+    voiceName: string;
+    timestamp: number;
+  }
+  const synthAudioCache = new Map<string, CachedAudioEntry>();
+
   interface InternalSynthesisResult {
     audio: string | null;
     mimeType: string;
@@ -1307,6 +1318,19 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
 
     const tStart = Date.now();
     const styleInstruction = style || 'Warm, confident, personable, lightly playful, clear and concise';
+
+    // Check pre-generated or cached audio for approved voice
+    const cacheKey = `${ATMOS_SIGNATURE_VOICE_ID}:${text.trim().toLowerCase()}:${styleInstruction}`;
+    if (synthAudioCache.has(cacheKey)) {
+      const cached = synthAudioCache.get(cacheKey)!;
+      return {
+        audio: cached.audio,
+        mimeType: cached.mimeType,
+        latencyMs: 0,
+        voiceId: cached.voiceId,
+        voiceName: cached.voiceName
+      };
+    }
 
     const trySynthesis = async (model: string, voiceConfig: any) => {
       return await ai!.models.generateContent({
@@ -1402,6 +1426,15 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         message: 'TTS service temporarily unavailable, falling back to Web Speech.'
       };
     }
+
+    // Cache synthesized audio safely for reuse
+    synthAudioCache.set(cacheKey, {
+      audio: audioData,
+      mimeType,
+      voiceId: usedVoiceId,
+      voiceName: usedVoiceName,
+      timestamp: Date.now()
+    });
 
     return {
       audio: audioData,
@@ -1616,11 +1649,12 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       };
 
       // Fast conversational routing: short-circuit pure greetings or thanks without invoking geocoding/weather APIs
-      const isPureGreeting = /^\s*(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|good morning|good afternoon|good evening|howdy|sup)\s*[.?!]*$/i.test(lastUserMsg);
+      const isGreeting = isGreetingQuery(lastUserMsg);
       const isPureThanks = /^\s*(?:thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)\s*[.?!]*$/i.test(lastUserMsg);
 
-      if (isPureGreeting) {
-        return await sendChatResponse("Hey! I'm here and ready. How can I help with your weather today?");
+      if (isGreeting) {
+        const greetingReply = buildNaturalGreetingResponse(req.body?.userName);
+        return await sendChatResponse(greetingReply);
       }
       if (isPureThanks) {
         return await sendChatResponse("You're very welcome! Let me know whenever you need more weather insights.");
@@ -1898,6 +1932,19 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
   });
 
   app.use(vite.middlewares);
+
+  // Pre-warm the approved RODEX Atmos Signature greeting audio cache
+  if (ai) {
+    synthesizeSpeechInternal("Hey! I'm listening. What's on your mind?")
+      .then((res) => {
+        if (res.audio) {
+          console.log('[RODEX Voice Cache] Pre-warmed approved signature greeting audio successfully.');
+        }
+      })
+      .catch((err) => {
+        console.warn('[RODEX Voice Cache] Pre-warm notice:', err?.message || err);
+      });
+  }
 
   app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`RODEX Atmos server running on http://localhost:${PORT}`);

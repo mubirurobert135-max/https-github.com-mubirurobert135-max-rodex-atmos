@@ -13,6 +13,7 @@ import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherMap } from './components/WeatherMap';
 import { OfflineIndicator } from './components/OfflineIndicator';
+import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
@@ -232,14 +233,30 @@ export default function App() {
     initializeStartupLocation(true);
   };
 
-  const currentTheme = weatherData 
+  let currentTheme = weatherData 
     ? getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).theme
     : 'sunny';
+
+  // Check if current time is within twilight window (near sunrise or sunset)
+  if (weatherData?.weather?.daily?.sunrise?.[0] && weatherData?.weather?.daily?.sunset?.[0]) {
+    try {
+      const now = new Date();
+      const sunrise = new Date(weatherData.weather.daily.sunrise[0]);
+      const sunset = new Date(weatherData.weather.daily.sunset[0]);
+      const diffSunriseMin = Math.abs(now.getTime() - sunrise.getTime()) / (1000 * 60);
+      const diffSunsetMin = Math.abs(now.getTime() - sunset.getTime()) / (1000 * 60);
+      if ((diffSunriseMin <= 45 || diffSunsetMin <= 45) && currentTheme !== 'thunder' && currentTheme !== 'snowy' && currentTheme !== 'rainy') {
+        currentTheme = 'twilight';
+      }
+    } catch {
+      // Fallback to condition-derived theme
+    }
+  }
 
   const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
 
   return (
-    <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-16 relative">
+    <div className="min-h-screen text-white font-sans selection:bg-sky-500 selection:text-white pb-28 sm:pb-16 relative">
       {/* Offline Status Indicator Banner */}
       <OfflineIndicator />
 
@@ -332,10 +349,8 @@ export default function App() {
               <span className="text-white/40">•</span>
               <span className="text-sky-200/80">{weatherData.providerInfo.disclaimer}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-300 border border-sky-400/30 text-[11px] font-medium">
-                {locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}
-              </span>
+            <div className="flex items-center gap-2 text-[11px] text-sky-200/90 font-medium">
+              <span>{locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}</span>
             </div>
           </div>
         )}
@@ -483,8 +498,8 @@ export default function App() {
 
       </main>
 
-      {/* Floating Action Button for RODEX AI Assistant */}
-      <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40">
+      {/* Floating Action Button for RODEX AI Assistant (Hidden on mobile where MobileNavBar orb takes precedence) */}
+      <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden md:flex">
         <button
           onClick={() => handleOpenAssistant()}
           className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-2xl shadow-sky-500/40 border border-sky-300/40 transition transform hover:scale-105 group backdrop-blur-md"
@@ -560,6 +575,16 @@ export default function App() {
           <span>RODEX AI: Live Voice (Gemini 3.8 Live) & Chat (Gemini 3.8 Flash)</span>
         </div>
       </footer>
+
+      {/* Mobile Responsive Navigation Dock */}
+      <MobileNavBar
+        activeTab={activeTab}
+        onSelectTab={setActiveTab}
+        onOpenAssistant={() => handleOpenAssistant()}
+        onOpenAlerts={() => setIsAlertsModalOpen(true)}
+        onOpenAuth={() => setIsAuthOpen(true)}
+        activeAlertsCount={weatherData?.alerts?.length || 0}
+      />
     </div>
   );
 }

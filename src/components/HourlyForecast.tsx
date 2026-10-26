@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudRain, CloudSnow, Droplets } from 'lucide-react';
+import { Clock, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudRain, CloudSnow, CloudLightning, Droplets, ChevronRight } from 'lucide-react';
 import { HourlyWeather } from '../types';
 import { formatTemp, getWeatherCondition } from '../utils/weatherUtils';
 
@@ -9,7 +9,7 @@ interface HourlyForecastProps {
 }
 
 export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) => {
-  // Get next 24 hours starting from current time or index 0
+  // Get next 24 hours starting from current time
   const nowIndex = Math.max(
     0,
     hourly.time.findIndex(t => new Date(t).getTime() >= Date.now()) - 1
@@ -33,20 +33,31 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
       case 'CloudMoon': return <CloudMoon className="w-5 h-5 text-indigo-200" />;
       case 'CloudRain': return <CloudRain className="w-5 h-5 text-blue-300" />;
       case 'CloudSnow': return <CloudSnow className="w-5 h-5 text-sky-100" />;
-      default: return <Cloud className="w-5 h-5 text-slate-200" />;
+      case 'CloudLightning': return <CloudLightning className="w-5 h-5 text-amber-300" />;
+      default: return <Cloud className="w-5 h-5 text-slate-300" />;
     }
   };
 
   return (
-    <div className="w-full bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 shadow-2xl">
-      <div className="flex items-center gap-2 mb-4">
-        <Clock className="w-5 h-5 text-sky-300" />
-        <h3 className="text-lg font-heading font-bold text-white tracking-wide">
-          Hourly Atmospheric Forecast
-        </h3>
+    <section 
+      aria-label="24-Hour Forecast"
+      className="w-full glass-panel-elevated rounded-3xl p-6 sm:p-7 relative overflow-hidden transition-all duration-300"
+    >
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2.5">
+          <Clock className="w-4 h-4 text-sky-400" />
+          <h3 className="text-base sm:text-lg font-heading font-bold text-white tracking-wide">
+            Hourly Atmospheric Forecast
+          </h3>
+        </div>
+        <div className="flex items-center gap-1 text-xs text-sky-200/60 font-medium">
+          <span>24-Hour Horizon</span>
+          <ChevronRight className="w-3.5 h-3.5 text-sky-400/80" />
+        </div>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-3 pt-2 scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+      {/* Horizontal Scroll Rail */}
+      <div className="forecast-rail flex gap-3 overflow-x-auto pb-3 pt-1">
         {times.map((timeStr, idx) => {
           const date = new Date(timeStr);
           const isNow = idx === 0;
@@ -55,25 +66,27 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
           return (
             <div
               key={timeStr}
-              className={`flex flex-col items-center justify-between min-w-[84px] py-4 px-3 rounded-2xl transition-all ${
+              className={`flex flex-col items-center justify-between min-w-[78px] sm:min-w-[86px] py-4 px-3 rounded-2xl transition-all select-none ${
                 isNow
-                  ? 'bg-sky-500/25 border-2 border-sky-400/50 shadow-lg shadow-sky-500/20'
-                  : 'bg-white/5 hover:bg-white/10 border border-white/10'
+                  ? 'bg-sky-500/20 border border-sky-400/40 shadow-lg shadow-sky-500/10'
+                  : 'bg-white/[0.03] hover:bg-white/[0.07] border border-white/6'
               }`}
             >
-              <span className="text-xs font-semibold text-white/80 tabular-nums">{timeLabel}</span>
+              <span className={`text-xs font-semibold tabular-nums ${isNow ? 'text-sky-300 font-bold' : 'text-white/70'}`}>
+                {timeLabel}
+              </span>
 
-              <div className="my-3">
+              <div className="my-3 flex items-center justify-center h-7 drop-shadow-sm">
                 {renderMiniIcon(codes[idx], isDays[idx])}
               </div>
 
-              <div className="text-base font-heading font-bold text-white tabular-nums">
+              <div className="text-base sm:text-lg font-heading font-bold text-white tabular-nums">
                 {formatTemp(temps[idx], unit)}
               </div>
 
-              {precipProbs[idx] > 15 ? (
-                <div className="flex items-center gap-1 mt-2 text-[10px] text-sky-300 font-medium tabular-nums">
-                  <Droplets className="w-3 h-3" />
+              {precipProbs[idx] > 10 ? (
+                <div className="flex items-center gap-1 mt-2 text-[11px] text-sky-300 font-semibold tabular-nums">
+                  <Droplets className="w-3 h-3 text-sky-400" />
                   <span>{precipProbs[idx]}%</span>
                 </div>
               ) : (
@@ -83,6 +96,6 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

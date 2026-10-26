@@ -1,6 +1,8 @@
 import { WeatherData } from '../types';
 
-export function getWeatherCondition(code: number, isDay: number = 1): { label: string; icon: string; theme: 'sunny' | 'night' | 'rainy' | 'snowy' | 'cloudy' | 'thunder' | 'fog' } {
+export type AtmosphericTheme = 'sunny' | 'night' | 'rainy' | 'snowy' | 'cloudy' | 'overcast' | 'thunder' | 'fog' | 'twilight';
+
+export function getWeatherCondition(code: number, isDay: number = 1): { label: string; icon: string; theme: AtmosphericTheme } {
   switch (code) {
     case 0:
       return isDay 
@@ -12,7 +14,7 @@ export function getWeatherCondition(code: number, isDay: number = 1): { label: s
         ? { label: 'Partly Cloudy', icon: 'CloudSun', theme: 'cloudy' }
         : { label: 'Partly Cloudy', icon: 'CloudMoon', theme: 'night' };
     case 3:
-      return { label: 'Overcast Clouds', icon: 'Cloud', theme: 'cloudy' };
+      return { label: 'Overcast Clouds', icon: 'Cloud', theme: 'overcast' };
     case 45:
     case 48:
       return { label: 'Foggy & Misty', icon: 'CloudFog', theme: 'fog' };

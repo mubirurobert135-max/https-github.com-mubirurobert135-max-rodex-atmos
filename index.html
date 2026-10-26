@@ -3,6 +3,60 @@
   <head>
     <script>
       (function() {
+        // Intercept Vite HMR/ping WebSocket before Vite client initializes in iframe preview
+        try {
+          var RealWebSocket = window.WebSocket;
+          if (RealWebSocket) {
+            function ViteHmrMockSocket(url, protocols) {
+              var isViteHmr = false;
+              if (protocols === 'vite-hmr' || protocols === 'vite-ping') {
+                isViteHmr = true;
+              } else if (Array.isArray(protocols) && (protocols.indexOf('vite-hmr') !== -1 || protocols.indexOf('vite-ping') !== -1)) {
+                isViteHmr = true;
+              } else if (typeof url === 'string' && (url.indexOf('vite-hmr') !== -1 || url.indexOf('token=') !== -1) && url.indexOf('googleapis.com') === -1) {
+                isViteHmr = true;
+              }
+
+              if (isViteHmr) {
+                var fakeWs = new EventTarget();
+                fakeWs.__isViteMock = true;
+                fakeWs.readyState = 1; // WebSocket.OPEN
+                fakeWs.CONNECTING = 0;
+                fakeWs.OPEN = 1;
+                fakeWs.CLOSING = 2;
+                fakeWs.CLOSED = 3;
+                fakeWs.url = url;
+                fakeWs.protocol = Array.isArray(protocols) ? protocols[0] : (protocols || '');
+                fakeWs.extensions = '';
+                fakeWs.binaryType = 'blob';
+                fakeWs.bufferedAmount = 0;
+                fakeWs.onopen = null;
+                fakeWs.onclose = null;
+                fakeWs.onerror = null;
+                fakeWs.onmessage = null;
+                fakeWs.send = function() {};
+                fakeWs.close = function() { fakeWs.readyState = 3; };
+                return fakeWs;
+              }
+
+              return Reflect.construct(RealWebSocket, arguments.length > 1 ? [url, protocols] : [url]);
+            }
+
+            ViteHmrMockSocket.CONNECTING = 0;
+            ViteHmrMockSocket.OPEN = 1;
+            ViteHmrMockSocket.CLOSING = 2;
+            ViteHmrMockSocket.CLOSED = 3;
+            if (typeof Symbol !== 'undefined' && Symbol.hasInstance) {
+              Object.defineProperty(ViteHmrMockSocket, Symbol.hasInstance, {
+                value: function(inst) {
+                  return (inst && inst.__isViteMock) || (inst instanceof RealWebSocket);
+                }
+              });
+            }
+            window.WebSocket = ViteHmrMockSocket;
+          }
+        } catch (e) {}
+
         var origError = console.error;
         function shouldSuppress(args) {
           for (var i = 0; i < args.length; i++) {
@@ -11,7 +65,7 @@
             var text = typeof item === 'string' ? item : (item.message || item.stack || String(item));
             if (
               text.includes('[vite]') ||
-              text.includes('WebSocket closed without opened') ||
+              text.includes('WebSocket') ||
               text.includes('Unexpected token \'<\'') ||
               text.includes('Failed to fetch AI insights') ||
               text.includes('NotAllowedError') ||
@@ -34,7 +88,7 @@
           var msg = (e && (e.message || (e.error && (e.error.message || e.error.stack)))) || '';
           if (
             msg.includes('[vite]') ||
-            msg.includes('WebSocket closed without opened') ||
+            msg.includes('WebSocket') ||
             msg.includes('Unexpected token \'<\'') ||
             msg.includes('Failed to fetch AI insights') ||
             msg.includes('NotAllowedError') ||
@@ -49,7 +103,7 @@
           var msg = (e && e.reason && (e.reason.message || e.reason.name || e.reason.stack || String(e.reason))) || '';
           if (
             msg.includes('[vite]') ||
-            msg.includes('WebSocket closed without opened') ||
+            msg.includes('WebSocket') ||
             msg.includes('Unexpected token \'<\'') ||
             msg.includes('Failed to fetch AI insights') ||
             msg.includes('NotAllowedError') ||

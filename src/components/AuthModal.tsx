@@ -401,23 +401,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-xl animate-fade-in">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-label="RODEX Account Portal"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-xl animate-fade-in"
+    >
       {/* Container for invisible reCAPTCHA */}
       <div id="recaptcha-container" ref={recaptchaContainerRef}></div>
 
-      <div className="relative w-full max-w-lg bg-slate-900/90 border border-sky-400/20 rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white">
+      <div className="relative w-full max-w-lg bg-[#0a1426]/95 border border-sky-400/25 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white flex flex-col max-h-[90dvh]">
         
         {/* Header */}
-        <div className="p-6 pb-4 border-b border-white/10 flex items-center justify-between">
+        <div className="p-4 sm:p-6 pb-3 sm:pb-4 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg text-white font-bold">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg text-white font-bold shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-lg font-black tracking-wide text-white">
+              <h2 className="text-base sm:text-lg font-black tracking-wide text-white">
                 RODEX <span className="text-sky-300 font-light">Account Portal</span>
               </h2>
-              <p className="text-xs text-sky-200/70 font-medium">
+              <p className="text-[11px] sm:text-xs text-sky-200/70 font-medium">
                 Phase One — Secure Auth & Verification
               </p>
             </div>
@@ -431,7 +436,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Selection */}
-        <div className="grid grid-cols-4 p-2 gap-1 bg-white/5 border-b border-white/10 text-xs font-semibold text-center">
+        <div className="grid grid-cols-4 p-1.5 sm:p-2 gap-1 bg-white/5 border-b border-white/10 text-[11px] sm:text-xs font-semibold text-center shrink-0">
           <button
             onClick={() => { setActiveTab('signin'); setErrorMessage(null); setSuccessMessage(null); }}
             className={`py-2 px-1 rounded-xl transition ${activeTab === 'signin' ? 'bg-sky-500 text-white font-bold shadow' : 'text-white/60 hover:text-white'}`}
@@ -442,7 +447,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             onClick={() => { setActiveTab('register_email'); setErrorMessage(null); setSuccessMessage(null); }}
             className={`py-2 px-1 rounded-xl transition ${activeTab === 'register_email' ? 'bg-sky-500 text-white font-bold shadow' : 'text-white/60 hover:text-white'}`}
           >
-            Email Register
+            Email
           </button>
           <button
             onClick={() => { setActiveTab('register_phone'); setErrorMessage(null); setSuccessMessage(null); }}
@@ -459,7 +464,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 space-y-4 max-h-[75vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto">
 
           {/* Feedback Banners */}
           {errorMessage && (

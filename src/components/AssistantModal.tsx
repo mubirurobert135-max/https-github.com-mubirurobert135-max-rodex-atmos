@@ -11,7 +11,9 @@ import {
   sanitizeUserName, 
   getTimeOfDayGreeting, 
   buildPersonalizedGreeting, 
-  isFastConversationalQuery 
+  isFastConversationalQuery,
+  isGreetingQuery,
+  buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
 
@@ -374,6 +376,13 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const isCompatModeRef = useRef<boolean>(false);
   const liveTranscriptsRef = useRef<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
 
+  // Turn tracking, concurrency locking & deduplication refs
+  const currentTurnIdRef = useRef<number>(0);
+  const isSpeechProcessingRef = useRef<boolean>(false);
+  const processedResultIndicesRef = useRef<Set<number>>(new Set());
+  const lastProcessedUtteranceRef = useRef<{ text: string; time: number }>({ text: '', time: 0 });
+  const prewarmedGreetingAudioRef = useRef<{ audio: string; mimeType: string } | null>(null);
+
   useEffect(() => {
     liveTranscriptsRef.current = liveTranscripts;
   }, [liveTranscripts]);
@@ -438,12 +447,32 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         }).catch(() => {});
       } catch (e) {}
     }
+
+    // 4. Pre-warm approved RODEX Atmos Signature greeting audio for instant playback
+    fetch('/api/ai/synthesize-speech', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        text: "Hey! I'm listening. What's on your mind?",
+        style: 'Warm, confident, personable, lightly playful, clear and concise'
+      })
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.audio) {
+          prewarmedGreetingAudioRef.current = { audio: data.audio, mimeType: data.mimeType || 'audio/wav' };
+        }
+      })
+      .catch(() => {});
   }, [isOpen]);
 
   // Clean termination of all voice resources - stops mic stream, closes contexts, closes WebSocket
   const stopVoiceSession = useCallback((targetState: 'idle' | 'ended' | 'error' = 'ended') => {
     // Invalidate inflight callbacks and setup state
     sessionIdRef.current += 1;
+    currentTurnIdRef.current += 1;
+    isSpeechProcessingRef.current = false;
+    processedResultIndicesRef.current.clear();
     isSetupCompleteRef.current = false;
     setIsAutoRecovering(false);
 
@@ -592,6 +621,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     setVoiceError(null);
     isCompatModeRef.current = true;
     setVoiceState('listening');
+    isSpeechProcessingRef.current = false;
+    processedResultIndicesRef.current.clear();
 
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionClass) {
@@ -613,34 +644,66 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       recognition.onresult = (event: any) => {
         let interimText = '';
-        let finalText = '';
+        let finalizedSegment = '';
 
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalText += transcript;
+          const result = event.results[i];
+          if (!result || !result[0]) continue;
+          const transcript = result[0].transcript;
+
+          if (result.isFinal) {
+            // Guarantee each result index is committed exactly once
+            if (!processedResultIndicesRef.current.has(i)) {
+              processedResultIndicesRef.current.add(i);
+              finalizedSegment += ' ' + transcript;
+            }
           } else {
             interimText += transcript;
           }
         }
 
-        if (interimText) {
-          setInterimUserSpeech(interimText);
+        // Show real-time interim speech without triggering assistant action
+        if (interimText.trim()) {
+          setInterimUserSpeech(interimText.trim());
         }
 
-        if (finalText.trim()) {
-          const userQuery = finalText.trim();
-          const turnTimer = new VoiceTurnTimer(`turn-${Date.now()}`);
-          turnTimer.markSpeechFinalized();
+        const trimmedFinal = finalizedSegment.trim();
+        if (trimmedFinal) {
+          const now = Date.now();
+
+          // Guard 1: Concurrency lock - Ignore duplicate flush event if a turn request is already in-flight
+          if (isSpeechProcessingRef.current) {
+            console.log('[RODEX Turn Lock] Request already in flight, ignoring duplicate flushed transcript:', trimmedFinal);
+            return;
+          }
+
+          // Guard 2: Engine bounce deduplication - Ignore duplicate utterance within 2000ms bounce window
+          const lastText = lastProcessedUtteranceRef.current.text.toLowerCase();
+          const timeSinceLast = now - lastProcessedUtteranceRef.current.time;
+          if (lastText === trimmedFinal.toLowerCase() && timeSinceLast < 2000) {
+            console.log('[RODEX Speech Deduplication] Duplicate utterance received within 2000ms bounce window, ignoring:', trimmedFinal);
+            return;
+          }
+
+          // Commit this turn
+          isSpeechProcessingRef.current = true;
+          lastProcessedUtteranceRef.current = { text: trimmedFinal, time: now };
+          const currentTurnId = ++currentTurnIdRef.current;
+          const userQuery = trimmedFinal;
+
+          const turnTimer = new VoiceTurnTimer(`turn-${currentTurnId}`);
+          turnTimer.markSpeechFinalized(now);
+
           setInterimUserSpeech('');
           setLiveTranscripts((t) => [
             ...t,
-            { sender: 'user', text: userQuery, id: 'user-' + Date.now() }
+            { sender: 'user', text: userQuery, id: `user-${currentTurnId}` }
           ]);
 
-          try { recognition.stop(); } catch (e) {}
+          // Stop listening immediately so microphone is muted during processing & speaking
+          try { recognition.abort(); } catch (e) {}
           setVoiceState('thinking');
-          turnTimer.markRequestDispatched();
+          turnTimer.markRequestDispatched(Date.now());
 
           // Bounded prior conversation history from liveTranscripts to preserve dialogue context
           const historyPayload = liveTranscriptsRef.current.slice(-6).map((t) => ({
@@ -656,6 +719,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 ...historyPayload,
                 { role: 'user', content: userQuery }
               ],
+              userName: authenticatedFirstName,
               weatherData,
               deviceLocationData,
               mapContextData,
@@ -665,61 +729,72 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
           })
             .then((res) => res.json())
             .then(async (data) => {
+              // Discard response if a newer turn was initiated or session ended
+              if (currentTurnIdRef.current !== currentTurnId) {
+                return;
+              }
+
               turnTimer.markTextReceived(Date.now(), data.timings);
 
               if (data.updatedCityWeather?.location) {
                 onSelectCityWeather(data.updatedCityWeather);
               }
 
-              const replyText = data.reply || "I couldn't process that weather query right now.";
+              const replyText = data.reply || "Hey! I'm listening. What's on your mind?";
+              
+              // Display text response immediately (T4)
               setCurrentAssistantSpoken(replyText);
-              setLiveTranscripts((t) => [
-                ...t,
-                { sender: 'assistant', text: replyText, id: 'ast-' + Date.now() }
-              ]);
+              setLiveTranscripts((t) => {
+                // Ensure no duplicate assistant message for this exact turn
+                if (t.some((msg) => msg.id === `ast-${currentTurnId}`)) {
+                  return t;
+                }
+                return [
+                  ...t,
+                  { sender: 'assistant', text: replyText, id: `ast-${currentTurnId}` }
+                ];
+              });
+              turnTimer.markTextRendered(Date.now());
 
-              // Play audio directly if synthesized audio arrived with the response
-              let playedAudio = false;
-              if (data.audio) {
+              const onPlaybackFinished = () => {
+                if (currentTurnIdRef.current !== currentTurnId) return;
+                activeAudioElementRef.current = null;
+                setCurrentAssistantSpoken('');
+                isSpeechProcessingRef.current = false;
+                if (isCompatModeRef.current) {
+                  setVoiceState('listening');
+                  processedResultIndicesRef.current.clear();
+                  try { recognition.start(); } catch (e) {}
+                } else {
+                  setVoiceState('idle');
+                }
+              };
+
+              // T5/T6/T7: Audio playback with approved signature voice
+              // Check if server returned synthesized audio or if prewarmed greeting is available
+              const audioBase64 = data.audio || (isGreetingQuery(userQuery) && prewarmedGreetingAudioRef.current?.audio);
+              const mimeType = data.mimeType || prewarmedGreetingAudioRef.current?.mimeType || 'audio/wav';
+
+              if (audioBase64) {
                 try {
-                  const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
+                  turnTimer.markAudioAvailable(Date.now());
+                  const audio = new Audio(`data:${mimeType};base64,${audioBase64}`);
                   activeAudioElementRef.current = audio;
                   setVoiceState('speaking');
                   turnTimer.markAudioPlaybackStarted();
                   console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
 
-                  audio.onended = () => {
-                    activeAudioElementRef.current = null;
-                    setCurrentAssistantSpoken('');
-                    if (isCompatModeRef.current) {
-                      setVoiceState('listening');
-                      try { recognition.start(); } catch (e) {}
-                    } else {
-                      setVoiceState('idle');
-                    }
-                  };
-
-                  audio.onerror = () => {
-                    activeAudioElementRef.current = null;
-                    setCurrentAssistantSpoken('');
-                    if (isCompatModeRef.current) {
-                      setVoiceState('listening');
-                      try { recognition.start(); } catch (e) {}
-                    } else {
-                      setVoiceState('idle');
-                    }
-                  };
+                  audio.onended = onPlaybackFinished;
+                  audio.onerror = onPlaybackFinished;
 
                   await audio.play();
-                  playedAudio = true;
+                  return;
                 } catch (playErr) {
                   console.warn('[RODEX Voice Notice] Audio playback error:', playErr);
                 }
               }
 
-              if (playedAudio) return;
-
-              // Fallback to browser warm feminine speech synthesis if no server audio was returned
+              // Fallback to browser warm feminine speech synthesis if no custom audio was returned
               if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(replyText);
@@ -740,37 +815,17 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 turnTimer.markAudioPlaybackStarted();
                 console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
 
-                utterance.onend = () => {
-                  setCurrentAssistantSpoken('');
-                  if (isCompatModeRef.current) {
-                    setVoiceState('listening');
-                    try { recognition.start(); } catch (e) {}
-                  } else {
-                    setVoiceState('idle');
-                  }
-                };
-
-                utterance.onerror = () => {
-                  setCurrentAssistantSpoken('');
-                  if (isCompatModeRef.current) {
-                    setVoiceState('listening');
-                    try { recognition.start(); } catch (e) {}
-                  } else {
-                    setVoiceState('idle');
-                  }
-                };
+                utterance.onend = onPlaybackFinished;
+                utterance.onerror = onPlaybackFinished;
 
                 window.speechSynthesis.speak(utterance);
               } else {
-                setCurrentAssistantSpoken('');
-                setVoiceState('listening');
-                if (isCompatModeRef.current) {
-                  try { recognition.start(); } catch (e) {}
-                }
+                onPlaybackFinished();
               }
             })
             .catch((err) => {
               console.warn('[Voice Compatibility Notice]', err);
+              isSpeechProcessingRef.current = false;
               setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
               setVoiceState('error');
             });
@@ -788,14 +843,15 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       };
 
       recognition.onend = () => {
-        if (isCompatModeRef.current && voiceState === 'listening') {
+        // If still listening and not in the middle of processing speech, restart recognition cleanly
+        if (isCompatModeRef.current && voiceState === 'listening' && !isSpeechProcessingRef.current) {
+          processedResultIndicesRef.current.clear();
           try { recognition.start(); } catch (e) {}
         }
       };
 
       recognitionRef.current = recognition;
 
-      // Ensure user speaks first: Start listening immediately without unprompted greeting
       try {
         recognition.start();
       } catch (e) {}
@@ -804,7 +860,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       setVoiceError('Could not launch voice recognition. Tap Retry Voice to try again.');
       setVoiceState('error');
     }
-  }, [weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, voiceState]);
+  }, [weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, voiceState, authenticatedFirstName]);
 
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
@@ -1684,11 +1740,16 @@ Available Function Tools:
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-xl animate-fade-in">
-      <div className="w-full max-w-2xl bg-slate-900/90 border border-sky-400/30 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[85vh] max-h-[750px] relative transition-all">
+    <div 
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="assistant-modal-title"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-2xl animate-fade-in"
+    >
+      <div className="w-full max-w-2xl bg-[#081224]/95 border-0 sm:border border-sky-400/30 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[750px] relative transition-all">
         
         {/* Modal Header */}
-        <div className="px-6 py-4 border-b border-white/10 bg-white/5 flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-white/5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center shadow-md shadow-sky-500/30 text-white">
               <Sparkles className="w-5 h-5 animate-pulse" />
@@ -2163,7 +2224,7 @@ Available Function Tools:
                   e.preventDefault();
                   handleSendTextMessage();
                 }}
-                className="mt-2 flex items-center gap-2"
+                className="mt-2 flex items-center gap-2 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
               >
                 <input
                   type="text"
@@ -2171,13 +2232,15 @@ Available Function Tools:
                   onChange={(e) => setInputQuery(e.target.value)}
                   placeholder={`Ask anything about ${weatherData?.location.name || 'weather'}...`}
                   disabled={isChatLoading}
-                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition disabled:opacity-50"
+                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition disabled:opacity-50 min-h-[44px]"
+                  aria-label="Ask assistant message"
                 />
                 <button
                   type="submit"
                   disabled={!inputQuery.trim() || isChatLoading}
-                  className="p-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold shadow-lg transition disabled:opacity-40"
+                  className="p-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold shadow-lg transition disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-hover-lift"
                   title="Send message"
+                  aria-label="Send message"
                 >
                   <Send className="w-5 h-5" />
                 </button>
@@ -2189,9 +2252,9 @@ Available Function Tools:
         </div>
 
         {/* Modal Footer Note */}
-        <div className="px-6 py-2.5 border-t border-white/10 bg-black/30 flex items-center justify-between text-[11px] text-white/50">
+        <div className="px-4 sm:px-6 py-2.5 border-t border-white/10 bg-black/40 hidden sm:flex items-center justify-between text-[11px] text-white/50 shrink-0">
           <span>Grounded in live atmospheric data from Open-Meteo & WeatherAPI</span>
-          <span>Single-use Ephemeral Tokens • Server-side Secrets</span>
+          <span>RODEX Atmos Signature Voice</span>
         </div>
 
       </div>

@@ -103,6 +103,30 @@ export function buildPersonalizedGreeting(
 }
 
 /**
+ * Checks if a user's utterance is specifically a greeting or wake phrase (e.g. "Hey Atmos", "Hello", "Hi Atmos").
+ */
+export function isGreetingQuery(text: string): boolean {
+  if (!text) return false;
+  const cleaned = text.trim().toLowerCase().replace(/[!?.,;]+$/, '');
+  const greetingPattern = /^(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|atmos|hey there|good morning|good afternoon|good evening|good day|howdy|sup|greetings|what's up)$/i;
+  return greetingPattern.test(cleaned);
+}
+
+/**
+ * Generates the natural, conversational response for "Hey Atmos" or friendly greetings as specified
+ * in Directive Section 3: "Hey! I'm listening. What's on your mind?"
+ */
+export function buildNaturalGreetingResponse(userName?: string | null): string {
+  if (userName) {
+    const cleanName = sanitizeUserName(userName);
+    if (cleanName) {
+      return `Hey ${cleanName}! I'm listening. What's on your mind?`;
+    }
+  }
+  return "Hey! I'm listening. What's on your mind?";
+}
+
+/**
  * Checks if a user's utterance is purely conversational (greeting or gratitude)
  * so the assistant can respond promptly without invoking external weather APIs.
  */
@@ -110,8 +134,8 @@ export function isFastConversationalQuery(text: string): boolean {
   if (!text) return false;
   const cleaned = text.trim().toLowerCase().replace(/[!?.,;]+$/, '');
 
-  const pureGreetingPattern = /^(hey|hi|hello|hey atmos|hi atmos|hello atmos|good morning|good afternoon|good evening|good day|howdy|sup|greetings)$/i;
-  const pureThanksPattern = /^(thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)$/i;
+  const pureGreetingPattern = /^(?:hey|hi|hello|hey atmos|hi atmos|hello atmos|atmos|hey there|good morning|good afternoon|good evening|good day|howdy|sup|greetings|what's up)$/i;
+  const pureThanksPattern = /^(?:thanks|thank you|thanks atmos|thank you atmos|thanks a lot|much appreciated)$/i;
 
   return pureGreetingPattern.test(cleaned) || pureThanksPattern.test(cleaned);
 }

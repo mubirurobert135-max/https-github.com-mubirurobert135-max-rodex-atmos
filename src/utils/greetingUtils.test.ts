@@ -4,7 +4,9 @@ import {
   sanitizeUserName,
   getTimeOfDayGreeting,
   buildPersonalizedGreeting,
-  isFastConversationalQuery
+  isFastConversationalQuery,
+  isGreetingQuery,
+  buildNaturalGreetingResponse
 } from './greetingUtils';
 
 test('sanitizeUserName extracts valid first name', () => {
@@ -55,6 +57,32 @@ test('buildPersonalizedGreeting generates correct phrases', () => {
 
   const greetingGuest = buildPersonalizedGreeting(null, undefined, afternoonDate);
   assert.equal(greetingGuest, 'Hey! Good afternoon. How can I help you today?');
+});
+
+test('isGreetingQuery detects wake phrases and greetings', () => {
+  assert.equal(isGreetingQuery('Hey Atmos'), true);
+  assert.equal(isGreetingQuery('hey atmos!'), true);
+  assert.equal(isGreetingQuery('Hello Atmos'), true);
+  assert.equal(isGreetingQuery('Hi Atmos'), true);
+  assert.equal(isGreetingQuery('hey'), true);
+  assert.equal(isGreetingQuery('hello'), true);
+  assert.equal(isGreetingQuery('Atmos'), true);
+
+  // Weather questions must NOT match greeting query
+  assert.equal(isGreetingQuery("What's the weather like in Kampala?"), false);
+  assert.equal(isGreetingQuery('Is it going to rain?'), false);
+  assert.equal(isGreetingQuery('Compare weather between Paris and London'), false);
+});
+
+test('buildNaturalGreetingResponse generates directive-specified concise response', () => {
+  const guestGreeting = buildNaturalGreetingResponse();
+  assert.equal(guestGreeting, "Hey! I'm listening. What's on your mind?");
+
+  const namedGreeting = buildNaturalGreetingResponse('David Miller');
+  assert.equal(namedGreeting, "Hey David! I'm listening. What's on your mind?");
+
+  const emailGreeting = buildNaturalGreetingResponse('david@example.com');
+  assert.equal(emailGreeting, "Hey! I'm listening. What's on your mind?");
 });
 
 test('isFastConversationalQuery detects pure greetings and thanks', () => {

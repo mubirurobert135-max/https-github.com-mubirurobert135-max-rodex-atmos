@@ -1,5 +1,5 @@
 import React from 'react';
-import { Calendar, Sun, Moon, CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
+import { Calendar, Sun, CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
 import { DailyWeather } from '../types';
 import { formatTemp, getWeatherCondition } from '../utils/weatherUtils';
 
@@ -29,15 +29,23 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
   };
 
   return (
-    <div className="w-full bg-white/10 dark:bg-slate-900/45 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-2xl">
-      <div className="flex items-center gap-2 mb-6">
-        <Calendar className="w-5 h-5 text-sky-300" />
-        <h3 className="text-lg font-heading font-bold text-white tracking-wide">
-          7-Day Atmospheric Outlook
-        </h3>
+    <section 
+      aria-label="7-Day Atmospheric Outlook"
+      className="w-full glass-panel-elevated rounded-3xl p-6 sm:p-7 relative overflow-hidden transition-all duration-300"
+    >
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5">
+          <Calendar className="w-4 h-4 text-sky-400" />
+          <h3 className="text-base sm:text-lg font-heading font-bold text-white tracking-wide">
+            7-Day Atmospheric Outlook
+          </h3>
+        </div>
+        <span className="text-xs text-sky-200/60 font-medium">
+          Extended Model
+        </span>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-2.5">
         {time.map((dateStr, idx) => {
           const date = new Date(dateStr);
           const isToday = idx === 0;
@@ -49,50 +57,58 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
 
           // Calculate percentage width for visual temperature range bar
           const leftPercent = Math.max(0, Math.min(100, ((minT - allMin) / rangeSpan) * 100));
-          const widthPercent = Math.max(15, Math.min(100 - leftPercent, ((maxT - minT) / rangeSpan) * 100));
+          const widthPercent = Math.max(16, Math.min(100 - leftPercent, ((maxT - minT) / rangeSpan) * 100));
 
           return (
             <div
               key={dateStr}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 transition group"
+              className={`flex items-center justify-between p-3.5 sm:p-4 rounded-2xl transition-all ${
+                isToday 
+                  ? 'bg-sky-500/15 border border-sky-400/30 shadow-sm' 
+                  : 'bg-white/[0.03] hover:bg-white/[0.07] border border-white/6'
+              }`}
             >
-              {/* Day & Icon */}
-              <div className="flex items-center gap-4 w-1/3 sm:w-1/4">
-                <div className="p-2 rounded-xl bg-white/10 group-hover:scale-110 transition-transform">
+              {/* Day & Condition Label */}
+              <div className="flex items-center gap-3.5 w-2/5 sm:w-1/3 min-w-0">
+                <div className="p-2 rounded-xl bg-white/[0.06] shrink-0">
                   {renderConditionIcon(code)}
                 </div>
-                <div>
-                  <div className="text-sm font-heading font-bold text-white">{dayName}</div>
-                  <div className="text-xs text-sky-200/70">{cond.label}</div>
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm font-heading font-bold text-white truncate">
+                    {dayName}
+                  </div>
+                  <div className="text-[11px] text-sky-200/70 truncate">
+                    {cond.label}
+                  </div>
                 </div>
               </div>
 
-              {/* Min - Max Range Bar (Desktop) */}
-              <div className="hidden sm:flex items-center gap-3 w-1/2 px-4">
-                <span className="text-xs font-heading font-semibold text-white/70 w-10 text-right tabular-nums">
+              {/* Min-Max Range Bar (Tablets & Desktop) */}
+              <div className="hidden sm:flex items-center gap-3 flex-1 px-4 max-w-md">
+                <span className="text-xs font-semibold text-white/60 w-10 text-right tabular-nums">
                   {formatTemp(minT, unit)}
                 </span>
                 <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden relative">
                   <div
-                    className="absolute h-full rounded-full bg-gradient-to-r from-sky-400 to-indigo-400 shadow-sm"
+                    className="absolute h-full rounded-full bg-gradient-to-r from-sky-400 via-teal-400 to-indigo-400 shadow-sm"
                     style={{ left: `${leftPercent}%`, width: `${widthPercent}%` }}
                   />
                 </div>
-                <span className="text-xs font-heading font-bold text-white w-10 tabular-nums">
+                <span className="text-xs font-bold text-white w-10 tabular-nums">
                   {formatTemp(maxT, unit)}
                 </span>
               </div>
 
-              {/* Temperatures (Mobile/Tablet) */}
-              <div className="flex sm:hidden items-center gap-2 tabular-nums">
-                <span className="text-xs text-white/70">{formatTemp(minT, unit)}</span>
-                <span className="text-xs text-white/40">/</span>
-                <span className="text-xs font-heading font-bold text-white">{formatTemp(maxT, unit)}</span>
+              {/* Min/Max (Mobile View) */}
+              <div className="flex sm:hidden items-center gap-1.5 tabular-nums text-xs font-semibold shrink-0">
+                <span className="text-indigo-300">{formatTemp(minT, unit)}</span>
+                <span className="text-white/30">/</span>
+                <span className="text-white font-bold">{formatTemp(maxT, unit)}</span>
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 };

@@ -289,7 +289,7 @@ export default function App() {
       />
 
       {/* Main Content Container */}
-      <main className={`max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 ${activeTab === 'dashboard' ? 'pt-1 sm:pt-2 space-y-4' : 'pt-6 sm:pt-8 space-y-6'}`}>
+      <main className={`max-w-[1360px] mx-auto px-3 sm:px-5 lg:px-6 ${activeTab === 'dashboard' ? 'pt-1 sm:pt-2 space-y-4' : 'pt-6 sm:pt-8 space-y-6'}`}>
         
         {/* Location Detection / Fallback Notice Banner */}
         {locationNotice && !setupRequired && (

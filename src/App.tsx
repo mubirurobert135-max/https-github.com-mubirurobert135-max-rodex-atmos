@@ -5,13 +5,13 @@ import { CurrentWeatherCard } from './components/CurrentWeatherCard';
 import { DailyBriefingCard } from './components/DailyBriefingCard';
 import { AiInsightsCard } from './components/AiInsightsCard';
 import { HourlyForecast } from './components/HourlyForecast';
-import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherMap } from './components/WeatherMap';
+import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboard';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
@@ -440,80 +440,34 @@ export default function App() {
                 />
               </div>
             ) : (
-              <div className="space-y-6 animate-fade-in">
-                {/* Reference-led responsive weather dashboard grid */}
-                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 xl:gap-6 animate-fade-in">
-                  {/* Main weather hero */}
-                  <section className="xl:col-span-8 min-w-0" aria-label="Current weather overview">
-                    <CurrentWeatherCard
-                      data={weatherData}
-                      unit={unit}
-                      onGetCurrentLocation={() => initializeStartupLocation(true)}
-                      locationMode={locationMode}
-                      isLoading={isLoading}
-                    />
-                  </section>
+              <div className="space-y-5 animate-fade-in">
+                <WeatherReferenceDashboard
+                  data={weatherData}
+                  unit={unit}
+                  locationMode={locationMode}
+                  isLoading={isLoading}
+                  onGetCurrentLocation={handleGetCurrentLocation}
+                  onOpenAssistant={handleOpenAssistant}
+                  onOpenMap={() => setActiveTab('map')}
+                  onOpenAccount={() => setIsAuthOpen(true)}
+                  onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
+                />
 
-                  {/* Atmospheric intelligence stays prominent beside the hero on desktop */}
-                  <section className="xl:col-span-4 min-w-0" aria-label="AI weather insights">
-                    <AiInsightsCard
-                      data={weatherData}
-                      onOpenAssistant={() => handleOpenAssistant()}
-                    />
-                  </section>
+                <div className="wx-reference-support-grid">
+                  <DailyBriefingCard
+                    data={weatherData}
+                    onOpenAssistant={handleOpenAssistant}
+                    unit={unit}
+                  />
+                  <AiInsightsCard
+                    data={weatherData}
+                    onOpenAssistant={() => handleOpenAssistant()}
+                  />
+                </div>
 
-                  {/* Full-width personal briefing */}
-                  <section className="xl:col-span-12 min-w-0" aria-label="Daily weather briefing">
-                    <DailyBriefingCard
-                      data={weatherData}
-                      onOpenAssistant={handleOpenAssistant}
-                      unit={unit}
-                    />
-                  </section>
-
-                  {/* Map stays one action away and remains connected to the real map view */}
-                  <section className="xl:col-span-12 min-w-0" aria-label="Interactive weather map shortcut">
-                    <div
-                      onClick={() => setActiveTab('map')}
-                      className="glass-card rounded-3xl p-4 sm:p-5 border border-sky-400/25 bg-gradient-to-r from-sky-500/15 via-indigo-600/15 to-purple-600/15 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-colors hover:border-sky-300/45"
-                    >
-                      <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-11 h-11 rounded-2xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300 shrink-0">
-                          <Globe className="w-5 h-5" aria-hidden="true" />
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 font-heading">
-                            <span>Interactive Weather Map</span>
-                          </h3>
-                          <p className="text-xs text-sky-100/70 mt-1 leading-relaxed">
-                            Explore temperature, precipitation and wind using the existing interactive map.
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setActiveTab('map');
-                        }}
-                        className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs shadow-lg transition shrink-0 min-h-[42px]"
-                      >
-                        Open weather map
-                      </button>
-                    </div>
-                  </section>
-
-                  {/* Forecast and atmospheric measurements form a balanced lower dashboard */}
-                  <section className="xl:col-span-7 min-w-0" aria-label="Hourly forecast">
-                    <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
-                  </section>
-                  <section className="xl:col-span-5 min-w-0" aria-label="Weather details">
-                    <WeatherDetailsGrid data={weatherData} unit={unit} />
-                  </section>
-
-                  <section className="xl:col-span-12 min-w-0" aria-label="Seven-day forecast">
-                    <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
-                  </section>
+                <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
+                  <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                  <WeatherDetailsGrid data={weatherData} unit={unit} />
                 </div>
               </div>
             )}

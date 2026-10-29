@@ -16,7 +16,7 @@ import {
   buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
-import { createAtmosBrowserUtterance, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
+import { createAtmosBrowserUtterance } from '../utils/voicePlayback';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
 
 import { LocationMode } from '../types';
@@ -858,13 +858,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
                 if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
                   window.speechSynthesis.cancel();
-                  const utterance = new SpeechSynthesisUtterance(replyText);
-                  utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
-                  utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-                  utterance.volume = 1;
-
-                  const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
-                  if (preferredVoice) utterance.voice = preferredVoice;
+                  const utterance = await createAtmosBrowserUtterance(replyText, window.speechSynthesis);
+                  if (currentTurnIdRef.current !== currentTurnId) return;
 
                   setVoiceState('speaking');
                   utterance.onstart = () => {

@@ -743,7 +743,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               deviceLocationData,
               mapContextData,
               activeMapLayer,
-              synthesizeVoice: true // Single round-trip: Server generates text & synthesizes Atmos Signature audio
+              synthesizeVoice: false // Return text first; request voice audio immediately afterward so TTS cannot delay visible replies.
             })
           })
             .then((res) => res.json())
@@ -789,10 +789,35 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 }
               };
 
-              // T5/T6/T7: Audio playback with approved signature voice
-              // Check if server returned synthesized audio or if prewarmed greeting is available
-              const audioBase64 = data.audio || (isGreetingQuery(userQuery) && prewarmedGreetingAudioRef.current?.audio);
-              const mimeType = data.mimeType || prewarmedGreetingAudioRef.current?.mimeType || 'audio/wav';
+              // Keep text responsive: synthesize audio only after the reply is already visible.
+              let audioBase64 = data.audio || (isGreetingQuery(userQuery) && prewarmedGreetingAudioRef.current?.audio);
+              let mimeType = data.mimeType || prewarmedGreetingAudioRef.current?.mimeType || 'audio/wav';
+
+              if (!audioBase64 && currentTurnIdRef.current === currentTurnId) {
+                turnTimer.markSynthesisRequested(Date.now());
+                const ttsController = new AbortController();
+                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 10500);
+                try {
+                  const ttsRes = await fetch('/api/ai/synthesize-speech', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: replyText, style: ATMOS_SIGNATURE_STYLE }),
+                    signal: ttsController.signal
+                  });
+                  if (currentTurnIdRef.current !== currentTurnId) return;
+                  if (ttsRes.ok) {
+                    const speechData = await ttsRes.json();
+                    if (speechData.audio) {
+                      audioBase64 = speechData.audio;
+                      mimeType = speechData.mimeType || mimeType;
+                    }
+                  }
+                } catch (ttsErr) {
+                  console.warn('[RODEX TTS Notice] Voice synthesis timed out or failed; using the browser feminine voice fallback.', ttsErr);
+                } finally {
+                  window.clearTimeout(ttsTimeout);
+                }
+              }
 
               if (audioBase64) {
                 try {

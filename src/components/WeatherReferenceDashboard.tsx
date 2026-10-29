@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   Bell, Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain,
   CloudSnow, CloudSun, Droplets, Gauge, MapPinned, Mic, Moon, Navigation,
@@ -75,7 +75,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const timezone = weather.timezone || location.timezone || 'UTC';
   const high = daily.temperature_2m_max?.[0] ?? current.temperature_2m;
   const low = daily.temperature_2m_min?.[0] ?? current.temperature_2m;
-  const nearbyNames = citiesForCountry(location.country || '');
+  const nearbyNames = useMemo(() => citiesForCountry(location.country || ''), [location.country]);
   const [nearbyWeather, setNearbyWeather] = useState<WeatherData[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
 
@@ -98,7 +98,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
       if (!cancelled) setNearbyLoading(false);
     });
     return () => { cancelled = true; };
-  }, [location.country, nearbyNames.join('|')]);
+  }, [location.country, nearbyNames]);
 
   const nextHours = (hourly.time || []).slice(0, 6).map((time, index) => ({
     time,

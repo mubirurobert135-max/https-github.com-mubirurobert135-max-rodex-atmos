@@ -1465,3 +1465,35 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+
+/* Contrast refinement: translucent white utilities must stay legible on the new light surfaces. */
+.glass-panel-elevated [class*="text-white/"],
+.wx-reference-support-grid > div [class*="text-white/"] { color: #78668d !important; }
+.glass-panel-elevated [class~="text-white"],
+.glass-panel-elevated [class~="text-white/90"],
+.glass-panel-elevated [class~="text-white/95"],
+.wx-reference-support-grid > div [class~="text-white"],
+.wx-reference-support-grid > div [class~="text-white/90"],
+.wx-reference-support-grid > div [class~="text-white/95"] { color: #342047 !important; }
+.glass-panel-elevated [class*="text-sky-200/"],
+.wx-reference-support-grid > div [class*="text-sky-200/"] { color: #78668d !important; }
+.glass-panel-elevated [class~="text-sky-200"],
+.glass-panel-elevated [class~="text-sky-300"],
+.glass-panel-elevated [class~="text-sky-400"],
+.wx-reference-support-grid > div [class~="text-sky-200"],
+.wx-reference-support-grid > div [class~="text-sky-300"],
+.wx-reference-support-grid > div [class~="text-sky-400"] { color: #7c3aed !important; }
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  color: #fff !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] svg {
+  color: #fff !important;
+}
+@media (prefers-contrast: more) {
+  .wx-reference-shell, .glass-panel, .glass-panel-elevated, .wx-reference-support-grid > div {
+    border-color: rgba(76,29,149,.45) !important;
+  }
+  .wx-story-copy, .wx-hourly-temperature > span, .wx-live-weather-feels,
+  .wx-live-weather-metrics span, .wx-nearby-city-condition { color: #513568 !important; }
+}

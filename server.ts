@@ -55,6 +55,16 @@ function saveWeatherCache(cacheKey: string, data: any): void {
   }
 }
 
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label + ' timed out after ' + timeoutMs + 'ms')), timeoutMs);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
+
 /**
  * Hourly window reset: Resets every 60 minutes (rolling interval from the start of each window).
  * Note: These in-memory counters are best-effort per server instance and cannot guarantee
@@ -1046,22 +1056,19 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
 
       let response: any;
       try {
-        response = await ai.models.generateContent({
+        response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: {
-            responseMimeType: 'application/json'
-          }
-        });
+          config: { responseMimeType: 'application/json' }
+        }), 3200, 'AI insights');
       } catch (liteErr: any) {
-        // Fallback to gemini-3.8-flash if flash-lite is not enabled
-        response = await ai.models.generateContent({
+        // Do not stack a second slow request after a timeout; deterministic insights are faster and safer.
+        if (String(liteErr?.message || liteErr).toLowerCase().includes('timed out')) throw liteErr;
+        response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: prompt,
-          config: {
-            responseMimeType: 'application/json'
-          }
-        });
+          config: { responseMimeType: 'application/json' }
+        }), 2200, 'AI insights fallback');
       }
 
       const text = response?.text;
@@ -1137,11 +1144,11 @@ Greeting: ${greetingTime}.
 Use only supplied facts. Do not invent missing numbers, weather conditions, or official warnings.
 Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations).`;
 
-        const aiRes = await ai.models.generateContent({
+        const aiRes = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
           config: { responseMimeType: 'application/json' }
-        });
+        }), 3200, 'Daily briefing AI');
 
         const parsed = JSON.parse(aiRes.text || '{}');
         if (parsed.summary && Array.isArray(parsed.recommendations)) {
@@ -1913,7 +1920,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
 - Local Time: ${localTime}
 - Condition: ${conditionLabel}
-- Temperature: ${temp == null ? 'unavailable' : temp + '°C'} (Feels like: ${feelsLike == null ? 'unavailable' : feelsLike + '°C'}
+- Temperature: ${temp == null ? 'unavailable' : temp + '°C'} (Feels like: ${feelsLike == null ? 'unavailable' : feelsLike + '°C'})
 - Weather Code: ${current?.weather_code ?? 'N/A'}
 - Humidity: ${humidity == null ? 'unavailable' : humidity + '%'}
 - Wind Speed: ${wind == null ? 'unavailable' : wind + ' km/h'}
@@ -1950,11 +1957,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
             }
           };
 
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('AI generation service timeout (3500ms)')), 3500)
-          );
-
-          const response: any = await Promise.race([generateWithTimeout(), timeoutPromise]);
+          const response: any = await withTimeout(generateWithTimeout(), 3500, 'AI chat generation');
           aiGenMs = Date.now() - tAiStart;
 
           if (response?.text) {

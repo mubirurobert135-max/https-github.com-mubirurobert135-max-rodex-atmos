@@ -202,7 +202,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
           text,
           style: ATMOS_SIGNATURE_STYLE
         }),
-        signal: AbortSignal.timeout(10500)
+        signal: AbortSignal.timeout(7500)
       });
 
       if (res.ok) {
@@ -291,7 +291,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE }),
-        signal: AbortSignal.timeout(10500)
+        signal: AbortSignal.timeout(7500)
       });
       const data = res.ok ? await res.json() : null;
 
@@ -334,7 +334,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
-        signal: AbortSignal.timeout(10500)
+        signal: AbortSignal.timeout(7500)
       });
 
       if (res.ok) {
@@ -483,7 +483,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         text: "Hey! I'm listening. What's on your mind?",
         style: ATMOS_SIGNATURE_STYLE
       }),
-      signal: AbortSignal.timeout(10500)
+      signal: AbortSignal.timeout(7500)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -805,7 +805,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               if (!audioBase64 && currentTurnIdRef.current === currentTurnId) {
                 turnTimer.markSynthesisRequested(Date.now());
                 const ttsController = new AbortController();
-                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 10500);
+                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 7500);
                 try {
                   const ttsRes = await fetch('/api/ai/synthesize-speech', {
                     method: 'POST',

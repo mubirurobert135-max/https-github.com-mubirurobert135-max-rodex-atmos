@@ -56,6 +56,23 @@ try {
     console.log(`PASS ${target.name}: ${layout.mainTitle}; document width ${layout.documentWidth}px`);
   }
 
+  // Verify the real search control, tab switching, and assistant entrypoint after responsive captures.
+  const searchInput = page.getByRole('textbox', { name: 'Search city or country' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await searchInput.waitFor({ state: 'visible', timeout: 5000 });
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole('button', { name: 'Interactive Weather Map' }).click();
+  await page.locator('.wx-reference-shell').waitFor({ state: 'detached', timeout: 10000 });
+  await page.getByRole('button', { name: 'Weather Dashboard' }).click();
+  await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 10000 });
+
+  await page.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' }).click();
+  await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
+  await page.getByTitle('Close Assistant').click();
+  await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
+  console.log('PASS interaction checks: search visible, map/dashboard tabs switch, assistant dialog opens and closes.');
+
   if (pageErrors.length) {
     throw new Error(`Browser runtime errors detected:\n${pageErrors.join('\n')}`);
   }

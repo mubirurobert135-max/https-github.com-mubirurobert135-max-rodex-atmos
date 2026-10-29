@@ -201,7 +201,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         body: JSON.stringify({
           text,
           style: ATMOS_SIGNATURE_STYLE
-        })
+        }),
+        signal: AbortSignal.timeout(10500)
       });
 
       if (res.ok) {
@@ -289,7 +290,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE })
+        body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE }),
+        signal: AbortSignal.timeout(10500)
       });
       const data = res.ok ? await res.json() : null;
 
@@ -330,7 +332,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         body: JSON.stringify({
           text,
           style: ATMOS_SIGNATURE_STYLE
-        })
+        }),
+        signal: AbortSignal.timeout(10500)
       });
 
       if (res.ok) {

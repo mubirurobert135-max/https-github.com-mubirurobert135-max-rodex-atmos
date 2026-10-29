@@ -175,12 +175,20 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const readAloudRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
 
-  // Stop any active audio element (audition or custom synthesized speech)
+  // Stop active playback and cancel pending TTS requests so stale audio cannot start later.
   const stopActiveAudioElement = useCallback(() => {
+    auditionRequestControllerRef.current?.abort();
+    auditionRequestControllerRef.current = null;
+    readAloudRequestControllerRef.current?.abort();
+    readAloudRequestControllerRef.current = null;
+
     if (activeAudioElementRef.current) {
       activeAudioElementRef.current.pause();
       activeAudioElementRef.current.currentTime = 0;
       activeAudioElementRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch {}
     }
     setIsAuditioning(false);
   }, []);
@@ -260,8 +268,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     }
 
     const auditionText = "Hey, I'm Atmos. Your day, your forecast, your vibe. Tell me what you need, and let's make today a little easier.";
+    stopActiveAudioElement();
     const requestController = new AbortController();
-    auditionRequestControllerRef.current?.abort();
     auditionRequestControllerRef.current = requestController;
     let fallbackStarted = false;
     let finished = false;
@@ -291,8 +299,6 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       }
     };
 
-    stopActiveAudioElement();
-    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
     setIsAuditioning(true);
 
     try {
@@ -325,11 +331,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Read any assistant message aloud with reliable cleanup and a quick feminine browser fallback.
   const handleSpeakChatMessage = useCallback(async (text: string) => {
-    readAloudRequestControllerRef.current?.abort();
+    stopActiveAudioElement();
     const requestController = new AbortController();
     readAloudRequestControllerRef.current = requestController;
-    stopActiveAudioElement();
-    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
 
     let fallbackStarted = false;
     let finished = false;

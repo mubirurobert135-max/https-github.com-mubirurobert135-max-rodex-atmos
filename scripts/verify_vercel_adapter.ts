@@ -9,6 +9,7 @@ type Handler = (req: IncomingMessage, res: ServerResponse) => Promise<void> | vo
 // These paths correspond to explicit Vercel filesystem functions. Standard Vite
 // projects do not get Next.js-style catch-all routing for api/[...path].ts.
 const routeModules = [
+  ['/api/health', () => import('../api/health.ts')],
   ['/api/weather/geocoding-search', () => import('../api/weather/geocoding-search.ts')],
   ['/api/weather/ip-location', () => import('../api/weather/ip-location.ts')],
   ['/api/weather/search', () => import('../api/weather/search.ts')],
@@ -31,8 +32,8 @@ for (const [route, load] of routeModules) {
   handlers.set(route, module.default as Handler);
 }
 
-if (handlers.size !== 11) {
-  throw new Error(`Expected 11 explicit API handlers, found ${handlers.size}`);
+if (handlers.size !== 12) {
+  throw new Error(`Expected 12 explicit API handlers, found ${handlers.size}`);
 }
 
 const server = createServer((req, res) => {
@@ -67,6 +68,7 @@ try {
     body?: string;
     status: number;
   }> = [
+    { path: '/api/health', status: 200 },
     { path: '/api/weather/geocoding-search?q=x', status: 200 },
     { path: '/api/weather/search', status: 400 },
     { path: '/api/weather/coordinates?lat=91&lon=0', status: 400 },
@@ -98,7 +100,7 @@ try {
     console.log(`PASS ${probe.method || 'GET'} ${probe.path} -> ${response.status}`);
   }
 
-  console.log('PASS Vercel route map: all 11 explicit API function modules load.');
+  console.log('PASS Vercel route map: all 12 explicit API function modules load.');
 } finally {
   await new Promise<void>((resolve, reject) => {
     server.close((error) => error ? reject(error) : resolve());

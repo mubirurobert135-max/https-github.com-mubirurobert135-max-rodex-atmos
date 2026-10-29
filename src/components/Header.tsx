@@ -309,7 +309,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Compact RODEX AI Trigger (Desktop) */}
           <button
             onClick={onOpenAssistant}
-            className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-300/40 group btn-hover-lift"
+            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-300/40 group btn-hover-lift`}
             title="Open RODEX AI Voice & Chat Assistant"
             aria-label="Open RODEX AI Voice and Chat Assistant"
           >
@@ -320,7 +320,7 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Account / Profile Button (Desktop) */}
           <button
             onClick={onOpenAuth}
-            className={`hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm border btn-hover-lift ${
+            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm border btn-hover-lift ${
               user 
                 ? isVerified 
                   ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-400/40' 

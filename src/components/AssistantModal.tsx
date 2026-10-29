@@ -236,7 +236,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         utterance.onerror = finishGreeting;
         window.speechSynthesis.speak(utterance);
       } else {
-        window.setTimeout(finishGreeting, 600);
+        setTimeout(finishGreeting, 600);
       }
     };
 

@@ -156,8 +156,8 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand Logo & Title */}
         <div className="flex items-center gap-3 shrink-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-500/20 text-white font-bold text-lg shrink-0">
-            <Compass className="w-5 h-5 sm:w-6 sm:h-6 animate-spin-slow" />
+          <div className="group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-lg shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-400/30">
+            <Compass className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-500 group-hover:rotate-12" />
           </div>
           {activeTab !== 'dashboard' && (
             <div className="hidden sm:block">
@@ -175,25 +175,27 @@ export const Header: React.FC<HeaderProps> = ({
         {onSelectTab && (
           <nav
             aria-label="Primary Navigation"
-            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 shadow-inner`}
+            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-slate-950/30 backdrop-blur-xl border border-white/10 shadow-inner`}
           >
             <button
+              aria-current={activeTab === 'dashboard' ? 'page' : undefined}
               onClick={() => onSelectTab('dashboard')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
                 activeTab === 'dashboard'
-                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/25 border border-sky-400/30'
-                  : 'text-sky-200/70 hover:text-white hover:bg-white/10'
+                  ? 'bg-gradient-to-r from-cyan-300/20 to-emerald-300/15 text-white shadow-md shadow-cyan-500/10 border border-cyan-100/20'
+                  : 'text-white/65 hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               <Compass className="w-3.5 h-3.5" />
               <span>Dashboard</span>
             </button>
             <button
+              aria-current={activeTab === 'map' ? 'page' : undefined}
               onClick={() => onSelectTab('map')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
                 activeTab === 'map'
-                  ? 'bg-gradient-to-r from-sky-500 to-indigo-600 text-white shadow-md shadow-sky-500/25 border border-sky-400/30'
-                  : 'text-sky-200/70 hover:text-white hover:bg-white/10'
+                  ? 'bg-gradient-to-r from-cyan-300/20 to-emerald-300/15 text-white shadow-md shadow-cyan-500/10 border border-cyan-100/20'
+                  : 'text-white/65 hover:text-white hover:bg-white/[0.08]'
               }`}
             >
               <Globe className="w-3.5 h-3.5" />
@@ -205,7 +207,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Location Search Bar */}
         <div ref={searchRef} className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-            <Search className="absolute left-3 w-4 h-4 text-sky-300 pointer-events-none z-10 shrink-0" />
+            <Search className="absolute left-3 w-4 h-4 text-cyan-200 pointer-events-none z-10 shrink-0" />
             
             <input
               type="text"
@@ -220,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
               }}
               onBlur={() => setIsInputFocused(false)}
               placeholder=""
-              className="w-full pl-9 pr-9 py-2 bg-white/8 hover:bg-white/12 focus:bg-[#0b162a] text-white text-xs sm:text-sm rounded-2xl border border-white/15 focus:border-sky-400/60 focus:outline-none transition-all duration-200 shadow-inner"
+              className="w-full pl-9 pr-9 py-2 bg-white/8 hover:bg-white/12 focus:bg-[#0b162a] text-white text-xs sm:text-sm rounded-2xl border border-white/15 focus:border-cyan-200/55 focus:ring-2 focus:ring-cyan-200/10 focus:outline-none transition-all duration-200 shadow-inner"
               aria-label="Search city or country"
             />
 

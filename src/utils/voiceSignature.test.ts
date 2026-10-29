@@ -31,5 +31,5 @@ test('RODEX Atmos Signature metadata structure matches API contract', () => {
 test('Speech style instruction conforms to natural delivery specifications', () => {
   assert.equal(ATMOS_SIGNATURE_STYLE.includes('warm'), true);
   assert.equal(ATMOS_SIGNATURE_STYLE.includes('brisk conversational pace'), true);
-  assert.equal(ATMOS_SIGNATURE_STYLE.includes('concise'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('expressive'), true);
 });

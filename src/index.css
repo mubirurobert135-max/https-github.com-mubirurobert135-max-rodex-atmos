@@ -1028,4 +1028,30 @@ header.sticky input[aria-label="Search city or country"]:focus {
     transform: none !important;
   }
 }
+/* Shared surfaces also keep the map, alerts and modal areas in the same visual system. */
+.glass-panel-elevated {
+  background: linear-gradient(145deg, rgba(17, 41, 61, .88), rgba(6, 19, 34, .92));
+  border-color: rgba(191, 226, 244, .2);
+  box-shadow: 0 24px 54px rgba(1, 8, 16, .36), inset 0 1px rgba(255,255,255,.1);
+}
+.glass-panel-interactive:hover {
+  transform: translateY(-2px);
+  border-color: rgba(120, 224, 239, .38);
+  box-shadow: 0 20px 42px -10px rgba(39, 176, 207, .18), inset 0 1px rgba(255,255,255,.08);
+}
+.btn-hover-lift:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(30, 170, 203, .12);
+}
+.btn-hover-lift:active:not(:disabled) {
+  transform: scale(.975);
+}
+button:disabled {
+  cursor: not-allowed;
+}
+@media (prefers-reduced-motion: reduce) {
+  .glass-panel-interactive:hover, .btn-hover-lift:hover:not(:disabled), .btn-hover-lift:active:not(:disabled) {
+    transform: none !important;
+  }
+}
 

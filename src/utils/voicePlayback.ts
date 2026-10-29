@@ -55,3 +55,38 @@ export function choosePreferredAtmosVoice<T extends BrowserVoiceOption>(
   const feminineOrNeutral = ranked.find(({ voice }) => !KNOWN_MASCULINE_VOICE_HINTS.test(voice.name || ''));
   return (feminineOrNeutral?.voice || ranked[0]?.voice || null) as T | null;
 }
+
+/**
+ * Chrome and some desktop browsers can return an empty voice list on the first
+ * read. Wait briefly for voiceschanged instead of silently choosing the OS default.
+ */
+export async function getPreferredAtmosVoice(
+  synthesis: SpeechSynthesis,
+  timeoutMs = 700
+): Promise<SpeechSynthesisVoice | null> {
+  const immediate = choosePreferredAtmosVoice(synthesis.getVoices());
+  if (immediate) return immediate;
+
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (voice: SpeechSynthesisVoice | null) => {
+      if (settled) return;
+      settled = true;
+      synthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      window.clearTimeout(timer);
+      resolve(voice);
+    };
+    const handleVoicesChanged = () => {
+      const voice = choosePreferredAtmosVoice(synthesis.getVoices());
+      if (voice) finish(voice);
+    };
+    const timer = window.setTimeout(() => {
+      finish(choosePreferredAtmosVoice(synthesis.getVoices()));
+    }, timeoutMs);
+
+    synthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    // Close the small race between the initial empty read and event registration.
+    handleVoicesChanged();
+  });
+}
+

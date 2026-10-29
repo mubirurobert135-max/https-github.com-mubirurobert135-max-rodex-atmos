@@ -150,7 +150,19 @@ function isProviderHealthy(providerName: string): boolean {
 async function startServer() {
   const PORT = process.env.PORT || 3000;
 
-  app.use(express.json());
+  app.disable('x-powered-by');
+  app.use(express.json({ limit: '1mb' }));
+
+  // Lightweight deployment/runtime probe. Never exposes credentials or environment values.
+  app.get('/api/health', (_req, res) => {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
+    res.status(200).json({
+      ok: true,
+      service: 'rodex-atmos-api',
+      runtime: isVercelRuntime ? 'vercel' : 'node',
+      timestamp: new Date().toISOString()
+    });
+  });
 
   // Initialize Gemini API if key is available
   const geminiApiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -2120,6 +2132,33 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
         message: err.message || 'Failed to process chat message.'
       });
     }
+  });
+
+  // Give missing API routes predictable JSON responses rather than HTML 404 pages.
+  app.use('/api', (_req, res) => {
+    res.status(404).json({
+      error: 'API_ROUTE_NOT_FOUND',
+      message: 'The requested RODEX Atmos API route does not exist.'
+    });
+  });
+
+  // Normalize JSON/body errors without exposing stack traces to clients.
+  app.use((error: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) return next(error);
+    const status = Number.isInteger(error?.status) && error.status >= 400 && error.status < 600
+      ? error.status
+      : 500;
+    const isBadJson = (status === 400 && error?.type === 'entity.parse.failed') ||
+      (status === 413 && error?.type === 'entity.too.large');
+    console.error('[RODEX API Middleware Error]', { status, message: error?.message || 'Unknown error' });
+    res.status(status).json({
+      error: status === 413 && error?.type === 'entity.too.large'
+        ? 'REQUEST_TOO_LARGE'
+        : isBadJson ? 'INVALID_REQUEST_BODY' : 'INTERNAL_SERVER_ERROR',
+      message: status === 413
+        ? 'Request body exceeds the 1 MB limit.'
+        : isBadJson ? 'Request body must contain valid JSON.' : 'The server could not complete this request. Please retry.'
+    });
   });
 
   // Vite middleware is only for local development. Vercel serves the built dist/ assets

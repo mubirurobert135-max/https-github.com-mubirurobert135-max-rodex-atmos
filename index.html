@@ -13,7 +13,11 @@
                 isViteHmr = true;
               } else if (Array.isArray(protocols) && (protocols.indexOf('vite-hmr') !== -1 || protocols.indexOf('vite-ping') !== -1)) {
                 isViteHmr = true;
-              } else if (typeof url === 'string' && (url.indexOf('vite-hmr') !== -1 || url.indexOf('token=') !== -1) && url.indexOf('googleapis.com') === -1) {
+              } else if (typeof url === 'string' && (
+                url.indexOf('vite-hmr') !== -1 ||
+                url.indexOf('vite-ping') !== -1 ||
+                (url.indexOf('token=') !== -1 && url.indexOf(window.location.host) !== -1)
+              )) {
                 isViteHmr = true;
               }
 
@@ -57,62 +61,7 @@
           }
         } catch (e) {}
 
-        var origError = console.error;
-        function shouldSuppress(args) {
-          for (var i = 0; i < args.length; i++) {
-            var item = args[i];
-            if (!item) continue;
-            var text = typeof item === 'string' ? item : (item.message || item.stack || String(item));
-            if (
-              text.includes('[vite]') ||
-              text.includes('WebSocket') ||
-              text.includes('Unexpected token \'<\'') ||
-              text.includes('Failed to fetch AI insights') ||
-              text.includes('NotAllowedError') ||
-              text.includes('Permission denied')
-            ) {
-              return true;
-            }
-          }
-          return false;
-        }
-
-        console.error = function() {
-          if (shouldSuppress(arguments)) {
-            return;
-          }
-          origError.apply(console, arguments);
-        };
-
-        window.addEventListener('error', function(e) {
-          var msg = (e && (e.message || (e.error && (e.error.message || e.error.stack)))) || '';
-          if (
-            msg.includes('[vite]') ||
-            msg.includes('WebSocket') ||
-            msg.includes('Unexpected token \'<\'') ||
-            msg.includes('Failed to fetch AI insights') ||
-            msg.includes('NotAllowedError') ||
-            msg.includes('Permission denied')
-          ) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-          }
-        }, true);
-
-        window.addEventListener('unhandledrejection', function(e) {
-          var msg = (e && e.reason && (e.reason.message || e.reason.name || e.reason.stack || String(e.reason))) || '';
-          if (
-            msg.includes('[vite]') ||
-            msg.includes('WebSocket') ||
-            msg.includes('Unexpected token \'<\'') ||
-            msg.includes('Failed to fetch AI insights') ||
-            msg.includes('NotAllowedError') ||
-            msg.includes('Permission denied')
-          ) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-          }
-        }, true);
+        // Do not silence application errors: they are essential for diagnosing API/preview failures.
       })();
     </script>
     <meta charset="UTF-8" />

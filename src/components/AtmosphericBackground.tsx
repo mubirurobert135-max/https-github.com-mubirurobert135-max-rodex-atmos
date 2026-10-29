@@ -128,7 +128,19 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
       className="fixed inset-0 -z-10 overflow-hidden pointer-events-none select-none transition-colors duration-1000"
     >
       {/* 1. Base Rich Atmospheric Gradient */}
-      <div className={`absolute inset-0 bg-gradient-to-b ${config.baseGradient} transition-all duration-1000`} />
+      <div
+        className={`absolute inset-0 bg-gradient-to-b ${config.baseGradient} transition-all duration-1000`}
+        style={
+          theme === 'rainy' || theme === 'thunder' || theme === 'overcast'
+            ? {
+                backgroundImage: "linear-gradient(180deg, rgba(7, 17, 23, .18), rgba(5, 11, 15, .32)), url('/atmos-storm-background.webp')",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center center',
+                backgroundRepeat: 'no-repeat',
+              }
+            : undefined
+        }
+      />
 
       {/* 2. Primary Atmospheric Horizon Glow (Top Solar / Celestial Arc) with subtle 3D parallax */}
       <div

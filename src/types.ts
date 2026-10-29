@@ -88,8 +88,8 @@ export interface DailyBriefing {
   greeting: string;
   locationName: string;
   summary: string;
-  highTemp: number;
-  lowTemp: number;
+  highTemp: number | null;
+  lowTemp: number | null;
   rainLikelihood: string;
   windCondition: string;
   headlineAlert?: string;

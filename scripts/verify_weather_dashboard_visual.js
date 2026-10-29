@@ -33,6 +33,9 @@ try {
   }
 
   await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 45000 });
+  // Let the real nearby-location requests settle before capturing the visual reference.
+  await page.waitForFunction(() => document.querySelectorAll('.wx-nearby-city').length > 0 || document.querySelector('.wx-nearby-empty') !== null, { timeout: 15000 }).catch(() => {});
+  await page.waitForTimeout(1000);
 
   for (const target of targets) {
     await page.setViewportSize({ width: target.width, height: target.height });
@@ -49,7 +52,7 @@ try {
     if (layout.documentWidth > layout.viewport + 1) {
       throw new Error(`Horizontal overflow at ${target.name}: viewport ${layout.viewport}px, document ${layout.documentWidth}px`);
     }
-    await page.screenshot({ path: path.join(outDir, `${target.name}.png`), fullPage: true });
+    await page.screenshot({ path: path.join(outDir, `${target.name}.png`), fullPage: false });
     console.log(`PASS ${target.name}: ${layout.mainTitle}; document width ${layout.documentWidth}px`);
   }
 

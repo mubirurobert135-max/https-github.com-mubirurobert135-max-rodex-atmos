@@ -24,7 +24,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#070e1c]/90 backdrop-blur-2xl border-t border-white/12 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[420px] z-40 lg:hidden bg-[rgba(29,43,42,0.68)] backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
     >
       <div className="max-w-md mx-auto grid grid-cols-5 items-center justify-items-center">
         

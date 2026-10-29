@@ -1031,8 +1031,29 @@ async function startServer() {
   // AI Insights endpoint using @google/genai with automatic quota failover
   app.post('/api/ai/insights', async (req, res) => {
     const { location, current, daily } = req.body || {};
+    if (!location || !current) {
+      return res.status(400).json({ error: 'Location and current weather measurements are required.' });
+    }
+
+    const insightsCacheKey = 'ai:insights:' + JSON.stringify([
+      location.name, location.country, location.latitude, location.longitude,
+      current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
+      current.wind_speed_10m, current.precipitation, current.weather_code,
+      daily?.uv_index_max?.[0]
+    ]);
+    const cachedInsights = cache.get(insightsCacheKey);
+    if (cachedInsights && Date.now() - cachedInsights.timestamp < CACHE_TTL_MS) {
+      cache.delete(insightsCacheKey);
+      cache.set(insightsCacheKey, cachedInsights);
+      return res.json(cachedInsights.data);
+    }
+    const sendFallbackInsights = () => {
+      const payload = generateWeatherInsights(location, current, daily);
+      saveWeatherCache(insightsCacheKey, payload);
+      return res.json(payload);
+    };
     if (!ai) {
-      return res.json(generateWeatherInsights(location, current, daily));
+      return sendFallbackInsights();
     }
 
     try {
@@ -1073,13 +1094,14 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
 
       const text = response?.text;
       const parsed = JSON.parse(text || '{}');
-      if (parsed.summary && parsed.clothing) {
+      if (parsed.summary && parsed.clothing && parsed.activities && parsed.health) {
+        saveWeatherCache(insightsCacheKey, parsed);
         return res.json(parsed);
       }
-      res.json(generateWeatherInsights(location, current, daily));
+      return sendFallbackInsights();
     } catch (err: any) {
-      // Graceful fallback without throwing unhandled 429 errors
-      res.json(generateWeatherInsights(location, current, daily));
+      // A bounded, deterministic fallback is more useful than surfacing quota and timeout errors.
+      return sendFallbackInsights();
     }
   });
 
@@ -1088,6 +1110,21 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     const { location, current, daily, hourly, alerts } = req.body || {};
     if (!location || !current) {
       return res.status(400).json({ error: 'Missing required weather parameters for daily briefing.' });
+    }
+
+    const briefingCacheKey = 'ai:briefing:' + JSON.stringify([
+      location.name, location.country, location.latitude, location.longitude,
+      current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
+      current.wind_speed_10m, current.precipitation, current.weather_code,
+      daily?.temperature_2m_max?.[0], daily?.temperature_2m_min?.[0], daily?.uv_index_max?.[0],
+      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(0, 12) : [],
+      Array.isArray(alerts) ? alerts.map((alert: any) => [alert.type, alert.severity, alert.title, alert.description]) : []
+    ]);
+    const cachedBriefing = cache.get(briefingCacheKey);
+    if (cachedBriefing && Date.now() - cachedBriefing.timestamp < CACHE_TTL_MS) {
+      cache.delete(briefingCacheKey);
+      cache.set(briefingCacheKey, cachedBriefing);
+      return res.json(cachedBriefing.data);
     }
 
     const rawHigh = daily?.temperature_2m_max?.[0];
@@ -1163,7 +1200,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
             headlineAlert,
             recommendations: parsed.recommendations,
             generatedAt: new Date().toISOString()
-          });
+          };
+          saveWeatherCache(briefingCacheKey, payload);
+          return res.json(payload);
         }
       } catch (err) {
         console.warn('[Briefing AI Warning] Gemini briefing fallback activated:', err);
@@ -1171,7 +1210,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     }
 
     // Deterministic fallback briefing
-    return res.json({
+    const payload = {
       greeting: `${greetingTime}, ${location.name}`,
       locationName: location.name,
       summary: (() => {
@@ -1193,7 +1232,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         windSpeed != null && windSpeed > 30 ? 'Take care outdoors because elevated wind speeds are reported.' : 'Recheck the forecast for any later weather changes.'
       ],
       generatedAt: new Date().toISOString()
-    });
+    };
+    saveWeatherCache(briefingCacheKey, payload);
+    return res.json(payload);
   });
 
   // Configured vocal identity: RODEX Atmos Signature (voice_nv4v693k2132)

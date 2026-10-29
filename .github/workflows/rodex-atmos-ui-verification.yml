@@ -6,6 +6,7 @@ on:
       - ui/dribbble-weather-redesign
       - perf/weather-speed-accuracy
       - fix/vercel-preview-api-routing
+      - design/white-purple-responsive
   workflow_dispatch:
 
 permissions:

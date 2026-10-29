@@ -1078,3 +1078,422 @@ button:disabled {
   .wx-live-weather-metrics strong { font-size: 11px; }
 }
 
+
+
+/* RODEX Atmos — White Orchid / Royal Violet design system
+   A responsive, accessible visual layer. Keeps the live weather atmosphere,
+   component behavior, API integrations and app structure unchanged. */
+:root {
+  --atmos-paper: #ffffff;
+  --atmos-paper-soft: #fcfaff;
+  --atmos-lavender: #f4efff;
+  --atmos-lavender-strong: #e9ddff;
+  --atmos-violet: #7c3aed;
+  --atmos-violet-bright: #8b5cf6;
+  --atmos-violet-deep: #4c1d95;
+  --atmos-plum: #2b1745;
+  --atmos-ink: #2c1b41;
+  --atmos-muted: #756583;
+  --atmos-outline: rgba(124, 58, 237, .19);
+  --atmos-glass: rgba(255, 255, 255, .88);
+  --atmos-stroke: rgba(124, 58, 237, .18);
+  --atmos-text-muted: #756583;
+  --atmos-cyan: #8b5cf6;
+  --atmos-mint: #d8c5ff;
+}
+
+html { scroll-behavior: smooth; }
+body { accent-color: var(--atmos-violet); }
+::selection { color: #fff; background: #7c3aed; }
+
+/* Bright, premium navigation that remains readable over changing weather scenes. */
+#root > div > header.sticky {
+  background: rgba(255, 255, 255, .94) !important;
+  border-bottom: 1px solid rgba(124, 58, 237, .13) !important;
+  box-shadow: 0 8px 28px rgba(49, 24, 84, .075);
+  -webkit-backdrop-filter: blur(24px) saturate(1.25);
+  backdrop-filter: blur(24px) saturate(1.25);
+  padding-top: max(.65rem, env(safe-area-inset-top, 0px));
+}
+#root > div > header.sticky .group.w-9.h-9 {
+  background: linear-gradient(140deg, #a78bfa 0%, #7c3aed 52%, #4c1d95 100%) !important;
+  box-shadow: 0 8px 20px rgba(124, 58, 237, .24) !important;
+  border: 1px solid rgba(255,255,255,.82);
+}
+#root > div > header.sticky h1 { color: var(--atmos-ink) !important; }
+#root > div > header.sticky h1 span { color: var(--atmos-violet) !important; }
+#root > div > header.sticky p { color: #76628d !important; }
+#root > div > header.sticky input[aria-label="Search city or country"] {
+  color: var(--atmos-ink) !important;
+  background: #f8f5ff !important;
+  border-color: rgba(124,58,237,.18) !important;
+  box-shadow: inset 0 1px 2px rgba(57,31,85,.035);
+}
+#root > div > header.sticky input[aria-label="Search city or country"]::placeholder {
+  color: #89799b !important;
+}
+#root > div > header.sticky input[aria-label="Search city or country"]:focus {
+  background: #fff !important;
+  border-color: rgba(124,58,237,.62) !important;
+  box-shadow: 0 0 0 4px rgba(124,58,237,.09) !important;
+}
+#root > div > header.sticky input[aria-label="Search city or country"] + span {
+  color: #8b78a7 !important;
+}
+#root > div > header.sticky nav[aria-label="Primary Navigation"] {
+  background: #f7f2ff !important;
+  border-color: var(--atmos-outline) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.9);
+}
+#root > div > header.sticky nav[aria-label="Primary Navigation"] button[aria-current="page"] {
+  color: #fff !important;
+  background: linear-gradient(135deg, #8b5cf6, #6425bd) !important;
+  border-color: rgba(255,255,255,.55) !important;
+  box-shadow: 0 5px 14px rgba(124,58,237,.22) !important;
+}
+#root > div > header.sticky nav[aria-label="Primary Navigation"] button:not([aria-current="page"]) {
+  color: #6a5780 !important;
+}
+#root > div > header.sticky nav[aria-label="Primary Navigation"] button:not([aria-current="page"]):hover {
+  color: var(--atmos-violet-deep) !important;
+  background: #eee5ff !important;
+}
+#root > div > header.sticky button[title="Toggle temperature unit"] {
+  color: var(--atmos-violet-deep) !important;
+  background: #f5f0ff !important;
+  border-color: var(--atmos-outline) !important;
+}
+#root > div > header.sticky button[title="Toggle temperature unit"]:hover {
+  background: #e9ddff !important;
+}
+#root > div > header.sticky button[aria-label="Submit search"] { color: var(--atmos-violet) !important; }
+#root > div > header.sticky .text-sky-400,
+#root > div > header.sticky .text-sky-300,
+#root > div > header.sticky .text-cyan-200 { color: var(--atmos-violet) !important; }
+
+/* Compact white-and-violet mobile dock, with safe-area clearance preserved. */
+nav[aria-label="Mobile Navigation"] {
+  background: rgba(255, 255, 255, .95) !important;
+  border: 1px solid rgba(124,58,237,.2) !important;
+  box-shadow: 0 15px 42px rgba(45, 21, 78, .18), inset 0 1px #fff !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.2);
+  backdrop-filter: blur(26px) saturate(1.2);
+}
+nav[aria-label="Mobile Navigation"] button {
+  color: #78658e !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
+  color: var(--atmos-violet-deep) !important;
+  background: #f3edff !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.9) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] svg,
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] span {
+  color: var(--atmos-violet-deep) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] .bg-sky-400 {
+  background: var(--atmos-violet) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  background: linear-gradient(145deg, #a78bfa, #7c3aed 57%, #4c1d95) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 10px 26px rgba(124,58,237,.32), inset 0 1px rgba(255,255,255,.55) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > div > span,
+nav[aria-label="Mobile Navigation"] .uppercase {
+  color: #7651b2 !important;
+}
+
+/* Main weather dashboard: soft white surfaces, plum typography and violet data accents. */
+.wx-reference-shell {
+  color: var(--atmos-ink);
+  border: 1px solid rgba(255,255,255,.84) !important;
+  background:
+    radial-gradient(ellipse at 83% 0%, rgba(196, 167, 255, .32), transparent 43%),
+    linear-gradient(132deg, rgba(255,255,255,.98), rgba(250,247,255,.97) 53%, rgba(242,235,255,.96)) !important;
+  box-shadow: 0 30px 90px rgba(27, 9, 54, .18), inset 0 1px rgba(255,255,255,.98) !important;
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+.wx-reference-rail {
+  background: linear-gradient(180deg, #fff, #f4edff) !important;
+  border-right: 1px solid rgba(124,58,237,.14) !important;
+}
+.wx-reference-mark {
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.75) !important;
+  background: linear-gradient(145deg,#a78bfa,#7c3aed 58%,#4c1d95) !important;
+  box-shadow: 0 8px 25px rgba(124,58,237,.24), inset 0 1px rgba(255,255,255,.36) !important;
+}
+.wx-reference-rail-button {
+  color: #79638f !important;
+  border-color: transparent;
+}
+.wx-reference-rail-button.is-active {
+  color: #5b21b6 !important;
+  background: linear-gradient(145deg,#f1e9ff,#e7d9ff) !important;
+  border-color: rgba(124,58,237,.22) !important;
+  box-shadow: 0 6px 18px rgba(124,58,237,.11), inset 0 1px #fff !important;
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  color: #5b21b6 !important;
+  background: #eee5ff !important;
+  border-color: rgba(124,58,237,.22) !important;
+}
+.wx-reference-rail-button::before {
+  background: linear-gradient(180deg,#8b5cf6,#c4b5fd) !important;
+}
+.wx-reference-heading { border-bottom-color: rgba(124,58,237,.14) !important; }
+.wx-welcome-line { color: #665174 !important; }
+.wx-welcome-line strong { color: #32164d !important; }
+.wx-reference-kicker { color: #7e6a93 !important; }
+.wx-reference-title, .wx-storm-title { color: #2c1745 !important; text-shadow: none !important; }
+.wx-story-label { color: #775a9c !important; }
+.wx-story-copy { color: #655572 !important; }
+.wx-story-copy strong { color: #3c1b61 !important; }
+.wx-hourly-heading { color: #3f2858 !important; }
+.wx-hourly-heading-note { color: #8668a7 !important; }
+.wx-live-status {
+  color: #573574 !important;
+  background: rgba(255,255,255,.86) !important;
+  border-color: rgba(124,58,237,.18) !important;
+  box-shadow: 0 4px 14px rgba(64,35,99,.045), inset 0 1px #fff !important;
+}
+.wx-live-divider { background: rgba(124,58,237,.22) !important; }
+.wx-live-pulse, .wx-status-dot.is-live, .wx-eyebrow-dot {
+  background: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139,92,246,.13), 0 0 11px rgba(139,92,246,.28) !important;
+}
+.wx-reference-quick-location {
+  color: #fff !important;
+  background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important;
+  border-color: rgba(124,58,237,.2) !important;
+  box-shadow: 0 5px 14px rgba(124,58,237,.16);
+}
+.wx-reference-quick-location:hover:not(:disabled) {
+  background: linear-gradient(135deg,#7c3aed,#5b21b6) !important;
+}
+.wx-hourly-temperature {
+  border: 1px solid rgba(124,58,237,.1);
+  border-radius: 16px;
+  background: rgba(255,255,255,.58);
+}
+.wx-hourly-temperature > span { color: #806e92 !important; }
+.wx-hourly-temperature strong { color: #342047 !important; }
+.wx-hourly-temperature small { color: #82639f !important; }
+.wx-hourly-temperature svg, .wx-weekly-day svg { color: #8050c8 !important; }
+.wx-weather-curve-panel {
+  border: 1px solid rgba(124,58,237,.12) !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.84),rgba(246,240,255,.88)) !important;
+  box-shadow: inset 0 1px #fff !important;
+}
+.wx-curve-topline { color: #4b3261 !important; }
+.wx-curve-badge {
+  color: #6d28d9 !important;
+  background: #f0e8ff !important;
+  border-color: rgba(124,58,237,.14) !important;
+}
+.wx-trend-chart line { stroke: rgba(124,58,237,.12) !important; }
+.wx-trend-chart > path:not(:first-of-type) { stroke: #8b5cf6 !important; }
+.wx-trend-chart circle { fill: #7c3aed !important; stroke: #fff !important; }
+.wx-weekly-strip { border-top-color: rgba(124,58,237,.16) !important; }
+.wx-weekly-strip-title { color: #513568 !important; }
+.wx-weekly-day {
+  background: rgba(255,255,255,.72) !important;
+  border-color: rgba(124,58,237,.12) !important;
+}
+.wx-weekly-day > span { color: #806e92 !important; }
+.wx-weekly-day strong { color: #3c2552 !important; }
+.wx-weekly-day small { color: #8a79a0 !important; }
+.wx-weekly-day.is-today {
+  background: linear-gradient(145deg,#f0e7ff,#e5d6ff) !important;
+  border-color: rgba(124,58,237,.32) !important;
+  box-shadow: 0 6px 17px rgba(124,58,237,.08), inset 0 1px #fff !important;
+}
+.wx-live-weather-card, .wx-nearby-panel {
+  background:
+    radial-gradient(ellipse at 90% 0%, rgba(191,164,255,.2), transparent 47%),
+    linear-gradient(145deg,#fff,#faf7ff) !important;
+  border-color: rgba(124,58,237,.16) !important;
+  box-shadow: 0 12px 28px rgba(50,24,77,.055), inset 0 1px #fff !important;
+}
+.wx-live-weather-location { color: #62427e !important; }
+.wx-location-status { color: #856e9d !important; }
+.wx-live-weather-temp { color: #2d1745 !important; }
+.wx-live-weather-condition { color: #694392 !important; }
+.wx-live-weather-feels { color: #776789 !important; }
+.wx-live-weather-symbol {
+  color: #7c3aed !important;
+  background: radial-gradient(circle,#ede2ff,#f9f6ff 72%) !important;
+  border-color: rgba(124,58,237,.15) !important;
+}
+.wx-live-weather-metrics > div {
+  background: #f8f5ff !important;
+  border-color: rgba(124,58,237,.1) !important;
+}
+.wx-live-weather-metrics svg { color: #8b5cf6 !important; }
+.wx-live-weather-metrics span { color: #7b6a8d !important; }
+.wx-live-weather-metrics strong { color: #3c2552 !important; }
+.wx-nearby-heading span { color: #4e3267 !important; }
+.wx-nearby-heading small { color: #88749b !important; }
+.wx-nearby-heading > svg { color: #8b5cf6 !important; }
+.wx-nearby-city { border-top-color: rgba(124,58,237,.12) !important; }
+.wx-nearby-city-name { color: #3c2552 !important; }
+.wx-nearby-city-condition { color: #867296 !important; }
+.wx-nearby-city > svg { color: #8b5cf6 !important; }
+.wx-nearby-city > strong { color: #3a2154 !important; }
+.wx-nearby-city:hover { background: #f2ebff !important; }
+.wx-nearby-empty, .wx-nearby-loading { color: #7f6d91 !important; }
+.wx-nearby-map-link {
+  color: #6d28d9 !important;
+  border-top-color: rgba(124,58,237,.13) !important;
+}
+.wx-nearby-map-link:hover { color: #4c1d95 !important; background: #f7f2ff !important; }
+.wx-reference-rail-status { color: #775890 !important; }
+
+/* Shared forecast cards, detail panels and weather information use the same white-violet finish. */
+.glass-panel, .glass-panel-elevated {
+  color: var(--atmos-ink);
+  border-color: rgba(124,58,237,.16) !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.97),rgba(248,244,255,.96)) !important;
+  box-shadow: 0 16px 38px rgba(39,16,71,.09), inset 0 1px #fff !important;
+}
+.glass-panel-interactive:hover {
+  border-color: rgba(124,58,237,.32) !important;
+  box-shadow: 0 20px 42px rgba(124,58,237,.13), inset 0 1px #fff !important;
+}
+.glass-panel-elevated [class~="text-white"],
+.glass-panel-elevated [class~="text-white/90"],
+.glass-panel-elevated [class~="text-white/95"] { color: #342047 !important; }
+.glass-panel-elevated [class~="text-white/70"],
+.glass-panel-elevated [class~="text-white/60"],
+.glass-panel-elevated [class~="text-white/50"] { color: #776789 !important; }
+.glass-panel-elevated [class~="text-white/40"] { color: #8f80a0 !important; }
+.glass-panel-elevated [class~="bg-white/5"],
+.glass-panel-elevated [class~="bg-white/[0.04]"] { background: rgba(124,58,237,.045) !important; }
+.glass-panel-elevated [class~="border-white/10"],
+.glass-panel-elevated [class~="border-white/8"],
+.glass-panel-elevated [class~="border-white/15"] { border-color: rgba(124,58,237,.12) !important; }
+.glass-panel-elevated .text-sky-300,
+.glass-panel-elevated .text-sky-200,
+.glass-panel-elevated .text-sky-400 { color: #7c3aed !important; }
+.glass-panel-elevated .text-indigo-300,
+.glass-panel-elevated .text-indigo-200 { color: #8050c8 !important; }
+
+/* AI briefing and insights are light cards with lilac internal modules, while status colors remain available. */
+.wx-reference-support-grid > div {
+  color: #3a2451 !important;
+  border: 1px solid rgba(124,58,237,.16) !important;
+  background: linear-gradient(145deg,#fff 0%,#fcfaff 58%,#f7f1ff 100%) !important;
+  box-shadow: 0 17px 42px rgba(45,18,76,.085), inset 0 1px #fff !important;
+}
+.wx-reference-support-grid > div [class~="text-white"],
+.wx-reference-support-grid > div [class~="text-white/95"],
+.wx-reference-support-grid > div [class~="text-white/90"] { color: #342047 !important; }
+.wx-reference-support-grid > div [class~="text-white/70"],
+.wx-reference-support-grid > div [class~="text-white/60"],
+.wx-reference-support-grid > div [class~="text-white/50"],
+.wx-reference-support-grid > div [class~="text-sky-200/70"] { color: #78668d !important; }
+.wx-reference-support-grid > div [class~="text-sky-200"],
+.wx-reference-support-grid > div [class~="text-sky-300"],
+.wx-reference-support-grid > div [class~="text-sky-400"] { color: #7c3aed !important; }
+.wx-reference-support-grid > div [class~="text-indigo-300"],
+.wx-reference-support-grid > div [class~="text-indigo-200"] { color: #8550c8 !important; }
+.wx-reference-support-grid > div [class~="bg-white/5"],
+.wx-reference-support-grid > div [class~="bg-white/10"],
+.wx-reference-support-grid > div [class~="bg-white/15"] { background: rgba(124,58,237,.055) !important; }
+.wx-reference-support-grid > div [class~="border-white/10"],
+.wx-reference-support-grid > div [class~="border-white/15"] { border-color: rgba(124,58,237,.13) !important; }
+.wx-reference-support-grid > div button:not(:disabled) {
+  transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.wx-reference-support-grid > div button:hover:not(:disabled) {
+  box-shadow: 0 7px 20px rgba(124,58,237,.12);
+}
+.wx-reference-support-grid > div .bg-gradient-to-tr,
+.wx-reference-support-grid > div .bg-gradient-to-r {
+  color: #fff !important;
+}
+.wx-reference-support-grid > div button[class*="from-sky-500"],
+.wx-reference-support-grid > div button[class*="from-sky-400"] {
+  background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important;
+  color: #fff !important;
+  border-color: rgba(124,58,237,.24) !important;
+}
+
+/* Keep the search result dropdown visually aligned with the new palette. */
+header.sticky [class*="bg-[#0a1426]"] {
+  color: #3a2451 !important;
+  background: rgba(255,255,255,.98) !important;
+  border-color: rgba(124,58,237,.16) !important;
+  box-shadow: 0 18px 46px rgba(39,16,71,.16) !important;
+}
+header.sticky [class*="bg-[#0a1426]"] button { color: #3b2552 !important; }
+header.sticky [class*="bg-[#0a1426]"] button:hover { background: #f2ebff !important; }
+header.sticky [class*="bg-[#0a1426]"] .text-white\/50 { color: #88759b !important; }
+header.sticky [class*="bg-[#0a1426]"] .border-white\/5 { border-color: rgba(124,58,237,.1) !important; }
+
+/* Map controls keep the purple cue without losing map legibility. */
+.leaflet-control-zoom a {
+  color: #7c3aed !important;
+  background: rgba(255,255,255,.96) !important;
+  border-color: rgba(124,58,237,.16) !important;
+}
+.leaflet-control-zoom a:hover { color: #fff !important; background: #7c3aed !important; }
+.leaflet-container .leaflet-control-attribution a { color: #a78bfa !important; }
+
+/* Clear focus, touch-friendly controls and responsive behavior for compact devices. */
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid #8b5cf6;
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  #root > div > header.sticky { padding-left: 12px; padding-right: 12px; }
+  .wx-reference-content { padding: clamp(12px, 3.5vw, 18px) !important; }
+  .wx-story-copy { font-size: 12px !important; line-height: 1.7 !important; }
+  .wx-welcome-line { font-size: 12px !important; }
+  .wx-reference-kicker { font-size: 10px !important; }
+  .wx-hourly-temperature > span, .wx-weekly-day > span { font-size: 10px !important; }
+  .wx-hourly-temperature strong { font-size: 14px !important; }
+  .wx-live-weather-metrics span, .wx-live-weather-feels { font-size: 10px !important; }
+  nav[aria-label="Mobile Navigation"] { bottom: max(.5rem, env(safe-area-inset-bottom, 0px)) !important; }
+}
+@media (max-width: 350px) {
+  nav[aria-label="Mobile Navigation"] { width: calc(100% - 12px) !important; padding-left: 4px !important; padding-right: 4px !important; }
+  nav[aria-label="Mobile Navigation"] button { min-width: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+
+/* Contrast refinement: translucent white utilities must stay legible on the new light surfaces. */
+.glass-panel-elevated [class*="text-white/"],
+.wx-reference-support-grid > div [class*="text-white/"] { color: #78668d !important; }
+.glass-panel-elevated [class~="text-white"],
+.glass-panel-elevated [class~="text-white/90"],
+.glass-panel-elevated [class~="text-white/95"],
+.wx-reference-support-grid > div [class~="text-white"],
+.wx-reference-support-grid > div [class~="text-white/90"],
+.wx-reference-support-grid > div [class~="text-white/95"] { color: #342047 !important; }
+.glass-panel-elevated [class*="text-sky-200/"],
+.wx-reference-support-grid > div [class*="text-sky-200/"] { color: #78668d !important; }
+.glass-panel-elevated [class~="text-sky-200"],
+.glass-panel-elevated [class~="text-sky-300"],
+.glass-panel-elevated [class~="text-sky-400"],
+.wx-reference-support-grid > div [class~="text-sky-200"],
+.wx-reference-support-grid > div [class~="text-sky-300"],
+.wx-reference-support-grid > div [class~="text-sky-400"] { color: #7c3aed !important; }
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  color: #fff !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] svg {
+  color: #fff !important;
+}
+@media (prefers-contrast: more) {
+  .wx-reference-shell, .glass-panel, .glass-panel-elevated, .wx-reference-support-grid > div {
+    border-color: rgba(76,29,149,.45) !important;
+  }
+  .wx-story-copy, .wx-hourly-temperature > span, .wx-live-weather-feels,
+  .wx-live-weather-metrics span, .wx-nearby-city-condition { color: #513568 !important; }
+}

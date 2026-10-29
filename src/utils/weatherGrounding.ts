@@ -38,7 +38,8 @@ export function isDirectCurrentWeatherQuery(query: string, currentCityName?: str
 
   if (currentCityName) {
     const safeCityName = escapeRegExp(currentCityName.toLowerCase());
-    clean = clean.replace(new RegExp(`\\b(?:in|for|at)\\s+${safeCityName}\\b`, 'gi'), '').trim();
+    clean = clean.replace(new RegExp(`\\b(?:in|for|at)\\s+${safeCityName}\\b`, 'gi'), '');
+    clean = clean.replace(/\\s+([?!.,])/g, '$1').trim();
   }
 
   const directPatterns = [

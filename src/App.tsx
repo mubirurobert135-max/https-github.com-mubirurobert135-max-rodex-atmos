@@ -62,18 +62,23 @@ export default function App() {
     if (!forceGPS && userPreferences && userPreferences.autoLocationEnabled === false) {
       try {
         const res = await fetch('/api/weather/search?query=Kampala,Uganda');
-        if (res.ok) {
-          const data: WeatherData = await res.json();
-          setWeatherData(data);
-          setDeviceLocationData(data);
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          setErrorMessage(data?.message || data?.error || `Weather service returned HTTP ${res.status}. Check the deployment API and try again.`);
+        } else if (data?.weather?.current && data?.location?.name) {
+          setWeatherData(data as WeatherData);
+          setDeviceLocationData(data as WeatherData);
           setLocationMode('fallback');
           setLocationNotice({
             type: 'info',
             message: 'Automatic location lookup is disabled in Privacy Preferences. Search any city or tap "My Location" to fetch weather.'
           });
+        } else {
+          setErrorMessage('The weather service returned an incomplete forecast. Please retry or search for a city.');
         }
       } catch (e) {
         console.warn('Auto location disabled fallback error:', e);
+        setErrorMessage('Unable to reach the weather API. The preview may be missing its API route or the service may be temporarily unavailable.');
       } finally {
         setIsLoading(false);
       }
@@ -104,20 +109,25 @@ export default function App() {
       // Step 3: Default Fallback Location (Kampala, Uganda)
       try {
         const res = await fetch('/api/weather/search?query=Kampala,Uganda');
-        if (res.ok) {
-          const data: WeatherData = await res.json();
-          setWeatherData(data);
-          setDeviceLocationData(data);
+        const data = await res.json().catch(() => null);
+        if (res.ok && data?.weather?.current && data?.location?.name) {
+          setWeatherData(data as WeatherData);
+          setDeviceLocationData(data as WeatherData);
           setLocationMode('fallback');
+          setErrorMessage(null);
           setLocationNotice({
             type: 'warning',
-            message: gpsErrorReason 
+            message: gpsErrorReason
               ? `${gpsErrorReason} Displaying default location (Kampala, Uganda). Search any city or tap "My Location" to retry.`
               : 'Device location unavailable. Displaying default location (Kampala, Uganda).'
           });
+        } else {
+          const serviceMessage = data?.message || data?.error || `Weather API returned HTTP ${res.status}.`;
+          setErrorMessage(`Unable to load the forecast. ${serviceMessage} Check the deployment API and retry, or search for a city.`);
         }
       } catch (fallbackErr) {
-        setErrorMessage('Unable to fetch initial weather forecast. Please check your network connection.');
+        console.error('Default weather fallback failed:', fallbackErr);
+        setErrorMessage('Unable to reach the weather API. Check the deployed backend/API routing and your network, then retry.');
       }
     };
 

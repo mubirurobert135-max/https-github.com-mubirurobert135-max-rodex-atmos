@@ -1148,7 +1148,7 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
         response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: { responseMimeType: 'application/json' }
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
         }), 3200, 'AI insights');
       } catch (liteErr: any) {
         // Do not stack a second slow request after a timeout; deterministic insights are faster and safer.
@@ -1156,7 +1156,7 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
         response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: prompt,
-          config: { responseMimeType: 'application/json' }
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
         }), 2200, 'AI insights fallback');
       }
 
@@ -1252,7 +1252,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         const aiRes = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: { responseMimeType: 'application/json' }
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 160 }
         }), 3200, 'Daily briefing AI');
 
         const parsed = JSON.parse(aiRes.text || '{}');
@@ -2055,13 +2055,13 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
               return await ai!.models.generateContent({
                 model: 'gemini-3.8-flash',
                 contents: conversationContents,
-                config: { systemInstruction }
+                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
               });
             } catch (flashErr) {
               return await ai!.models.generateContent({
                 model: 'gemini-3.1-flash-lite',
                 contents: conversationContents,
-                config: { systemInstruction }
+                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
               });
             }
           };

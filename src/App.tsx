@@ -472,6 +472,8 @@ export default function App() {
                   onOpenMap={() => setActiveTab('map')}
                   onOpenAccount={() => setIsAuthOpen(true)}
                   onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
+                  onOpenAlerts={() => setIsAlertsModalOpen(true)}
+                  onSelectCoordinates={handleSelectCoordinates}
                 />
 
                 <div className="wx-reference-support-grid">

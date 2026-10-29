@@ -745,6 +745,7 @@ async function startServer() {
     let country = '';
     let admin1 = '';
     let timezone = 'auto';
+    let reverseGeoPromise: Promise<{ name: string; country: string; admin1: string }> | null = null;
 
     try {
       if (typeof queryOrCoords === 'string') {
@@ -759,10 +760,8 @@ async function startServer() {
         lat = queryOrCoords.lat;
         lon = queryOrCoords.lon;
         if (!name || name === 'Current Location' || name === 'My Location' || name === 'Location') {
-          const geo = await reverseGeocodeCoordinates(lat, lon);
-          name = geo.name;
-          country = geo.country;
-          admin1 = geo.admin1;
+          // Reverse geocoding is independent of the forecast request; start it now and await both together.
+          reverseGeoPromise = reverseGeocodeCoordinates(lat, lon);
         }
       }
 
@@ -770,6 +769,12 @@ async function startServer() {
       const weatherRes = await fetchWithTimeout(weatherUrl, {}, 6000);
       if (!weatherRes.ok) throw new Error(`Open-Meteo HTTP ${weatherRes.statusText}`);
       const weatherData = await weatherRes.json();
+      if (reverseGeoPromise) {
+        const geo = await reverseGeoPromise;
+        name = geo.name;
+        country = geo.country;
+        admin1 = geo.admin1;
+      }
 
       const openMeteoLocation = {
         name,

@@ -8,6 +8,7 @@ on:
       - fix/vercel-preview-api-routing
       - fix/vercel-explicit-api-routes
       - fix/preview-health-and-startup-errors-v2
+      - fix/vercel-serverless-runtime-bootstrap
       - main
       - design/white-purple-responsive
   workflow_dispatch:

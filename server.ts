@@ -1240,7 +1240,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         name: 'RODEX Atmos Signature',
         type: 'prompted',
         gender: 'female',
-        ttsModel: 'gemini-3.8-flash-lite-tts',
+        ttsModel: ATMOS_SIGNATURE_TTS_MODEL,
         liveFallbackVoice: ATMOS_SIGNATURE_LIVE_VOICE,
         hasAuditionSample: true,
         auditionUrl: '/atmos-signature-audition.wav'

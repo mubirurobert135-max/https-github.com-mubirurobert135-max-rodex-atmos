@@ -60,7 +60,7 @@ function citiesForCountry(country: string): string[] {
   if (key === 'rwanda') return ['Kigali', 'Musanze', 'Huye'];
   if (key === 'united kingdom' || key === 'uk') return ['London', 'Manchester', 'Edinburgh'];
   if (key === 'japan') return ['Tokyo', 'Osaka', 'Sapporo'];
-  return ['Nairobi', 'London', 'Tokyo'];
+  return []; // Never label unrelated global cities as nearby locations.
 }
 
 export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps> = ({

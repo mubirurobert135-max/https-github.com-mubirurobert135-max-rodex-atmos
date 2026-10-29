@@ -828,50 +828,65 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 }
               }
 
+              let browserFallbackStarted = false;
+              const startBrowserVoiceFallback = async () => {
+                if (browserFallbackStarted || currentTurnIdRef.current !== currentTurnId) return;
+                browserFallbackStarted = true;
+                activeAudioElementRef.current = null;
+
+                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                  const utterance = new SpeechSynthesisUtterance(replyText);
+                  utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+                  utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
+                  utterance.volume = 1;
+
+                  const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
+                  if (preferredVoice) utterance.voice = preferredVoice;
+
+                  setVoiceState('speaking');
+                  utterance.onstart = () => {
+                    if (currentTurnIdRef.current !== currentTurnId) return;
+                    turnTimer.markAudioPlaybackStarted();
+                    console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+                  };
+                  utterance.onend = onPlaybackFinished;
+                  utterance.onerror = onPlaybackFinished;
+                  window.speechSynthesis.speak(utterance);
+                } else {
+                  onPlaybackFinished();
+                }
+              };
+
               if (audioBase64) {
+                let audio: HTMLAudioElement | null = null;
                 try {
                   turnTimer.markAudioAvailable(Date.now());
-                  const audio = new Audio(`data:${mimeType};base64,${audioBase64}`);
+                  audio = new Audio('data:' + mimeType + ';base64,' + audioBase64);
                   activeAudioElementRef.current = audio;
                   setVoiceState('speaking');
-                  turnTimer.markAudioPlaybackStarted();
-                  console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
-
+                  audio.onplaying = () => {
+                    if (currentTurnIdRef.current !== currentTurnId) return;
+                    turnTimer.markAudioPlaybackStarted();
+                    console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+                  };
                   audio.onended = onPlaybackFinished;
-                  audio.onerror = onPlaybackFinished;
+                  audio.onerror = () => {
+                    console.warn('[RODEX Voice Notice] Generated audio failed during playback; switching to the browser feminine voice.');
+                    void startBrowserVoiceFallback();
+                  };
 
                   await audio.play();
                   return;
                 } catch (playErr) {
-                  console.warn('[RODEX Voice Notice] Audio playback error:', playErr);
+                  console.warn('[RODEX Voice Notice] Audio playback error; trying the browser feminine voice.', playErr);
+                  if (audio && activeAudioElementRef.current === audio) {
+                    activeAudioElementRef.current = null;
+                  }
                 }
               }
 
-              // Fallback to browser warm feminine speech synthesis if no custom audio was returned
-              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(replyText);
-                utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
-                utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
-
-                if (preferredVoice) {
-                  utterance.voice = preferredVoice;
-                }
-
-                setVoiceState('speaking');
-                turnTimer.markAudioPlaybackStarted();
-                console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
-
-                utterance.onend = onPlaybackFinished;
-                utterance.onerror = onPlaybackFinished;
-
-                window.speechSynthesis.speak(utterance);
-              } else {
-                onPlaybackFinished();
-              }
+              await startBrowserVoiceFallback();
             })
             .catch((err) => {
               console.warn('[Voice Compatibility Notice]', err);

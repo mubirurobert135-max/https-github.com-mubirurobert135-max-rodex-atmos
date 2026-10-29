@@ -1508,15 +1508,22 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     };
   }
 
-  // Synthesize speech endpoint using RODEX Atmos Signature voice
+  // Synthesize speech endpoint using RODEX Atmos Signature voice.
+  // Bound input size so accidental long transcripts cannot make voice replies feel unresponsive.
   app.post('/api/ai/synthesize-speech', async (req, res) => {
     const { text, style } = req.body || {};
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Text prompt is required for speech synthesis.' });
+    if (typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'A non-empty text prompt is required for speech synthesis.' });
+    }
+    if (text.length > 2500) {
+      return res.status(413).json({ error: 'Speech text is too long. Keep read-aloud requests under 2500 characters.' });
+    }
+    if (style != null && (typeof style !== 'string' || style.length > 400)) {
+      return res.status(400).json({ error: 'Speech style must be a short string of 400 characters or fewer.' });
     }
 
     try {
-      const result = await synthesizeSpeechInternal(text, style);
+      const result = await synthesizeSpeechInternal(text.trim(), style);
       res.json(result);
     } catch (err: any) {
       console.warn('[RODEX Speech Synthesis Warning]', err?.message || err);

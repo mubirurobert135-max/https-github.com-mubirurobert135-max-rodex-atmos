@@ -3,7 +3,7 @@
 
 @layer base {
   :root {
-    --font-heading: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-heading: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
     /* RODEX Atmos Design Tokens */
@@ -11,9 +11,9 @@
     --color-midnight: #0a1120;
     --color-ink-deep: #0f1a2e;
     --color-ink-surface: #152238;
-    --color-teal-glow: #0ea5e9;
-    --color-emerald-accent: #10b981;
-    --color-champagne: #fde68a;
+    --color-teal-glow: #67d9ee;
+    --color-emerald-accent: #83e2b5;
+    --color-champagne: #f4e6b2;
     --color-ivory: #f8fafc;
 
     --sat: env(safe-area-inset-top, 0px);
@@ -783,3 +783,249 @@
     font-size: 9px;
   }
 }
+
+
+/* RODEX Atmos — premium visual polish layer */
+:root {
+  --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --color-teal-glow: #78e0ef;
+  --color-emerald-accent: #8fe8bf;
+  --color-champagne: #f2e6bd;
+  --atmos-cyan: #9deaf4;
+  --atmos-mint: #9ce9c1;
+  --atmos-lilac: #b5c5ff;
+  --atmos-glass: rgba(9, 25, 41, .66);
+  --atmos-stroke: rgba(206, 232, 246, .18);
+  --atmos-text-muted: rgba(236, 246, 250, .72);
+}
+html {
+  scroll-behavior: smooth;
+  text-rendering: optimizeLegibility;
+}
+body {
+  font-family: var(--font-body);
+  letter-spacing: -.008em;
+}
+button, input, select, textarea {
+  font: inherit;
+}
+button:not(:disabled), a, [role="tab"] {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--atmos-cyan);
+  outline-offset: 3px;
+}
+::selection {
+  color: #07131d;
+  background: rgba(157, 234, 244, .85);
+}
+.wx-reference-shell {
+  border-color: rgba(195, 229, 246, .25);
+  background:
+    radial-gradient(ellipse at 80% 0%, rgba(86, 180, 213, .14), transparent 43%),
+    linear-gradient(118deg, rgba(5, 17, 30, .62), rgba(9, 26, 42, .5) 58%, rgba(9, 25, 42, .66));
+  box-shadow: 0 28px 84px rgba(1, 9, 17, .36), inset 0 1px rgba(255,255,255,.16);
+}
+.wx-reference-rail {
+  border-right-color: rgba(197, 229, 244, .16);
+  background: rgba(5, 17, 30, .42);
+}
+.wx-reference-mark {
+  border-color: rgba(157, 234, 244, .42);
+  background: linear-gradient(145deg, rgba(52, 192, 222, .28), rgba(58, 114, 171, .2) 65%, rgba(91, 216, 173, .16));
+  box-shadow: 0 7px 24px rgba(40, 182, 219, .11), inset 0 1px rgba(255,255,255,.18);
+}
+.wx-reference-rail-button {
+  position: relative;
+  overflow: hidden;
+  transition:
+    color .22s ease,
+    background .22s ease,
+    border-color .22s ease,
+    box-shadow .22s ease,
+    transform .22s cubic-bezier(.2,.8,.2,1);
+}
+.wx-reference-rail-button::before {
+  content: "";
+  position: absolute;
+  inset: 5px auto 5px 0;
+  width: 2px;
+  border-radius: 99px;
+  background: linear-gradient(180deg, var(--atmos-cyan), var(--atmos-mint));
+  opacity: 0;
+  transform: scaleY(.45);
+  transition: opacity .2s ease, transform .2s ease;
+}
+.wx-reference-rail-button.is-active {
+  color: #f7feff;
+  border-color: rgba(157, 234, 244, .34);
+  background: linear-gradient(140deg, rgba(69, 191, 220, .2), rgba(87, 151, 190, .13) 55%, rgba(103, 222, 174, .1));
+  box-shadow: 0 7px 20px rgba(25, 153, 188, .09), inset 0 1px rgba(255,255,255,.12);
+  animation: atmosTabEnter .34s cubic-bezier(.2,.8,.2,1) both;
+}
+.wx-reference-rail-button.is-active::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  color: #fff;
+  border-color: rgba(157, 234, 244, .28);
+  background: rgba(157, 234, 244, .11);
+}
+.wx-reference-rail-button:active:not(:disabled) { transform: scale(.94); }
+.wx-reference-heading {
+  border-bottom-color: rgba(210, 234, 245, .17);
+}
+.wx-welcome-line, .wx-reference-kicker { letter-spacing: .015em; }
+.wx-reference-title {
+  font-weight: 700;
+  letter-spacing: -.052em;
+}
+.wx-storm-title {
+  text-shadow: 0 3px 22px rgba(0, 0, 0, .28);
+}
+.wx-story-copy { color: rgba(245, 250, 252, .84); }
+.wx-live-status {
+  border-color: rgba(205, 232, 245, .22);
+  background: rgba(10, 27, 42, .34);
+  box-shadow: inset 0 1px rgba(255,255,255,.09);
+}
+.wx-current-panel, .wx-live-weather-card, .wx-nearby-panel {
+  border-color: rgba(192, 229, 248, .25);
+  background:
+    radial-gradient(ellipse at 88% 8%, rgba(96, 196, 225, .18), transparent 44%),
+    linear-gradient(145deg, rgba(19, 45, 66, .62), rgba(5, 21, 37, .76));
+  box-shadow: inset 0 1px rgba(255,255,255,.14), 0 18px 40px rgba(1, 9, 18, .15);
+}
+.wx-live-weather-metrics > div, .wx-weekly-day, .wx-temperature-trend {
+  border-color: rgba(194, 228, 245, .14);
+  background-color: rgba(7, 23, 39, .24);
+}
+.wx-weekly-day.is-today {
+  border-color: rgba(157, 234, 244, .34);
+  background: linear-gradient(145deg, rgba(75, 195, 224, .18), rgba(103, 222, 174, .07));
+  box-shadow: inset 0 1px rgba(255,255,255,.1), 0 6px 18px rgba(24, 159, 188, .08);
+}
+.wx-weekly-day svg, .wx-hourly-temperature svg { color: #d7f4f7; }
+.wx-live-weather-symbol {
+  border-color: rgba(201, 236, 246, .22);
+  background: radial-gradient(circle, rgba(133, 222, 238, .2), rgba(106, 170, 213, .04) 72%);
+}
+.wx-nearby-city {
+  border-top-color: rgba(201, 231, 244, .15);
+  border-radius: 8px;
+}
+.wx-nearby-city:hover {
+  background: rgba(157, 234, 244, .1);
+}
+.wx-nearby-map-link {
+  color: #c6f5f5;
+  border-top-color: rgba(201, 231, 244, .15);
+  transition: color .2s ease, background .2s ease;
+}
+.wx-nearby-map-link:hover { color: white; background: rgba(157, 234, 244, .06); }
+
+/* Animated, consistent tab states on desktop, mobile and the dashboard rail. */
+.wx-primary-tabs {
+  border-color: rgba(197, 229, 244, .17);
+  background: rgba(5, 19, 33, .52);
+  box-shadow: 0 8px 26px rgba(0,0,0,.12), inset 0 1px rgba(255,255,255,.06);
+}
+nav[aria-label="Primary Navigation"] button,
+nav[aria-label="Mobile Navigation"] button {
+  position: relative;
+  transform-origin: center;
+  transition:
+    color .2s ease,
+    background-color .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease,
+    transform .2s cubic-bezier(.2,.8,.2,1);
+}
+nav[aria-label="Primary Navigation"] button[aria-current="page"] {
+  background: linear-gradient(130deg, rgba(90, 211, 236, .23), rgba(130, 229, 187, .13));
+  border-color: rgba(171, 239, 244, .32);
+  box-shadow: 0 7px 20px rgba(51, 190, 218, .12), inset 0 1px rgba(255,255,255,.12);
+  animation: atmosTabEnter .32s cubic-bezier(.2,.8,.2,1) both;
+}
+nav[aria-label="Primary Navigation"] button:hover:not(:disabled),
+nav[aria-label="Mobile Navigation"] button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+nav[aria-label="Primary Navigation"] button:active:not(:disabled),
+nav[aria-label="Mobile Navigation"] button:active:not(:disabled) {
+  transform: scale(.95);
+}
+nav[aria-label="Mobile Navigation"] {
+  border-color: rgba(185, 226, 245, .26);
+  background: rgba(7, 23, 39, .8);
+  box-shadow: 0 18px 44px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.12);
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
+  color: #b7f1f7;
+  background: linear-gradient(135deg, rgba(74, 193, 226, .16), rgba(125, 226, 183, .09));
+  box-shadow: inset 0 1px rgba(255,255,255,.08);
+  animation: atmosTabEnter .32s cubic-bezier(.2,.8,.2,1) both;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  border-color: rgba(225, 249, 252, .64);
+  background: linear-gradient(135deg, #44c6e4, #428bda 58%, #50cfa5);
+  box-shadow: 0 9px 28px rgba(38, 183, 214, .24), inset 0 1px rgba(255,255,255,.44);
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:hover {
+  box-shadow: 0 12px 32px rgba(38, 183, 214, .34), inset 0 1px rgba(255,255,255,.52);
+}
+header.sticky input[aria-label="Search city or country"] {
+  border-color: rgba(200, 229, 243, .18);
+  background-color: rgba(5, 22, 38, .46);
+  color: #f7fcff;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.08);
+  transition: border-color .2s ease, background-color .2s ease, box-shadow .2s ease;
+}
+header.sticky input[aria-label="Search city or country"]:hover {
+  border-color: rgba(157, 234, 244, .32);
+  background-color: rgba(9, 30, 47, .6);
+}
+header.sticky input[aria-label="Search city or country"]:focus {
+  border-color: rgba(157, 234, 244, .64);
+  background-color: rgba(5, 21, 36, .94);
+  box-shadow: 0 0 0 4px rgba(103, 217, 238, .09), inset 0 1px 2px rgba(0,0,0,.1);
+}
+.wx-reference-quick-location, .wx-action-primary, .wx-action-secondary, .wx-nearby-map-link {
+  transition: color .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease, transform .2s cubic-bezier(.2,.8,.2,1);
+}
+.wx-reference-quick-location:hover:not(:disabled), .wx-action-primary:hover, .wx-action-secondary:hover {
+  box-shadow: 0 8px 24px rgba(33, 175, 205, .13);
+}
+@keyframes atmosTabEnter {
+  from { opacity: .7; transform: translateY(3px) scale(.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes atmosWeatherReveal {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wx-reference-main > *, .wx-reference-aside > * {
+  animation: atmosWeatherReveal .45s cubic-bezier(.2,.8,.2,1) both;
+}
+.wx-reference-main > *:nth-child(2) { animation-delay: .04s; }
+.wx-reference-main > *:nth-child(3) { animation-delay: .08s; }
+.wx-reference-main > *:nth-child(4) { animation-delay: .12s; }
+.wx-reference-aside > *:nth-child(2) { animation-delay: .08s; }
+@media (prefers-reduced-motion: reduce) {
+  .wx-reference-main > *, .wx-reference-aside > *,
+  nav[aria-label="Primary Navigation"] button[aria-current="page"],
+  nav[aria-label="Mobile Navigation"] button[aria-current="page"],
+  .wx-reference-rail-button.is-active {
+    animation: none !important;
+  }
+  nav[aria-label="Primary Navigation"] button:hover:not(:disabled),
+  nav[aria-label="Mobile Navigation"] button:hover:not(:disabled),
+  .wx-reference-rail-button:hover:not(:disabled) {
+    transform: none !important;
+  }
+}
+

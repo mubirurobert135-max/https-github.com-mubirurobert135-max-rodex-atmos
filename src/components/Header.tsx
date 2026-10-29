@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full py-3 px-3 sm:px-6 lg:px-8 border-b border-white/10 bg-[#070e1c]/80 backdrop-blur-2xl sticky top-0 z-50 transition-all">
+    <header className="w-full py-3 px-3 sm:px-6 lg:px-8 border-b border-white/10 lg:border-b-0 bg-[#070e1c]/80 lg:bg-transparent backdrop-blur-2xl sticky top-0 z-50 transition-all">
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
         
         {/* Brand Logo & Title */}
@@ -152,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onSelectTab && (
           <nav
             aria-label="Primary Navigation"
-            className="hidden lg:flex items-center p-1 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 shadow-inner"
+            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 shadow-inner`}
           >
             <button
               onClick={() => onSelectTab('dashboard')}

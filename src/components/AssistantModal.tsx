@@ -16,6 +16,8 @@ import {
   buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
+import { choosePreferredAtmosVoice, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
+import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
 
 import { LocationMode } from '../types';
 
@@ -198,7 +200,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          style: 'Warm, confident, personable, lightly playful, clear and concise'
+          style: ATMOS_SIGNATURE_STYLE
         })
       });
 
@@ -233,14 +235,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
+      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
 
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find((v) =>
-        v.lang.startsWith('en') &&
-        (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-      ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
+      const preferredVoice = choosePreferredAtmosVoice(voices);
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
@@ -307,7 +306,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
-          style: 'Warm, confident, personable, lightly playful, clear and concise'
+          style: ATMOS_SIGNATURE_STYLE
         })
       });
 
@@ -328,13 +327,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
+      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find((v) =>
-        v.lang.startsWith('en') &&
-        (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-      ) || voices[0];
+      const preferredVoice = choosePreferredAtmosVoice(voices);
       if (preferredVoice) utterance.voice = preferredVoice;
       window.speechSynthesis.speak(utterance);
     }
@@ -454,7 +450,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: "Hey! I'm listening. What's on your mind?",
-        style: 'Warm, confident, personable, lightly playful, clear and concise'
+        style: ATMOS_SIGNATURE_STYLE
       })
     })
       .then((res) => res.json())
@@ -798,14 +794,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
                 window.speechSynthesis.cancel();
                 const utterance = new SpeechSynthesisUtterance(replyText);
-                utterance.rate = 1.0;
-                utterance.pitch = 1.05;
+                utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+                utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
 
                 const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find((v) =>
-                  v.lang.startsWith('en') &&
-                  (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-                ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
+                const preferredVoice = choosePreferredAtmosVoice(voices);
 
                 if (preferredVoice) {
                   utterance.voice = preferredVoice;
@@ -1063,7 +1056,7 @@ Available Function Tools:
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: 'Aoede'
+                    voiceName: ATMOS_SIGNATURE_LIVE_VOICE
                   }
                 }
               }

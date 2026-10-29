@@ -18,6 +18,7 @@ interface WeatherReferenceDashboardProps {
   onOpenAccount: () => void;
   onOpenPrivacy: () => void;
   onOpenAlerts: () => void;
+  onSelectCoordinates: (lat: number, lon: number, name: string) => void;
 }
 
 const WeatherSymbol: React.FC<{ code: number; isDay: number; className?: string }> = ({
@@ -64,7 +65,7 @@ function citiesForCountry(country: string): string[] {
 
 export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps> = ({
   data, unit, locationMode, isLoading, onGetCurrentLocation, onOpenAssistant, onOpenMap,
-  onOpenAccount, onOpenPrivacy, onOpenAlerts
+  onOpenAccount, onOpenPrivacy, onOpenAlerts, onSelectCoordinates
 }) => {
   const { location, weather } = data;
   const current = weather.current;
@@ -293,9 +294,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
                 const local = item.weather.current;
                 const nearbyCondition = getWeatherCondition(local.weather_code, local.is_day);
                 return (
-                  <button type="button" className="wx-nearby-city" key={`${item.location.name}-${item.location.latitude}`} onClick={() => {
-                    window.dispatchEvent(new CustomEvent('rodex:select-nearby-city', { detail: item.location }));
-                  }} title={`View ${item.location.name} weather`}>
+                  <button type="button" className="wx-nearby-city" key={`${item.location.name}-${item.location.latitude}`} onClick={() => onSelectCoordinates(item.location.latitude, item.location.longitude, item.location.name)} title={`View ${item.location.name} weather`}>
                     <div className="wx-nearby-city-left">
                       <span className="wx-nearby-city-name">{item.location.name}</span>
                       <span className="wx-nearby-city-condition">{nearbyCondition.label}</span>

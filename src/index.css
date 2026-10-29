@@ -652,3 +652,41 @@
   .wx-reference-quick-location { min-height: 34px; }
 }
 
+
+
+/* Desktop proportions tuned against the supplied Dribbble composition */
+@media (min-width: 1101px) {
+  .wx-reference-shell {
+    min-height: 710px;
+  }
+  .wx-reference-content {
+    padding-top: 29px;
+    padding-bottom: 31px;
+  }
+  .wx-reference-heading {
+    padding-bottom: 22px;
+  }
+  .wx-reference-layout {
+    padding-top: 33px;
+  }
+  .wx-hourly-heading {
+    margin-top: 38px;
+  }
+  .wx-hourly-temperatures {
+    margin-top: 21px;
+  }
+  .wx-trend-chart {
+    height: 108px;
+  }
+  .wx-weekly-strip {
+    margin-top: 30px;
+    padding-top: 14px;
+  }
+  .wx-weekly-day {
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+  .wx-reference-support-grid {
+    margin-top: 54px;
+  }
+}

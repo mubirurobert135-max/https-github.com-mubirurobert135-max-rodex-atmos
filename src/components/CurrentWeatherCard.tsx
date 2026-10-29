@@ -49,7 +49,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
         return (
           <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
             <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-lg animate-pulse" />
-            <Sun className="w-10 h-10 sm:w-12 sm:h-12 text-amber-300 animate-spin-slow drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
+            <Sun className="w-10 h-10 sm:w-12 sm:h-12 text-amber-200 drop-shadow-[0_0_12px_rgba(251,191,36,0.45)] transition-transform duration-500 hover:scale-105" />
           </div>
         );
       case 'Moon':

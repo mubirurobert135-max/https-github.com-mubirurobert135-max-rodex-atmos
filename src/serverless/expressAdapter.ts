@@ -1,12 +1,15 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { app, serverReady } from '../server';
+import { app, serverReady } from '../../server';
 
 /**
- * Vercel catch-all API adapter.
- * The Vite build serves the static frontend from dist/, while all /api/* requests
- * are passed through the existing Express routes so local and deployed behavior match.
+ * Dispatch one explicit Vercel API function through the existing Express app.
+ * The file-system route is defined by each api/weather/*.ts and api/ai/*.ts file;
+ * this adapter deliberately does not depend on unsupported catch-all routing.
  */
-export default async function handler(req: IncomingMessage, res: ServerResponse): Promise<void> {
+export async function handleExpressRequest(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
   try {
     await serverReady;
     app(req as any, res as any);

@@ -343,7 +343,7 @@ export default function App() {
         )}
 
         {/* Weather Provider Attribution & Disclaimer Banner */}
-        {weatherData && weatherData.providerInfo && (
+        {weatherData && weatherData.providerInfo && activeTab !== 'dashboard' && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md text-xs text-sky-200 gap-2">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />

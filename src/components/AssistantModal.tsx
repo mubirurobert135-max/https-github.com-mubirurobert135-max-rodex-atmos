@@ -477,7 +477,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       body: JSON.stringify({
         text: "Hey! I'm listening. What's on your mind?",
         style: ATMOS_SIGNATURE_STYLE
-      })
+      }),
+      signal: AbortSignal.timeout(10500)
     })
       .then((res) => res.json())
       .then((data) => {

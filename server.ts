@@ -452,7 +452,8 @@ async function startServer() {
     };
   }
 
-  // Helper to fetch weather via OpenWeather
+  // Optional OpenWeather integration: current observations come from the current-conditions endpoint,
+  // while daily ranges are derived from actual forecast samples (never current temperature +/- a guess).
   async function fetchOpenWeather(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     const apiKey = process.env.OPENWEATHER_API_KEY;
     if (!apiKey) throw new Error('OPENWEATHER_API_KEY not configured');
@@ -463,10 +464,11 @@ async function startServer() {
     let country = '';
 
     if (typeof queryOrCoords === 'string') {
-      const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(queryOrCoords)}&limit=1&appid=${apiKey}`;
+      const geoUrl = 'https://api.openweathermap.org/geo/1.0/direct?q=' + encodeURIComponent(queryOrCoords) + '&limit=1&appid=' + apiKey;
       const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
+      if (!geoRes.ok) throw new Error('OpenWeather geocoding failed: HTTP ' + geoRes.status);
       const geoData = await geoRes.json();
-      if (!geoData || geoData.length === 0) {
+      if (!Array.isArray(geoData) || geoData.length === 0) {
         throw new Error('City not found via OpenWeather geocoding');
       }
       lat = geoData[0].lat;
@@ -478,23 +480,40 @@ async function startServer() {
       lon = queryOrCoords.lon;
     }
 
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
-    const forecastRes = await fetchWithTimeout(forecastUrl, {}, 6000);
-    if (!forecastRes.ok) throw new Error(`OpenWeather error: ${forecastRes.statusText}`);
-    const data = await forecastRes.json();
+    const currentUrl = 'https://api.openweathermap.org/data/2.5/weather?lat=' + lat + '&lon=' + lon + '&units=metric&appid=' + apiKey;
+    const forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&units=metric&appid=' + apiKey;
+    const [currentRes, forecastRes] = await Promise.all([
+      fetchWithTimeout(currentUrl, {}, 6000),
+      fetchWithTimeout(forecastUrl, {}, 6000)
+    ]);
+    if (!currentRes.ok) throw new Error('OpenWeather current conditions failed: HTTP ' + currentRes.status);
+    if (!forecastRes.ok) throw new Error('OpenWeather forecast failed: HTTP ' + forecastRes.status);
 
-    const currentItem = data.list[0] || {};
+    const currentData = await currentRes.json();
+    const forecastData = await forecastRes.json();
+    if (!Array.isArray(forecastData.list) || forecastData.list.length === 0) {
+      throw new Error('OpenWeather returned no forecast samples');
+    }
+
+    const timezoneOffset = Number.isFinite(currentData.timezone) ? currentData.timezone : 0;
+    const currentTimestamp = Number.isFinite(currentData.dt) ? currentData.dt : Math.floor(Date.now() / 1000);
+    const sunriseTimestamp = currentData.sys?.sunrise;
+    const sunsetTimestamp = currentData.sys?.sunset;
+    const isDay = Number.isFinite(sunriseTimestamp) && Number.isFinite(sunsetTimestamp)
+      ? (currentTimestamp >= sunriseTimestamp && currentTimestamp < sunsetTimestamp ? 1 : 0)
+      : 1;
+    const currentWeatherCode = mapOpenWeatherCode(currentData.weather?.[0]?.id);
     const current = {
-      time: currentItem.dt_txt || new Date().toISOString(),
-      temperature_2m: currentItem.main?.temp || 20,
-      relative_humidity_2m: currentItem.main?.humidity || 50,
-      apparent_temperature: currentItem.main?.feels_like || 20,
-      is_day: 1,
-      precipitation: currentItem.rain?.['3h'] || 0,
-      weather_code: mapOpenWeatherCode(currentItem.weather?.[0]?.id),
-      wind_speed_10m: (currentItem.wind?.speed || 3) * 3.6,
-      wind_direction_10m: currentItem.wind?.deg || 0,
-      surface_pressure: currentItem.main?.pressure || 1013
+      time: new Date(currentTimestamp * 1000).toISOString(),
+      temperature_2m: Number.isFinite(currentData.main?.temp) ? currentData.main.temp : null,
+      relative_humidity_2m: Number.isFinite(currentData.main?.humidity) ? currentData.main.humidity : null,
+      apparent_temperature: Number.isFinite(currentData.main?.feels_like) ? currentData.main.feels_like : null,
+      is_day: isDay,
+      precipitation: Number.isFinite(currentData.rain?.['1h']) ? currentData.rain['1h'] : 0,
+      weather_code: currentWeatherCode,
+      wind_speed_10m: Number.isFinite(currentData.wind?.speed) ? currentData.wind.speed * 3.6 : null,
+      wind_direction_10m: Number.isFinite(currentData.wind?.deg) ? currentData.wind.deg : null,
+      surface_pressure: Number.isFinite(currentData.main?.pressure) ? currentData.main.pressure : null
     };
 
     const hourlyTimes: string[] = [];
@@ -502,56 +521,100 @@ async function startServer() {
     const hourlyPrecipProb: number[] = [];
     const hourlyCodes: number[] = [];
     const hourlyIsDay: number[] = [];
+    const dailyByDate = new Map<string, { temps: number[]; codes: number[]; codeHours: number[] }>();
 
-    data.list.forEach((item: any) => {
-      hourlyTimes.push(item.dt_txt);
-      hourlyTemps.push(item.main?.temp);
-      hourlyPrecipProb.push(Math.round((item.pop || 0) * 100));
-      hourlyCodes.push(mapOpenWeatherCode(item.weather?.[0]?.id));
+    for (const item of forecastData.list) {
+      const timestamp = Number.isFinite(item.dt) ? item.dt : null;
+      if (timestamp == null) continue;
+      const localDate = new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(0, 10);
+      const localHour = Number(new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(11, 13));
+      const temp = Number.isFinite(item.main?.temp) ? item.main.temp : null;
+      const code = mapOpenWeatherCode(item.weather?.[0]?.id);
+
+      // OpenWeather's standard forecast feed provides 3-hour samples, not one-hour samples.
+      hourlyTimes.push(new Date(timestamp * 1000).toISOString());
+      hourlyTemps.push(temp == null ? Number.NaN : temp);
+      hourlyPrecipProb.push(Number.isFinite(item.pop) ? Math.round(item.pop * 100) : Number.NaN);
+      hourlyCodes.push(code);
       hourlyIsDay.push(1);
-    });
 
-    const alerts = processWeatherAlerts({
-      location: { name: data.city?.name || name, country: data.city?.country || country },
-      current,
-      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
-      daily: { time: [new Date().toISOString().split('T')[0]], weather_code: [current.weather_code], temperature_2m_max: [current.temperature_2m + 3], temperature_2m_min: [current.temperature_2m - 3], sunrise: ['06:00'], sunset: ['18:00'], uv_index_max: [5] }
-    });
+      if (!dailyByDate.has(localDate)) dailyByDate.set(localDate, { temps: [], codes: [], codeHours: [] });
+      const day = dailyByDate.get(localDate)!;
+      if (temp != null) day.temps.push(temp);
+      if (code >= 0) {
+        day.codes.push(code);
+        day.codeHours.push(localHour);
+      }
+    }
+
+    const dailyTimes = Array.from(dailyByDate.keys()).sort();
+    const dailyCodes: number[] = [];
+    const dailyMax: number[] = [];
+    const dailyMin: number[] = [];
+    const dailySunrise: string[] = [];
+    const dailySunset: string[] = [];
+
+    const formatOffsetTime = (timestamp: unknown): string => {
+      if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) return 'Unavailable';
+      return new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(11, 16);
+    };
+
+    for (const date of dailyTimes) {
+      const day = dailyByDate.get(date)!;
+      // Use the available samples closest to local noon to represent a day's reported condition.
+      let representativeCode = -1;
+      if (day.codes.length) {
+        const closestNoonIndex = day.codeHours.reduce((bestIndex, hour, index) =>
+          Math.abs(hour - 12) < Math.abs(day.codeHours[bestIndex] - 12) ? index : bestIndex, 0);
+        representativeCode = day.codes[closestNoonIndex];
+      }
+      dailyCodes.push(representativeCode);
+      dailyMax.push(day.temps.length ? Math.max(...day.temps) : Number.NaN);
+      dailyMin.push(day.temps.length ? Math.min(...day.temps) : Number.NaN);
+      if (date === new Date((currentTimestamp + timezoneOffset) * 1000).toISOString().slice(0, 10)) {
+        dailySunrise.push(formatOffsetTime(sunriseTimestamp));
+        dailySunset.push(formatOffsetTime(sunsetTimestamp));
+      } else {
+        dailySunrise.push('Unavailable');
+        dailySunset.push('Unavailable');
+      }
+    }
+
+    const location = {
+      name: currentData.name || forecastData.city?.name || name,
+      country: currentData.sys?.country || forecastData.city?.country || country,
+      admin1: '',
+      latitude: lat,
+      longitude: lon,
+      timezone: 'UTC'
+    };
+    const hourly = {
+      time: hourlyTimes,
+      temperature_2m: hourlyTemps,
+      precipitation_probability: hourlyPrecipProb,
+      weather_code: hourlyCodes,
+      is_day: hourlyIsDay
+    };
+    const daily = {
+      time: dailyTimes,
+      weather_code: dailyCodes,
+      temperature_2m_max: dailyMax,
+      temperature_2m_min: dailyMin,
+      sunrise: dailySunrise,
+      sunset: dailySunset,
+      // This OpenWeather endpoint does not provide UV forecasts; don't fabricate them.
+      uv_index_max: [] as number[]
+    };
+    const alerts = processWeatherAlerts({ location, current, hourly, daily });
 
     return {
-      location: {
-        name: data.city?.name || name,
-        country: data.city?.country || country,
-        admin1: '',
-        latitude: lat,
-        longitude: lon,
-        timezone: 'UTC'
-      },
-      weather: {
-        timezone: 'UTC',
-        current,
-        hourly: {
-          time: hourlyTimes,
-          temperature_2m: hourlyTemps,
-          precipitation_probability: hourlyPrecipProb,
-          weather_code: hourlyCodes,
-          is_day: hourlyIsDay
-        },
-        daily: {
-          time: [new Date().toISOString().split('T')[0]],
-          weather_code: [current.weather_code],
-          temperature_2m_max: [current.temperature_2m + 3],
-          temperature_2m_min: [current.temperature_2m - 3],
-          sunrise: ['06:00'],
-          sunset: ['18:00'],
-          uv_index_max: [5]
-        }
-      },
+      location,
+      weather: { timezone: 'UTC', current, hourly, daily },
       alerts,
       providerInfo: {
         name: 'OpenWeather',
         credit: 'Powered by OpenWeather',
-        disclaimer: 'OpenWeather commercial API subscription.'
+        disclaimer: 'Current observations are from OpenWeather; daily ranges are derived from available 3-hour forecast samples. UV forecast data is unavailable in this feed.'
       },
       source: 'live' as const
     };

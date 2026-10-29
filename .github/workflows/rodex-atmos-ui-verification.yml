@@ -17,28 +17,28 @@ jobs:
       - name: Check out feature branch
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: 22
+          bun-version: latest
 
-      - name: Install dependencies
-        run: npm install
+      - name: Install dependencies from the project lockfile
+        run: bun install --frozen-lockfile
 
       - name: TypeScript check
-        run: npm run lint
+        run: bun run lint
 
       - name: Production build
-        run: npm run build
+        run: bun run build
 
       - name: Install Playwright Chromium
-        run: npx playwright install --with-deps chromium
+        run: bunx playwright install --with-deps chromium
 
       - name: Start app and verify responsive dashboard
         shell: bash
         run: |
           set -euo pipefail
-          npm run dev > /tmp/rodex-atmos.log 2>&1 &
+          bun run dev > /tmp/rodex-atmos.log 2>&1 &
           SERVER_PID=$!
           trap 'kill "$SERVER_PID" 2>/dev/null || true' EXIT
 

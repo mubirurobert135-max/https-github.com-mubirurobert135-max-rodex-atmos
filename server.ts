@@ -1252,7 +1252,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
 
         const parsed = JSON.parse(aiRes.text || '{}');
         if (parsed.summary && Array.isArray(parsed.recommendations)) {
-          return res.json({
+          const payload = {
             greeting: parsed.greeting || `${greetingTime}, ${location.name}`,
             locationName: location.name,
             summary: parsed.summary,

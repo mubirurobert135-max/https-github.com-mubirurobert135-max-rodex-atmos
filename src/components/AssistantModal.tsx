@@ -267,36 +267,59 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     }
   }, [stopActiveAudioElement]);
 
-  // Audition the official RODEX Atmos Signature voice sample
+  // Audition the exact voice profile used in the assistant, not a stale bundled recording.
   const handleAuditionSignatureVoice = useCallback(async () => {
     if (isAuditioning) {
       stopActiveAudioElement();
+      if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
       return;
     }
 
-    try {
-      stopActiveAudioElement();
-      setIsAuditioning(true);
-      const audio = new Audio('/atmos-signature-audition.wav');
-      activeAudioElementRef.current = audio;
-
-      audio.onended = () => {
-        setIsAuditioning(false);
-        activeAudioElementRef.current = null;
-      };
-
-      audio.onerror = () => {
-        setIsAuditioning(false);
-        activeAudioElementRef.current = null;
-      };
-
-      await audio.play();
-    } catch (err) {
-      console.warn('[Audition Notice] Playback failed:', err);
+    const auditionText = "Hey, I'm Atmos. Your day, your forecast, your vibe. Tell me what you need, and let's make today a little easier.";
+    const finishAudition = () => {
       setIsAuditioning(false);
-    }
-  }, [isAuditioning, stopActiveAudioElement]);
+      activeAudioElementRef.current = null;
+    };
 
+    stopActiveAudioElement();
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+    setIsAuditioning(true);
+
+    try {
+      const res = await fetch('/api/ai/synthesize-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE })
+      });
+      const data = res.ok ? await res.json() : null;
+
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishAudition;
+        audio.onerror = finishAudition;
+        await audio.play();
+        return;
+      }
+    } catch (err) {
+      console.warn('[Atmos Voice Audition] Signature voice unavailable; trying the browser voice fallback.', err);
+    }
+
+    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      const utterance = new SpeechSynthesisUtterance(auditionText);
+      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
+      utterance.volume = 1;
+      const preferredVoice = choosePreferredAtmosVoice(window.speechSynthesis.getVoices());
+      if (preferredVoice) utterance.voice = preferredVoice;
+      utterance.onend = finishAudition;
+      utterance.onerror = finishAudition;
+      window.speechSynthesis.speak(utterance);
+      return;
+    }
+
+    finishAudition();
+  }, [isAuditioning, stopActiveAudioElement]);
   // Read any assistant message aloud using the RODEX Atmos Signature voice
   const handleSpeakChatMessage = useCallback(async (text: string) => {
     stopActiveAudioElement();

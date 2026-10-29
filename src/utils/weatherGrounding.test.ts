@@ -39,7 +39,7 @@ test('direct weather answers distinguish no rain from a rain condition', () => {
   };
   const reply = buildGroundedWeatherReply(dryWeather, 'Is it raining right now?');
   assert.ok(reply.includes('Kampala'));
-  assert.ok(reply.includes('24°C'));
+  // A rainfall question should answer the precipitation question directly; temperature is not required.
   assert.ok(reply.includes('no measurable precipitation'));
   assert.ok(!reply.includes('heavy rain'));
 

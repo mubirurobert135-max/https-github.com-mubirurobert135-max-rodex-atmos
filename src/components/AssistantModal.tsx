@@ -172,6 +172,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Reference for active audio elements (audition or custom synthesized speech)
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const auditionRequestControllerRef = useRef<AbortController | null>(null);
+  const readAloudRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
 
   // Stop any active audio element (audition or custom synthesized speech)
@@ -324,47 +325,68 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Read any assistant message aloud with reliable cleanup and a quick feminine browser fallback.
   const handleSpeakChatMessage = useCallback(async (text: string) => {
+    readAloudRequestControllerRef.current?.abort();
+    const requestController = new AbortController();
+    readAloudRequestControllerRef.current = requestController;
     stopActiveAudioElement();
-    if (typeof window !== 'undefined' && window.speechSynthesis) {
-      window.speechSynthesis.cancel();
-    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+
+    let fallbackStarted = false;
+    let finished = false;
+    const finishReadAloud = () => {
+      if (finished) return;
+      finished = true;
+      if (activeAudioElementRef.current && activeAudioElementRef.current.ended) {
+        activeAudioElementRef.current = null;
+      }
+      if (readAloudRequestControllerRef.current === requestController) {
+        readAloudRequestControllerRef.current = null;
+      }
+    };
+
+    const speakBrowserFallback = async () => {
+      if (fallbackStarted || finished || requestController.signal.aborted) return;
+      fallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(text, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
+        utterance.onend = finishReadAloud;
+        utterance.onerror = finishReadAloud;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        finishReadAloud();
+      }
+    };
 
     try {
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
-        signal: AbortSignal.timeout(7500)
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audio) {
-          const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
-          activeAudioElementRef.current = audio;
-          const clearAudio = () => {
-            if (activeAudioElementRef.current === audio) activeAudioElementRef.current = null;
-          };
-          audio.onended = clearAudio;
-          audio.onerror = clearAudio;
-          await audio.play();
-          return;
-        }
+      const data = res.ok ? await res.json() : null;
+      if (requestController.signal.aborted) return;
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishReadAloud;
+        audio.onerror = () => {
+          console.warn('[RODEX Read Aloud] Generated audio failed; switching to the browser feminine voice.');
+          void speakBrowserFallback();
+        };
+        await audio.play();
+        return;
       }
     } catch (err) {
-      activeAudioElementRef.current = null;
+      if (requestController.signal.aborted) return;
       console.warn('[RODEX Read Aloud] Generated voice unavailable; switching to browser speech.', err);
     }
 
-    // Use a named, energetic English voice where available; never assume voices load synchronously.
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
-      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
-      if (preferredVoice) utterance.voice = preferredVoice;
-      window.speechSynthesis.speak(utterance);
-    }
+    await speakBrowserFallback();
   }, [stopActiveAudioElement]);
 
   // Helper to safely record sequential diagnostic stages

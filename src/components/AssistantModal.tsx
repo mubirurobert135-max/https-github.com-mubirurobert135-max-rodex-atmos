@@ -171,12 +171,15 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Reference for active audio elements (audition or custom synthesized speech)
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const greetingRequestControllerRef = useRef<AbortController | null>(null);
   const auditionRequestControllerRef = useRef<AbortController | null>(null);
   const readAloudRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
 
   // Stop active playback and cancel pending TTS requests so stale audio cannot start later.
   const stopActiveAudioElement = useCallback(() => {
+    greetingRequestControllerRef.current?.abort();
+    greetingRequestControllerRef.current = null;
     auditionRequestControllerRef.current?.abort();
     auditionRequestControllerRef.current = null;
     readAloudRequestControllerRef.current?.abort();
@@ -196,6 +199,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Speak personalized time-aware greeting using RODEX Atmos Signature custom voice (voice_nv4v693k2132)
   const speakGreeting = useCallback(async (text: string, onDone?: () => void) => {
     stopActiveAudioElement();
+    const requestController = new AbortController();
+    greetingRequestControllerRef.current = requestController;
     if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
 
     setCurrentAssistantSpoken(text);
@@ -211,18 +216,22 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       if (finished) return;
       finished = true;
       activeAudioElementRef.current = null;
+      if (greetingRequestControllerRef.current === requestController) {
+        greetingRequestControllerRef.current = null;
+      }
       setCurrentAssistantSpoken('');
       setVoiceState('listening');
       onDone?.();
     };
 
     const speakBrowserFallback = async () => {
-      if (browserFallbackStarted || finished) return;
+      if (browserFallbackStarted || finished || requestController.signal.aborted) return;
       browserFallbackStarted = true;
       activeAudioElementRef.current = null;
       if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = await createAtmosBrowserUtterance(text, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
         utterance.onend = finishGreeting;
         utterance.onerror = finishGreeting;
         window.speechSynthesis.speak(utterance);
@@ -236,7 +245,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
-        signal: AbortSignal.timeout(7500)
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
       });
       const data = res.ok ? await res.json() : null;
       if (data?.audio) {

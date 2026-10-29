@@ -1054,4 +1054,27 @@ button:disabled {
     transform: none !important;
   }
 }
+/* Mobile content must scroll completely clear of the fixed navigation dock. */
+#root { min-height: 100dvh; }
+@media (max-width: 1023px) {
+  #root {
+    padding-bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+@media (min-width: 601px) {
+  .wx-reference-kicker { font-size: 10px; }
+  .wx-nearby-city-condition, .wx-live-weather-feels, .wx-location-status,
+  .wx-live-weather-metrics span, .wx-weekly-day > span, .wx-weekly-day small {
+    font-size: 9px;
+  }
+}
+@media (max-width: 600px) {
+  .wx-reference-kicker { font-size: 10px; }
+  .wx-welcome-line { font-size: 11px; }
+  .wx-nearby-city-condition, .wx-live-weather-feels, .wx-location-status,
+  .wx-live-weather-metrics span, .wx-weekly-day > span, .wx-weekly-day small {
+    font-size: 9px;
+  }
+  .wx-live-weather-metrics strong { font-size: 11px; }
+}
 

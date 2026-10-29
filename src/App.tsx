@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { CurrentWeatherCard } from './components/CurrentWeatherCard';
+import { Interactive3DGlobe } from './components/Interactive3DGlobe';
 import { DailyBriefingCard } from './components/DailyBriefingCard';
 import { AiInsightsCard } from './components/AiInsightsCard';
 import { HourlyForecast } from './components/HourlyForecast';
@@ -441,14 +442,31 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6 animate-fade-in">
-                {/* Hero Current Weather */}
-                <CurrentWeatherCard 
-                  data={weatherData} 
-                  unit={unit} 
-                  onGetCurrentLocation={() => initializeStartupLocation(true)}
-                  locationMode={locationMode}
-                  isLoading={isLoading}
-                />
+                {/* Hero Layout: Left Current Weather & Right Interactive 3D Climate Globe */}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                  <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between">
+                    <CurrentWeatherCard 
+                      data={weatherData} 
+                      unit={unit} 
+                      onGetCurrentLocation={() => initializeStartupLocation(true)}
+                      locationMode={locationMode}
+                      isLoading={isLoading}
+                    />
+                  </div>
+
+                  <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between">
+                    <Interactive3DGlobe
+                      lat={weatherData.location.latitude}
+                      lon={weatherData.location.longitude}
+                      cityName={weatherData.location.name}
+                      country={weatherData.location.country}
+                      temperature={weatherData.weather.current.temperature_2m}
+                      condition={getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).label}
+                      unit={unit}
+                      onSelectCoordinates={handleSelectCoordinates}
+                    />
+                  </div>
+                </div>
 
                 {/* Proactive Personalised Daily Weather Briefing */}
                 <DailyBriefingCard

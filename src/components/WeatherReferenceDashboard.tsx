@@ -186,6 +186,10 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
               <span className="wx-live-divider" />
               <span>{formatHour(current.time, timezone)} local</span>
             </div>
+            <button type="button" className="wx-reference-quick-location" onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="Use my current location">
+              <Navigation className={`h-3.5 w-3.5 ${isLoading ? 'animate-pulse' : ''}`} />
+              <span>My location</span>
+            </button>
           </div>
         </header>
 

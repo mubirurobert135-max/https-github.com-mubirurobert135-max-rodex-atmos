@@ -2,17 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { CurrentWeatherCard } from './components/CurrentWeatherCard';
-import { Interactive3DGlobe } from './components/Interactive3DGlobe';
 import { DailyBriefingCard } from './components/DailyBriefingCard';
 import { AiInsightsCard } from './components/AiInsightsCard';
 import { HourlyForecast } from './components/HourlyForecast';
-import { WeeklyForecast } from './components/WeeklyForecast';
 import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
 import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherMap } from './components/WeatherMap';
+import { Interactive3DGlobe } from './components/Interactive3DGlobe';
+import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboard';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
@@ -23,6 +23,7 @@ import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigatio
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
+  const [mapDisplayMode, setMapDisplayMode] = useState<'map' | 'globe'>('map');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
@@ -288,7 +289,7 @@ export default function App() {
       />
 
       {/* Main Content Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 space-y-6">
+      <main className={`max-w-[1360px] mx-auto px-3 sm:px-5 lg:px-6 ${activeTab === 'dashboard' ? 'pt-1 sm:pt-2 space-y-4' : 'pt-6 sm:pt-8 space-y-6'}`}>
         
         {/* Location Detection / Fallback Notice Banner */}
         {locationNotice && !setupRequired && (
@@ -342,7 +343,7 @@ export default function App() {
         )}
 
         {/* Weather Provider Attribution & Disclaimer Banner */}
-        {weatherData && weatherData.providerInfo && (
+        {weatherData && weatherData.providerInfo && activeTab !== 'dashboard' && (
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md text-xs text-sky-200 gap-2">
             <div className="flex items-center gap-2">
               <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
@@ -410,51 +411,32 @@ export default function App() {
           <>
             {activeTab === 'map' ? (
               <div className="space-y-6 animate-fade-in">
-                {/* Interactive Weather Map Component */}
-                <WeatherMap
-                  currentWeatherData={weatherData}
-                  deviceLocationData={deviceLocationData}
-                  unit={unit}
-                  onSelectCoordinates={handleSelectCoordinates}
-                  onOpenAssistant={handleOpenAssistant}
-                  locationMode={locationMode}
-                  onMapContextChange={(mapLoc, layer) => {
-                    if (mapLoc) setMapContextLocation(mapLoc);
-                    if (layer) setActiveMapLayer(layer);
-                  }}
-                />
-
-                {/* Hero Current Weather Summary under map */}
-                <CurrentWeatherCard 
-                  data={weatherData} 
-                  unit={unit} 
-                  onGetCurrentLocation={() => initializeStartupLocation(true)}
-                  locationMode={locationMode}
-                  isLoading={isLoading}
-                />
-
-                {/* Proactive Personalised Daily Weather Briefing */}
-                <DailyBriefingCard
-                  data={weatherData}
-                  onOpenAssistant={handleOpenAssistant}
-                  unit={unit}
-                />
-              </div>
-            ) : (
-              <div className="space-y-6 animate-fade-in">
-                {/* Hero Layout: Left Current Weather & Right Interactive 3D Climate Globe */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-                  <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-between">
-                    <CurrentWeatherCard 
-                      data={weatherData} 
-                      unit={unit} 
-                      onGetCurrentLocation={() => initializeStartupLocation(true)}
-                      locationMode={locationMode}
-                      isLoading={isLoading}
-                    />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-white">Explore weather around the world</h2>
+                    <p className="text-xs text-white/65 mt-1">Switch between the interactive map and 3D weather globe.</p>
                   </div>
+                  <div className="flex items-center gap-1 p-1 rounded-xl border border-white/20 bg-white/8 backdrop-blur-xl" role="group" aria-label="Map display mode">
+                    <button type="button" onClick={() => setMapDisplayMode('map')} aria-pressed={mapDisplayMode === 'map'} className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${mapDisplayMode === 'map' ? 'bg-white/20 text-white shadow' : 'text-white/65 hover:text-white'}`}>2D map</button>
+                    <button type="button" onClick={() => setMapDisplayMode('globe')} aria-pressed={mapDisplayMode === 'globe'} className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${mapDisplayMode === 'globe' ? 'bg-white/20 text-white shadow' : 'text-white/65 hover:text-white'}`}>3D globe</button>
+                  </div>
+                </div>
 
-                  <div className="lg:col-span-5 xl:col-span-4 flex flex-col justify-between">
+                {mapDisplayMode === 'map' ? (
+                  <WeatherMap
+                    currentWeatherData={weatherData}
+                    deviceLocationData={deviceLocationData}
+                    unit={unit}
+                    onSelectCoordinates={handleSelectCoordinates}
+                    onOpenAssistant={handleOpenAssistant}
+                    locationMode={locationMode}
+                    onMapContextChange={(mapLoc, layer) => {
+                      if (mapLoc) setMapContextLocation(mapLoc);
+                      if (layer) setActiveMapLayer(layer);
+                    }}
+                  />
+                ) : (
+                  <div className="glass-panel-elevated rounded-3xl border border-white/15 overflow-hidden p-2 sm:p-4">
                     <Interactive3DGlobe
                       lat={weatherData.location.latitude}
                       lon={weatherData.location.longitude}
@@ -466,53 +448,50 @@ export default function App() {
                       onSelectCoordinates={handleSelectCoordinates}
                     />
                   </div>
-                </div>
+                )}
 
-                {/* Proactive Personalised Daily Weather Briefing */}
-                <DailyBriefingCard
+                <CurrentWeatherCard
                   data={weatherData}
-                  onOpenAssistant={handleOpenAssistant}
                   unit={unit}
+                  onGetCurrentLocation={() => initializeStartupLocation(true)}
+                  locationMode={locationMode}
+                  isLoading={isLoading}
                 />
 
-                {/* Quick Map Teaser Banner */}
-                <div 
-                  onClick={() => setActiveTab('map')}
-                  className="glass-card rounded-3xl p-5 border border-sky-400/30 bg-gradient-to-r from-sky-500/20 via-indigo-600/20 to-purple-600/20 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-sky-500/30 border border-sky-400/40 flex items-center justify-center text-sky-300 group-hover:scale-110 transition-transform">
-                      <Globe className="w-6 h-6 animate-spin-slow" />
-                    </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white flex items-center gap-2 font-heading">
-                        <span>Interactive Weather Map & Location Explorer</span>
-                        <span className="px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 text-[10px] font-extrabold uppercase border border-sky-400/40">New</span>
-                      </h3>
-                      <p className="text-xs text-sky-200/80">
-                        Explore temperatures, rain probabilities, and wind speeds visually across the globe.
-                      </p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-lg transition btn-hover-lift shrink-0">
-                    Open Weather Map
-                  </button>
+                <DailyBriefingCard data={weatherData} onOpenAssistant={handleOpenAssistant} unit={unit} />
+              </div>
+            ) : (
+              <div className="space-y-5 animate-fade-in">
+                <WeatherReferenceDashboard
+                  data={weatherData}
+                  unit={unit}
+                  locationMode={locationMode}
+                  isLoading={isLoading}
+                  onGetCurrentLocation={handleGetCurrentLocation}
+                  onOpenAssistant={handleOpenAssistant}
+                  onOpenMap={() => setActiveTab('map')}
+                  onOpenAccount={() => setIsAuthOpen(true)}
+                  onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
+                  onOpenAlerts={() => setIsAlertsModalOpen(true)}
+                  onSelectCoordinates={handleSelectCoordinates}
+                />
+
+                <div className="wx-reference-support-grid">
+                  <DailyBriefingCard
+                    data={weatherData}
+                    onOpenAssistant={handleOpenAssistant}
+                    unit={unit}
+                  />
+                  <AiInsightsCard
+                    data={weatherData}
+                    onOpenAssistant={() => handleOpenAssistant()}
+                  />
                 </div>
 
-                {/* AI Atmospheric Insights Card */}
-                <AiInsightsCard 
-                  data={weatherData} 
-                  onOpenAssistant={() => handleOpenAssistant()}
-                />
-
-                {/* Hourly Forecast */}
-                <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
-
-                {/* Details Grid (Sunrise, Wind, Pressure) */}
-                <WeatherDetailsGrid data={weatherData} unit={unit} />
-
-                {/* 7-Day Weekly Forecast */}
-                <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
+                <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
+                  <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                  <WeatherDetailsGrid data={weatherData} unit={unit} />
+                </div>
               </div>
             )}
           </>
@@ -520,7 +499,8 @@ export default function App() {
 
       </main>
 
-      {/* Floating Action Button for RODEX AI Assistant (Hidden on mobile/tablet where MobileNavBar orb takes precedence) */}
+      {/* Keep the desktop floating assistant off the reference dashboard; its voice action is in the left rail. */}
+      {activeTab !== 'dashboard' && (
       <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden lg:flex">
         <button
           onClick={() => handleOpenAssistant()}
@@ -534,6 +514,7 @@ export default function App() {
           <span>RODEX AI (Voice & Chat)</span>
         </button>
       </aside>
+      )}
 
       {/* RODEX AI Live Voice & Text Assistant Modal */}
       <AssistantModal

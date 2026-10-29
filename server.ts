@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
 import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
+import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
 
 dotenv.config();
 
@@ -1225,7 +1226,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
   const rawVoiceEnv = process.env.ATMOS_SIGNATURE_VOICE_ID?.trim();
   const ATMOS_SIGNATURE_VOICE_ID = (rawVoiceEnv && rawVoiceEnv.startsWith('voice_') && rawVoiceEnv.length < 50)
     ? rawVoiceEnv
-    : 'voice_nv4v693k2132';
+    : DEFAULT_ATMOS_SIGNATURE_VOICE_ID;
 
   // Voice readiness status endpoint (checks presence of GEMINI_API_KEY and signature voice configuration)
   app.get('/api/ai/live-status', (req, res) => {
@@ -1239,8 +1240,8 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         name: 'RODEX Atmos Signature',
         type: 'prompted',
         gender: 'female',
-        ttsModel: 'gemini-3.8-flash-lite-tts',
-        liveFallbackVoice: 'Aoede',
+        ttsModel: ATMOS_SIGNATURE_TTS_MODEL,
+        liveFallbackVoice: ATMOS_SIGNATURE_LIVE_VOICE,
         hasAuditionSample: true,
         auditionUrl: '/atmos-signature-audition.wav'
       },
@@ -1259,18 +1260,19 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       languageCode: 'en-US',
       context: 'Conversational',
       type: 'prompted',
-      ttsModel: 'gemini-3.8-flash-lite-tts',
-      liveVoice: 'Aoede',
-      description: 'An original, distinctive feminine voice for a premium modern AI assistant. Warm, sophisticated, confident and charismatic, with a bright playful sparkle and understated glamour.',
+      ttsModel: ATMOS_SIGNATURE_TTS_MODEL,
+      liveVoice: ATMOS_SIGNATURE_LIVE_VOICE,
+      description: 'A modern feminine assistant voice with warm brightness, upbeat energy, expressive natural rhythm, crisp articulation and a confident playful spark.',
       hasAuditionSample: true,
       auditionUrl: '/atmos-signature-audition.wav'
     });
   });
 
-  // Cooldown cache for TTS models to prevent wasted latency on failed / rate-limited tiers
+  // Per-model cooldowns avoid repeatedly retrying unavailable TTS tiers.
   const ttsModelCooldowns = new Map<string, number>();
+  const ttsVoiceCooldowns = new Map<string, number>();
 
-  // In-memory cache for approved voice synthesized audio to achieve near-instant turnaround
+  // Short-lived, bounded cache helps greetings feel instant without retaining a large chat history.
   interface CachedAudioEntry {
     audio: string;
     mimeType: string;
@@ -1279,6 +1281,11 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     timestamp: number;
   }
   const synthAudioCache = new Map<string, CachedAudioEntry>();
+  const TTS_CACHE_TTL_MS = 10 * 60 * 1000;
+  const TTS_CACHE_MAX_ENTRIES = 48;
+  const TTS_CACHE_MAX_TEXT_LENGTH = 160;
+  const TTS_TOTAL_BUDGET_MS = 7000;
+  const TTS_REQUEST_TIMEOUT_MS = 4500;
 
   interface InternalSynthesisResult {
     audio: string | null;
@@ -1290,9 +1297,34 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     message?: string;
   }
 
-  // Optimized internal speech synthesis using approved RODEX Atmos Signature voice (voice_nv4v693k2132)
+  function voiceCacheKey(voiceId: string, text: string, style: string): string {
+    return voiceId + ':' + text.trim().toLowerCase() + ':' + style;
+  }
+
+  function readCachedAudio(key: string): CachedAudioEntry | null {
+    const cached = synthAudioCache.get(key);
+    if (!cached) return null;
+    if (Date.now() - cached.timestamp > TTS_CACHE_TTL_MS) {
+      synthAudioCache.delete(key);
+      return null;
+    }
+    return cached;
+  }
+
+  function storeCachedAudio(key: string, entry: CachedAudioEntry): void {
+    if (synthAudioCache.size >= TTS_CACHE_MAX_ENTRIES) {
+      const oldest = [...synthAudioCache.entries()]
+        .sort((a, b) => a[1].timestamp - b[1].timestamp)
+        .slice(0, Math.max(1, Math.floor(TTS_CACHE_MAX_ENTRIES / 5)));
+      oldest.forEach(([oldKey]) => synthAudioCache.delete(oldKey));
+    }
+    synthAudioCache.set(key, entry);
+  }
+
+  // Uses the current Gemini TTS Interactions API so delivery style is metadata, not spoken text.
   async function synthesizeSpeechInternal(text: string, style?: string): Promise<InternalSynthesisResult> {
-    if (!text || typeof text !== 'string') {
+    const cleanText = typeof text === 'string' ? text.trim() : '';
+    if (!cleanText) {
       return {
         audio: null,
         mimeType: 'audio/wav',
@@ -1317,103 +1349,132 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     }
 
     const tStart = Date.now();
-    const styleInstruction = style || 'Warm, confident, personable, lightly playful, clear and concise';
+    const styleInstruction = style && style.trim() ? style.trim() : ATMOS_SIGNATURE_STYLE;
+    const signatureCacheKey = voiceCacheKey(ATMOS_SIGNATURE_VOICE_ID, cleanText, styleInstruction);
+    const fallbackCacheKey = voiceCacheKey(ATMOS_SIGNATURE_LIVE_VOICE, cleanText, styleInstruction);
 
-    // Check pre-generated or cached audio for approved voice
-    const cacheKey = `${ATMOS_SIGNATURE_VOICE_ID}:${text.trim().toLowerCase()}:${styleInstruction}`;
-    if (synthAudioCache.has(cacheKey)) {
-      const cached = synthAudioCache.get(cacheKey)!;
-      return {
-        audio: cached.audio,
-        mimeType: cached.mimeType,
-        latencyMs: 0,
-        voiceId: cached.voiceId,
-        voiceName: cached.voiceName
-      };
+    // Only cache short utterances such as greetings. Dynamic longer responses are never retained.
+    if (cleanText.length <= TTS_CACHE_MAX_TEXT_LENGTH) {
+      const cached = readCachedAudio(signatureCacheKey) || readCachedAudio(fallbackCacheKey);
+      if (cached) {
+        return {
+          audio: cached.audio,
+          mimeType: cached.mimeType,
+          latencyMs: 0,
+          voiceId: cached.voiceId,
+          voiceName: cached.voiceName
+        };
+      }
     }
 
-    const trySynthesis = async (model: string, voiceConfig: any) => {
-      return await ai!.models.generateContent({
+    const trySynthesis = async (model: string, voice: string): Promise<{ audio: string; mimeType: string }> => {
+      const interactions = (ai as any).interactions;
+      if (!interactions || typeof interactions.create !== 'function') {
+        throw new Error('Gemini TTS Interactions API is unavailable in the installed SDK.');
+      }
+
+      const remainingBudgetMs = TTS_TOTAL_BUDGET_MS - (Date.now() - tStart);
+      if (remainingBudgetMs < 900) throw new Error('Atmos TTS total time budget reached.');
+
+      const interaction = await interactions.create({
         model,
-        contents: [
-          {
-            role: 'user',
-            parts: [
-              {
-                text,
-                speechMetadata: {
-                  style: styleInstruction
-                }
-              }
-            ]
-          }
-        ],
-        config: {
-          responseModalities: ['AUDIO'],
-          speechConfig: { voiceConfig }
+        input: [{
+          type: 'user_input',
+          content: [{
+            type: 'text',
+            text: cleanText,
+            annotations: [{
+              type: 'speech_metadata',
+              style: styleInstruction
+            }]
+          }]
+        }],
+        response_format: { type: 'audio' },
+        generation_config: {
+          speech_config: [{ voice }]
         }
+      }, {
+        timeout_ms: Math.min(TTS_REQUEST_TIMEOUT_MS, remainingBudgetMs),
+        retries: 0
       });
+
+      const outputAudio = interaction && interaction.output_audio;
+      const audio = outputAudio && outputAudio.data;
+      if (typeof audio !== 'string' || audio.length === 0) {
+        throw new Error('TTS model ' + model + ' returned no audio for voice ' + voice + '.');
+      }
+
+      return {
+        audio,
+        mimeType: (outputAudio && (outputAudio.mime_type || outputAudio.mimeType)) || 'audio/wav'
+      };
     };
 
-    const now = Date.now();
-    let response: any = null;
+    const models = [
+      { name: ATMOS_SIGNATURE_TTS_MODEL, cooldownMs: 15 * 60 * 1000 },
+      { name: 'gemini-3.8-flash-tts', cooldownMs: 2 * 60 * 1000 }
+    ];
+    let audioData: string | null = null;
+    let mimeType = 'audio/wav';
     let usedVoiceName = 'RODEX Atmos Signature';
     let usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
 
-    // Tier 1: Try approved custom voice persona with ATMOS_SIGNATURE_VOICE_ID on gemini-3.8-flash-lite-tts
-    const liteCooldownUntil = ttsModelCooldowns.get('gemini-3.8-flash-lite-tts') || 0;
-    if (now > liteCooldownUntil) {
-      try {
-        response = await trySynthesis('gemini-3.8-flash-lite-tts', {
-          voice: ATMOS_SIGNATURE_VOICE_ID
-        });
-        usedVoiceName = 'RODEX Atmos Signature';
-        usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
-      } catch (liteErr: any) {
-        // If custom voice parameter isn't supported directly by this tier, try prebuilt Aoede fallback while preserving signature identity
-        try {
-          response = await trySynthesis('gemini-3.8-flash-lite-tts', {
-            prebuiltVoiceConfig: { voiceName: 'Aoede' }
-          });
-          usedVoiceName = 'RODEX Atmos Signature';
-          usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
-        } catch (innerErr: any) {
-          const errMsg = innerErr?.message || liteErr?.message || '';
-          const cooldownTime = errMsg.includes('429') || errMsg.includes('RESOURCE_EXHAUSTED') ? 15 * 60 * 1000 : 5 * 60 * 1000;
-          console.warn(`[RODEX TTS] flash-lite-tts cooling down for ${cooldownTime / 1000}s:`, errMsg.slice(0, 100));
-          ttsModelCooldowns.set('gemini-3.8-flash-lite-tts', now + cooldownTime);
-        }
-      }
-    }
+    for (const model of models) {
+      if (Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
+      if (Date.now() < (ttsModelCooldowns.get(model.name) || 0)) continue;
+      let tierCooldownMs = model.cooldownMs;
 
-    // Tier 2: Flagship flash-tts with approved voice (gemini-3.8-flash-tts)
-    if (!response) {
-      const flagshipCooldownUntil = ttsModelCooldowns.get('gemini-3.8-flash-tts') || 0;
-      if (now > flagshipCooldownUntil) {
+      const primaryVoiceKey = model.name + ':' + ATMOS_SIGNATURE_VOICE_ID;
+      if (Date.now() >= (ttsVoiceCooldowns.get(primaryVoiceKey) || 0)) {
         try {
-          response = await trySynthesis('gemini-3.8-flash-tts', {
-            voice: ATMOS_SIGNATURE_VOICE_ID
-          });
+          const result = await trySynthesis(model.name, ATMOS_SIGNATURE_VOICE_ID);
+          audioData = result.audio;
+          mimeType = result.mimeType;
           usedVoiceName = 'RODEX Atmos Signature';
           usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
-        } catch (flagshipErr: any) {
-          try {
-            response = await trySynthesis('gemini-3.8-flash-tts', {
-              prebuiltVoiceConfig: { voiceName: 'Aoede' }
-            });
-            usedVoiceName = 'RODEX Atmos Signature';
-            usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
-          } catch (innerErr: any) {
-            const errMsg = innerErr?.message || flagshipErr?.message || '';
-            console.warn('[RODEX Speech Synthesis Notice] flash-tts unavailable:', errMsg.slice(0, 100));
-            ttsModelCooldowns.set('gemini-3.8-flash-tts', now + 2 * 60 * 1000);
+        } catch (primaryError: any) {
+          const errMsg = primaryError && primaryError.message ? primaryError.message : String(primaryError);
+          const isQuotaError = /429|RESOURCE_EXHAUSTED|rate.?limit|quota/i.test(errMsg);
+          const isTimeoutError = /timeout|timed out|deadline|time budget/i.test(errMsg);
+          tierCooldownMs = isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : tierCooldownMs);
+          ttsVoiceCooldowns.set(primaryVoiceKey, Date.now() + (isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : 10 * 60 * 1000)));
+
+          if (isQuotaError) {
+            ttsModelCooldowns.set(model.name, Date.now() + 15 * 60 * 1000);
+            console.warn('[RODEX TTS] ' + model.name + ' reached quota; switching to the next tier.');
+            continue;
           }
+          console.warn('[RODEX TTS] Custom Atmos voice unavailable on this tier; trying the upbeat feminine fallback.');
         }
       }
-    }
 
-    const audioData = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-    const mimeType = response?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.mimeType || 'audio/wav';
+      if (audioData || Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
+
+      const fallbackVoiceKey = model.name + ':' + ATMOS_SIGNATURE_LIVE_VOICE;
+      if (Date.now() >= (ttsVoiceCooldowns.get(fallbackVoiceKey) || 0)) {
+        try {
+          const result = await trySynthesis(model.name, ATMOS_SIGNATURE_LIVE_VOICE);
+          audioData = result.audio;
+          mimeType = result.mimeType;
+          usedVoiceName = ATMOS_SIGNATURE_LIVE_VOICE + ' (upbeat feminine fallback)';
+          usedVoiceId = ATMOS_SIGNATURE_LIVE_VOICE;
+        } catch (fallbackError: any) {
+          const errMsg = fallbackError && fallbackError.message ? fallbackError.message : String(fallbackError);
+          const isQuotaError = /429|RESOURCE_EXHAUSTED|rate.?limit|quota/i.test(errMsg);
+          const isTimeoutError = /timeout|timed out|deadline|time budget/i.test(errMsg);
+          tierCooldownMs = isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : tierCooldownMs);
+          ttsVoiceCooldowns.set(fallbackVoiceKey, Date.now() + (isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : 5 * 60 * 1000)));
+          if (isQuotaError) ttsModelCooldowns.set(model.name, Date.now() + 15 * 60 * 1000);
+          console.warn('[RODEX TTS] ' + model.name + ' ' + ATMOS_SIGNATURE_LIVE_VOICE + ' fallback unavailable:', errMsg.slice(0, 120));
+        }
+      }
+
+      if (audioData) break;
+      if (Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
+      if (Date.now() >= (ttsModelCooldowns.get(model.name) || 0)) {
+        ttsModelCooldowns.set(model.name, Date.now() + tierCooldownMs);
+      }
+    }
 
     if (!audioData) {
       return {
@@ -1423,18 +1484,20 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         voiceId: ATMOS_SIGNATURE_VOICE_ID,
         voiceName: 'RODEX Atmos Signature',
         fallbackToWebSpeech: true,
-        message: 'TTS service temporarily unavailable, falling back to Web Speech.'
+        message: 'Gemini TTS is temporarily unavailable; use the configured browser voice fallback.'
       };
     }
 
-    // Cache synthesized audio safely for reuse
-    synthAudioCache.set(cacheKey, {
-      audio: audioData,
-      mimeType,
-      voiceId: usedVoiceId,
-      voiceName: usedVoiceName,
-      timestamp: Date.now()
-    });
+    if (cleanText.length <= TTS_CACHE_MAX_TEXT_LENGTH) {
+      const actualCacheKey = voiceCacheKey(usedVoiceId, cleanText, styleInstruction);
+      storeCachedAudio(actualCacheKey, {
+        audio: audioData,
+        mimeType,
+        voiceId: usedVoiceId,
+        voiceName: usedVoiceName,
+        timestamp: Date.now()
+      });
+    }
 
     return {
       audio: audioData,
@@ -1445,20 +1508,30 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     };
   }
 
-  // Synthesize speech endpoint using RODEX Atmos Signature voice
+  // Synthesize speech endpoint using RODEX Atmos Signature voice.
+  // Bound input size so accidental long transcripts cannot make voice replies feel unresponsive.
   app.post('/api/ai/synthesize-speech', async (req, res) => {
     const { text, style } = req.body || {};
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ error: 'Text prompt is required for speech synthesis.' });
+    if (typeof text !== 'string' || !text.trim()) {
+      return res.status(400).json({ error: 'A non-empty text prompt is required for speech synthesis.' });
+    }
+    if (text.length > 2500) {
+      return res.status(413).json({ error: 'Speech text is too long. Keep read-aloud requests under 2500 characters.' });
+    }
+    if (style != null && (typeof style !== 'string' || style.length > 400)) {
+      return res.status(400).json({ error: 'Speech style must be a short string of 400 characters or fewer.' });
     }
 
     try {
-      const result = await synthesizeSpeechInternal(text, style);
+      const result = await synthesizeSpeechInternal(text.trim(), style);
       res.json(result);
     } catch (err: any) {
       console.warn('[RODEX Speech Synthesis Warning]', err?.message || err);
       res.json({
         audio: null,
+        mimeType: 'audio/wav',
+        voiceId: ATMOS_SIGNATURE_VOICE_ID,
+        voiceName: 'RODEX Atmos Signature',
         fallbackToWebSpeech: true,
         message: 'Speech synthesis fell back to browser voice.'
       });
@@ -1511,35 +1584,51 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       case 48:
         return 'Foggy & Misty';
       case 51:
-      case 53:
-      case 55:
-      case 56:
-      case 57:
         return 'Light Drizzle';
+      case 53:
+        return 'Moderate Drizzle';
+      case 55:
+        return 'Dense Drizzle';
+      case 56:
+        return 'Light Freezing Drizzle';
+      case 57:
+        return 'Dense Freezing Drizzle';
       case 61:
+        return 'Light Rain';
       case 63:
+        return 'Moderate Rain';
       case 65:
-      case 66:
-      case 67:
-        return 'Rain Showers';
-      case 71:
-      case 73:
-      case 75:
-      case 77:
-        return 'Snowfall';
-      case 80:
-      case 81:
-      case 82:
         return 'Heavy Rain';
+      case 66:
+        return 'Light Freezing Rain';
+      case 67:
+        return 'Heavy Freezing Rain';
+      case 71:
+        return 'Light Snowfall';
+      case 73:
+        return 'Moderate Snowfall';
+      case 75:
+        return 'Heavy Snowfall';
+      case 77:
+        return 'Snow Grains';
+      case 80:
+        return 'Light Rain Showers';
+      case 81:
+        return 'Moderate Rain Showers';
+      case 82:
+        return 'Intense Rain Showers';
       case 85:
+        return 'Light Snow Showers';
       case 86:
-        return 'Snow Showers';
+        return 'Heavy Snow Showers';
       case 95:
-      case 96:
-      case 99:
         return 'Thunderstorm';
+      case 96:
+        return 'Thunderstorm with Hail';
+      case 99:
+        return 'Severe Thunderstorm with Hail';
       default:
-        return 'Clear Skies';
+        return 'Conditions Unavailable';
     }
   }
 
@@ -1935,7 +2024,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 
   // Pre-warm the approved RODEX Atmos Signature greeting audio cache
   if (ai) {
-    synthesizeSpeechInternal("Hey! I'm listening. What's on your mind?")
+    synthesizeSpeechInternal("Hey! I'm listening. What's on your mind?", ATMOS_SIGNATURE_STYLE)
       .then((res) => {
         if (res.audio) {
           console.log('[RODEX Voice Cache] Pre-warmed approved signature greeting audio successfully.');

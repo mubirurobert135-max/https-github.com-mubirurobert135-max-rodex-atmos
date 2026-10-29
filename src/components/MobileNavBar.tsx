@@ -24,7 +24,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#070e1c]/90 backdrop-blur-2xl border-t border-white/12 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[420px] z-40 lg:hidden bg-[rgba(29,43,42,0.68)] backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
     >
       <div className="max-w-md mx-auto grid grid-cols-5 items-center justify-items-center">
         
@@ -36,6 +36,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
               ? 'text-sky-300'
               : 'text-white/60 hover:text-white/90'
           }`}
+          aria-current={activeTab === 'dashboard' ? 'page' : undefined}
           aria-label="Weather Dashboard"
         >
           <div className="relative">
@@ -55,6 +56,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
               ? 'text-sky-300'
               : 'text-white/60 hover:text-white/90'
           }`}
+          aria-current={activeTab === 'map' ? 'page' : undefined}
           aria-label="Interactive Weather Map"
         >
           <div className="relative">
@@ -70,7 +72,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         <div className="flex flex-col items-center justify-center -mt-5">
           <button
             onClick={onOpenAssistant}
-            className="w-13 h-13 rounded-full bg-gradient-to-tr from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white shadow-xl shadow-sky-500/40 border-2 border-white/30 flex items-center justify-center transition-transform active:scale-95 group"
+            className="w-13 h-13 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-white shadow-xl shadow-cyan-500/25 border-2 border-white/45 flex items-center justify-center transition-transform active:scale-95 group"
             aria-label="Open RODEX AI Voice and Chat Assistant"
             title="Open RODEX AI Assistant"
           >

@@ -16,6 +16,8 @@ import {
   buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
+import { createAtmosBrowserUtterance } from '../utils/voicePlayback';
+import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
 
 import { LocationMode } from '../types';
 
@@ -169,20 +171,38 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Reference for active audio elements (audition or custom synthesized speech)
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const greetingRequestControllerRef = useRef<AbortController | null>(null);
+  const auditionRequestControllerRef = useRef<AbortController | null>(null);
+  const readAloudRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
 
-  // Stop any active audio element (audition or custom synthesized speech)
+  // Stop active playback and cancel pending TTS requests so stale audio cannot start later.
   const stopActiveAudioElement = useCallback(() => {
+    greetingRequestControllerRef.current?.abort();
+    greetingRequestControllerRef.current = null;
+    auditionRequestControllerRef.current?.abort();
+    auditionRequestControllerRef.current = null;
+    readAloudRequestControllerRef.current?.abort();
+    readAloudRequestControllerRef.current = null;
+
     if (activeAudioElementRef.current) {
       activeAudioElementRef.current.pause();
       activeAudioElementRef.current.currentTime = 0;
       activeAudioElementRef.current = null;
+    }
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      try { window.speechSynthesis.cancel(); } catch {}
     }
     setIsAuditioning(false);
   }, []);
 
   // Speak personalized time-aware greeting using RODEX Atmos Signature custom voice (voice_nv4v693k2132)
   const speakGreeting = useCallback(async (text: string, onDone?: () => void) => {
+    stopActiveAudioElement();
+    const requestController = new AbortController();
+    greetingRequestControllerRef.current = requestController;
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+
     setCurrentAssistantSpoken(text);
     setLiveTranscripts((prev) => [
       ...prev,
@@ -190,154 +210,196 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     ]);
     setVoiceState('speaking');
 
-    // Attempt high-fidelity RODEX Atmos Signature voice synthesis first
-    let playedWithSignatureVoice = false;
+    let browserFallbackStarted = false;
+    let finished = false;
+    const finishGreeting = () => {
+      if (finished) return;
+      finished = true;
+      activeAudioElementRef.current = null;
+      if (greetingRequestControllerRef.current === requestController) {
+        greetingRequestControllerRef.current = null;
+      }
+      setCurrentAssistantSpoken('');
+      setVoiceState('listening');
+      onDone?.();
+    };
+
+    const speakBrowserFallback = async () => {
+      if (browserFallbackStarted || finished || requestController.signal.aborted) return;
+      browserFallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(text, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
+        utterance.onend = finishGreeting;
+        utterance.onerror = finishGreeting;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        setTimeout(finishGreeting, 600);
+      }
+    };
+
     try {
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          style: 'Warm, confident, personable, lightly playful, clear and concise'
-        })
+        body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audio) {
-          const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
-          activeAudioElementRef.current = audio;
-          audio.onended = () => {
-            activeAudioElementRef.current = null;
-            setCurrentAssistantSpoken('');
-            setVoiceState('listening');
-            if (onDone) onDone();
-          };
-          audio.onerror = () => {
-            activeAudioElementRef.current = null;
-            setCurrentAssistantSpoken('');
-            setVoiceState('listening');
-            if (onDone) onDone();
-          };
-          await audio.play();
-          playedWithSignatureVoice = true;
-        }
+      const data = res.ok ? await res.json() : null;
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishGreeting;
+        audio.onerror = () => {
+          console.warn('[RODEX Greeting Voice] Generated audio failed; using the browser voice.');
+          void speakBrowserFallback();
+        };
+        await audio.play();
+        return;
       }
     } catch (synthErr) {
-      console.warn('[RODEX Signature Voice Notice] Custom TTS fallback to Web Speech:', synthErr);
+      console.warn('[RODEX Greeting Voice] Generated speech unavailable; using the browser voice.', synthErr);
     }
 
-    if (playedWithSignatureVoice) return;
-
-    // Fallback to browser warm feminine speech synthesis
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find((v) =>
-        v.lang.startsWith('en') &&
-        (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-      ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-
-      utterance.onend = () => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      };
-
-      utterance.onerror = () => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      };
-
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(() => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      }, 1500);
-    }
+    await speakBrowserFallback();
   }, [stopActiveAudioElement]);
 
-  // Audition the official RODEX Atmos Signature voice sample
+  // Audition the exact voice profile used in the assistant, not a stale bundled recording.
   const handleAuditionSignatureVoice = useCallback(async () => {
     if (isAuditioning) {
+      auditionRequestControllerRef.current?.abort();
+      auditionRequestControllerRef.current = null;
       stopActiveAudioElement();
+      if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
       return;
     }
 
-    try {
-      stopActiveAudioElement();
-      setIsAuditioning(true);
-      const audio = new Audio('/atmos-signature-audition.wav');
-      activeAudioElementRef.current = audio;
-
-      audio.onended = () => {
-        setIsAuditioning(false);
-        activeAudioElementRef.current = null;
-      };
-
-      audio.onerror = () => {
-        setIsAuditioning(false);
-        activeAudioElementRef.current = null;
-      };
-
-      await audio.play();
-    } catch (err) {
-      console.warn('[Audition Notice] Playback failed:', err);
-      setIsAuditioning(false);
-    }
-  }, [isAuditioning, stopActiveAudioElement]);
-
-  // Read any assistant message aloud using the RODEX Atmos Signature voice
-  const handleSpeakChatMessage = useCallback(async (text: string) => {
+    const auditionText = "Hey, I'm Atmos. Your day, your forecast, your vibe. Tell me what you need, and let's make today a little easier.";
     stopActiveAudioElement();
+    const requestController = new AbortController();
+    auditionRequestControllerRef.current = requestController;
+    let fallbackStarted = false;
+    let finished = false;
+    const finishAudition = () => {
+      if (finished) return;
+      finished = true;
+      setIsAuditioning(false);
+      activeAudioElementRef.current = null;
+      if (auditionRequestControllerRef.current === requestController) {
+        auditionRequestControllerRef.current = null;
+      }
+    };
+
+    const speakBrowserFallback = async () => {
+      if (fallbackStarted || finished || requestController.signal.aborted) return;
+      fallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(auditionText, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
+        utterance.onend = finishAudition;
+        utterance.onerror = finishAudition;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        finishAudition();
+      }
+    };
+
+    setIsAuditioning(true);
+
     try {
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          style: 'Warm, confident, personable, lightly playful, clear and concise'
-        })
+        body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE }),
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audio) {
-          const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
-          activeAudioElementRef.current = audio;
-          await audio.play();
-          return;
-        }
+      const data = res.ok ? await res.json() : null;
+      if (requestController.signal.aborted) return;
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishAudition;
+        audio.onerror = () => {
+          console.warn('[Atmos Voice Audition] Generated audio failed; switching to browser speech.');
+          void speakBrowserFallback();
+        };
+        await audio.play();
+        return;
       }
     } catch (err) {
-      console.warn('Chat speech synthesis fallback:', err);
+      if (requestController.signal.aborted) return;
+      console.warn('[Atmos Voice Audition] Generated voice unavailable; trying the browser voice fallback.', err);
     }
 
-    // Fallback to browser speech synthesis
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.05;
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = voices.find((v) =>
-        v.lang.startsWith('en') &&
-        (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-      ) || voices[0];
-      if (preferredVoice) utterance.voice = preferredVoice;
-      window.speechSynthesis.speak(utterance);
+    await speakBrowserFallback();
+  }, [isAuditioning, stopActiveAudioElement]);
+
+  // Read any assistant message aloud with reliable cleanup and a quick feminine browser fallback.
+  const handleSpeakChatMessage = useCallback(async (text: string) => {
+    stopActiveAudioElement();
+    const requestController = new AbortController();
+    readAloudRequestControllerRef.current = requestController;
+
+    let fallbackStarted = false;
+    let finished = false;
+    const finishReadAloud = () => {
+      if (finished) return;
+      finished = true;
+      if (activeAudioElementRef.current && activeAudioElementRef.current.ended) {
+        activeAudioElementRef.current = null;
+      }
+      if (readAloudRequestControllerRef.current === requestController) {
+        readAloudRequestControllerRef.current = null;
+      }
+    };
+
+    const speakBrowserFallback = async () => {
+      if (fallbackStarted || finished || requestController.signal.aborted) return;
+      fallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(text, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
+        utterance.onend = finishReadAloud;
+        utterance.onerror = finishReadAloud;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        finishReadAloud();
+      }
+    };
+
+    try {
+      const res = await fetch('/api/ai/synthesize-speech', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
+      });
+
+      const data = res.ok ? await res.json() : null;
+      if (requestController.signal.aborted) return;
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishReadAloud;
+        audio.onerror = () => {
+          console.warn('[RODEX Read Aloud] Generated audio failed; switching to the browser feminine voice.');
+          void speakBrowserFallback();
+        };
+        await audio.play();
+        return;
+      }
+    } catch (err) {
+      if (requestController.signal.aborted) return;
+      console.warn('[RODEX Read Aloud] Generated voice unavailable; switching to browser speech.', err);
     }
+
+    await speakBrowserFallback();
   }, [stopActiveAudioElement]);
 
   // Helper to safely record sequential diagnostic stages
@@ -454,8 +516,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: "Hey! I'm listening. What's on your mind?",
-        style: 'Warm, confident, personable, lightly playful, clear and concise'
-      })
+        style: ATMOS_SIGNATURE_STYLE
+      }),
+      signal: AbortSignal.timeout(7500)
     })
       .then((res) => res.json())
       .then((data) => {
@@ -724,7 +787,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               deviceLocationData,
               mapContextData,
               activeMapLayer,
-              synthesizeVoice: true // Single round-trip: Server generates text & synthesizes Atmos Signature audio
+              synthesizeVoice: false // Return text first; request voice audio immediately afterward so TTS cannot delay visible replies.
             })
           })
             .then((res) => res.json())
@@ -770,58 +833,90 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 }
               };
 
-              // T5/T6/T7: Audio playback with approved signature voice
-              // Check if server returned synthesized audio or if prewarmed greeting is available
-              const audioBase64 = data.audio || (isGreetingQuery(userQuery) && prewarmedGreetingAudioRef.current?.audio);
-              const mimeType = data.mimeType || prewarmedGreetingAudioRef.current?.mimeType || 'audio/wav';
+              // Keep text responsive: synthesize audio only after the reply is already visible.
+              let audioBase64 = data.audio || (isGreetingQuery(userQuery) && prewarmedGreetingAudioRef.current?.audio);
+              let mimeType = data.mimeType || prewarmedGreetingAudioRef.current?.mimeType || 'audio/wav';
+
+              if (!audioBase64 && currentTurnIdRef.current === currentTurnId) {
+                turnTimer.markSynthesisRequested(Date.now());
+                const ttsController = new AbortController();
+                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 7500);
+                try {
+                  const ttsRes = await fetch('/api/ai/synthesize-speech', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: replyText, style: ATMOS_SIGNATURE_STYLE }),
+                    signal: ttsController.signal
+                  });
+                  if (currentTurnIdRef.current !== currentTurnId) return;
+                  if (ttsRes.ok) {
+                    const speechData = await ttsRes.json();
+                    if (speechData.audio) {
+                      audioBase64 = speechData.audio;
+                      mimeType = speechData.mimeType || mimeType;
+                    }
+                  }
+                } catch (ttsErr) {
+                  console.warn('[RODEX TTS Notice] Voice synthesis timed out or failed; using the browser feminine voice fallback.', ttsErr);
+                } finally {
+                  window.clearTimeout(ttsTimeout);
+                }
+              }
+
+              let browserFallbackStarted = false;
+              const startBrowserVoiceFallback = async () => {
+                if (browserFallbackStarted || currentTurnIdRef.current !== currentTurnId) return;
+                browserFallbackStarted = true;
+                activeAudioElementRef.current = null;
+
+                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                  const utterance = await createAtmosBrowserUtterance(replyText, window.speechSynthesis);
+                  if (currentTurnIdRef.current !== currentTurnId) return;
+
+                  setVoiceState('speaking');
+                  utterance.onstart = () => {
+                    if (currentTurnIdRef.current !== currentTurnId) return;
+                    turnTimer.markAudioPlaybackStarted();
+                    console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+                  };
+                  utterance.onend = onPlaybackFinished;
+                  utterance.onerror = onPlaybackFinished;
+                  window.speechSynthesis.speak(utterance);
+                } else {
+                  onPlaybackFinished();
+                }
+              };
 
               if (audioBase64) {
+                let audio: HTMLAudioElement | null = null;
                 try {
                   turnTimer.markAudioAvailable(Date.now());
-                  const audio = new Audio(`data:${mimeType};base64,${audioBase64}`);
+                  audio = new Audio('data:' + mimeType + ';base64,' + audioBase64);
                   activeAudioElementRef.current = audio;
                   setVoiceState('speaking');
-                  turnTimer.markAudioPlaybackStarted();
-                  console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
-
+                  audio.onplaying = () => {
+                    if (currentTurnIdRef.current !== currentTurnId) return;
+                    turnTimer.markAudioPlaybackStarted();
+                    console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+                  };
                   audio.onended = onPlaybackFinished;
-                  audio.onerror = onPlaybackFinished;
+                  audio.onerror = () => {
+                    console.warn('[RODEX Voice Notice] Generated audio failed during playback; switching to the browser feminine voice.');
+                    void startBrowserVoiceFallback();
+                  };
 
                   await audio.play();
                   return;
                 } catch (playErr) {
-                  console.warn('[RODEX Voice Notice] Audio playback error:', playErr);
+                  console.warn('[RODEX Voice Notice] Audio playback error; trying the browser feminine voice.', playErr);
+                  if (audio && activeAudioElementRef.current === audio) {
+                    activeAudioElementRef.current = null;
+                  }
                 }
               }
 
-              // Fallback to browser warm feminine speech synthesis if no custom audio was returned
-              if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                window.speechSynthesis.cancel();
-                const utterance = new SpeechSynthesisUtterance(replyText);
-                utterance.rate = 1.0;
-                utterance.pitch = 1.05;
-
-                const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = voices.find((v) =>
-                  v.lang.startsWith('en') &&
-                  (/female|samantha|victoria|karen|moira|fiona|tessa|serena|stephanie|zira|google.*female|google us english|natural/i.test(v.name))
-                ) || voices.find((v) => v.lang.startsWith('en')) || voices[0];
-
-                if (preferredVoice) {
-                  utterance.voice = preferredVoice;
-                }
-
-                setVoiceState('speaking');
-                turnTimer.markAudioPlaybackStarted();
-                console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
-
-                utterance.onend = onPlaybackFinished;
-                utterance.onerror = onPlaybackFinished;
-
-                window.speechSynthesis.speak(utterance);
-              } else {
-                onPlaybackFinished();
-              }
+              await startBrowserVoiceFallback();
             })
             .catch((err) => {
               console.warn('[Voice Compatibility Notice]', err);
@@ -1038,10 +1133,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         const systemPrompt = `You are Hey Atmos, the expert meteorologist and voice assistant for RODEX Atmos.
 ${authenticatedName ? `The user is authenticated as ${authenticatedName}. Address them naturally as ${authenticatedName}.` : 'Address the user warmly.'}
 
-CONVERSATIONAL SPEECH RULES:
-1. Always respond concisely in 1 to 2 short conversational sentences (strictly under 30 spoken words).
-2. Never recite capabilities or speak robotic disclaimers. Speak naturally in a warm, friendly feminine tone.
-3. If the user simply says hello, thank you, or greets you, respond conversationally in one short sentence without calling tools.
+VOICE PERSONALITY & DELIVERY:
+1. Sound like a modern feminine conversational companion: bright, warm, confident, upbeat and a little playful, with natural melodic inflection and a subtle smile in the voice.
+2. Speak at a brisk, clear conversational pace. Keep articulation crisp, vary emphasis naturally, and avoid flat, sleepy, robotic, overly slow or exaggerated sing-song delivery.
+3. Keep most replies to one or two natural sentences and under 30 spoken words unless the user needs a more detailed explanation.
+4. Never recite capabilities or use robotic disclaimers. If the user says hello, thanks, or greets you, answer casually in one short sentence without calling tools.
 
 Location Context Hierarchy & Rules:
 1. User's Detected Physical Location: ${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}. (Use when user asks "What's the weather here?" or "How is my local weather?").
@@ -1063,7 +1159,7 @@ Available Function Tools:
               speechConfig: {
                 voiceConfig: {
                   prebuiltVoiceConfig: {
-                    voiceName: 'Aoede'
+                    voiceName: ATMOS_SIGNATURE_LIVE_VOICE
                   }
                 }
               }

@@ -16,7 +16,7 @@ test('RODEX Atmos Signature voice metadata and configuration constants', () => {
   assert.equal(ATMOS_SIGNATURE_VOICE_NAME, 'RODEX Atmos Signature');
   assert.equal(ATMOS_SIGNATURE_GENDER, 'female');
   assert.equal(ATMOS_SIGNATURE_TTS_MODEL, 'gemini-3.8-flash-lite-tts');
-  assert.equal(ATMOS_SIGNATURE_LIVE_VOICE, 'Aoede');
+  assert.equal(ATMOS_SIGNATURE_LIVE_VOICE, 'Laomedeia');
   assert.equal(ATMOS_SIGNATURE_AUDITION_URL, '/atmos-signature-audition.wav');
 });
 
@@ -29,7 +29,7 @@ test('RODEX Atmos Signature metadata structure matches API contract', () => {
 });
 
 test('Speech style instruction conforms to natural delivery specifications', () => {
-  assert.equal(ATMOS_SIGNATURE_STYLE.includes('Warm'), true);
-  assert.equal(ATMOS_SIGNATURE_STYLE.includes('confident'), true);
-  assert.equal(ATMOS_SIGNATURE_STYLE.includes('concise'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('warm'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('brisk conversational pace'), true);
+  assert.equal(ATMOS_SIGNATURE_STYLE.includes('expressive'), true);
 });

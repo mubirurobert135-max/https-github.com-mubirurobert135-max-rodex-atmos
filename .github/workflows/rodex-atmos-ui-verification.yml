@@ -39,6 +39,10 @@ jobs:
 
       - name: Start app and verify responsive dashboard
         shell: bash
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          API_KEY: ${{ secrets.API_KEY }}
+          ATMOS_SIGNATURE_VOICE_ID: ${{ secrets.ATMOS_SIGNATURE_VOICE_ID }}
         run: |
           set -euo pipefail
           bun run dev > /tmp/rodex-atmos.log 2>&1 &
@@ -60,6 +64,7 @@ jobs:
           fi
 
           node scripts/verify_weather_dashboard_visual.js
+          node scripts/verify_voice_service.js
 
       - name: Upload desktop and mobile screenshots
         if: always()

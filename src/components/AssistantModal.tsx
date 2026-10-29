@@ -16,7 +16,7 @@ import {
   buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
-import { choosePreferredAtmosVoice, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
+import { getPreferredAtmosVoice, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
 
 import { LocationMode } from '../types';
@@ -240,7 +240,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
 
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = choosePreferredAtmosVoice(voices);
+      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
 
       if (preferredVoice) {
         utterance.voice = preferredVoice;
@@ -312,7 +312,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
       utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
       utterance.volume = 1;
-      const preferredVoice = choosePreferredAtmosVoice(window.speechSynthesis.getVoices());
+      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
       if (preferredVoice) utterance.voice = preferredVoice;
       utterance.onend = finishAudition;
       utterance.onerror = finishAudition;
@@ -356,7 +356,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
       utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
       const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = choosePreferredAtmosVoice(voices);
+      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
       if (preferredVoice) utterance.voice = preferredVoice;
       window.speechSynthesis.speak(utterance);
     }
@@ -850,7 +850,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
 
                 const voices = window.speechSynthesis.getVoices();
-                const preferredVoice = choosePreferredAtmosVoice(voices);
+                const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
 
                 if (preferredVoice) {
                   utterance.voice = preferredVoice;

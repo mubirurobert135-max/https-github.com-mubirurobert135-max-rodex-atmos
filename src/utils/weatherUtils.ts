@@ -63,7 +63,7 @@ export function getWeatherCondition(code: number, isDay: number = 1): { label: s
     case 99:
       return { label: 'Severe Thunderstorm with Hail', icon: 'CloudLightning', theme: 'thunder' };
     default:
-      return { label: 'Clear Skies', icon: 'Sun', theme: 'sunny' };
+      return { label: 'Conditions Unavailable', icon: 'Cloud', theme: 'overcast' };
   }
 }
 

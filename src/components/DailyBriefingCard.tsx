@@ -1,13 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Sun, CloudRain, Wind, AlertTriangle, Sparkles, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { WeatherData, DailyBriefing } from '../types';
+import { formatTemp } from '../utils/weatherUtils';
 
 interface DailyBriefingCardProps {
   data: WeatherData;
   onOpenAssistant?: (prompt?: string) => void;
+  unit?: 'C' | 'F';
 }
 
-export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOpenAssistant }) => {
+export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOpenAssistant, unit = 'C' }) => {
   const [briefing, setBriefing] = useState<DailyBriefing | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
@@ -42,6 +44,8 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
 
   const activeAlerts = data.alerts || [];
   const topAlert = activeAlerts.find(a => a.severity === 'extreme' || a.severity === 'severe') || activeAlerts[0];
+  const maxT = data.weather.daily?.temperature_2m_max?.[0] ?? (briefing?.highTemp ?? data.weather.current.temperature_2m + 3);
+  const minT = data.weather.daily?.temperature_2m_min?.[0] ?? (briefing?.lowTemp ?? data.weather.current.temperature_2m - 3);
 
   return (
     <div className="w-full bg-gradient-to-br from-slate-900/80 via-sky-950/60 to-indigo-950/80 backdrop-blur-2xl border border-sky-400/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-sky-400/45">
@@ -155,8 +159,8 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               <Sun className="w-5 h-5 text-amber-400 shrink-0" />
               <div>
                 <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Temperature Range</span>
-                <span className="text-sm font-bold text-white">
-                  High: {briefing?.highTemp ?? Math.round(data.weather.current.temperature_2m)}°C / Low: {briefing?.lowTemp ?? Math.round(data.weather.current.temperature_2m - 4)}°C
+                <span className="text-sm font-bold text-white tabular-nums">
+                  High: {formatTemp(maxT, unit)} / Low: {formatTemp(minT, unit)}
                 </span>
               </div>
             </div>

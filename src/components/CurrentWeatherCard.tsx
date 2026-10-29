@@ -1,11 +1,10 @@
 import React from 'react';
 import { 
-  Wind, Droplets, Gauge, Sun,
-  ArrowUp, ArrowDown, Clock, Navigation, RefreshCw, Globe, MapPin 
+  Wind, Droplets, Gauge, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudFog, CloudDrizzle,
+  CloudRain, CloudSnow, CloudLightning, ArrowUp, ArrowDown, Clock, Navigation, RefreshCw, Globe, MapPin 
 } from 'lucide-react';
 import { WeatherData, LocationMode } from '../types';
 import { formatTemp, formatWind, getWeatherCondition, getWindDirectionLabel } from '../utils/weatherUtils';
-import { DimensionalWeatherSculpture } from './DimensionalWeatherSculpture';
 
 interface CurrentWeatherCardProps {
   data: WeatherData;
@@ -38,17 +37,87 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
 
   // Air comfort description
   const airComfort = current.relative_humidity_2m > 70 
-    ? 'Humid air' 
+    ? 'Humid & damp' 
     : current.relative_humidity_2m < 30 
       ? 'Dry air' 
       : 'Optimal balance';
 
+  // Condition Icon with rich aesthetic presentation matching reference
+  const renderConditionIcon = (iconName: string) => {
+    switch (iconName) {
+      case 'Sun':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-amber-400/25 rounded-full blur-lg animate-pulse" />
+            <Sun className="w-10 h-10 sm:w-12 sm:h-12 text-amber-300 animate-spin-slow drop-shadow-[0_0_12px_rgba(251,191,36,0.6)]" />
+          </div>
+        );
+      case 'Moon':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-indigo-500/25 rounded-full blur-lg" />
+            <Moon className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-200 drop-shadow-[0_0_12px_rgba(199,210,254,0.5)]" />
+          </div>
+        );
+      case 'CloudSun':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-sky-400/20 rounded-full blur-lg" />
+            <CloudSun className="w-10 h-10 sm:w-12 sm:h-12 text-sky-200 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]" />
+          </div>
+        );
+      case 'CloudMoon':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-indigo-400/20 rounded-full blur-lg" />
+            <CloudMoon className="w-10 h-10 sm:w-12 sm:h-12 text-indigo-200 drop-shadow-[0_0_12px_rgba(165,180,252,0.5)]" />
+          </div>
+        );
+      case 'CloudRain':
+      case 'CloudDrizzle':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-sky-500/25 rounded-full blur-lg" />
+            <CloudRain className="w-10 h-10 sm:w-12 sm:h-12 text-sky-300 drop-shadow-[0_0_12px_rgba(56,189,248,0.6)] animate-pulse" />
+          </div>
+        );
+      case 'CloudSnow':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-cyan-300/25 rounded-full blur-lg" />
+            <CloudSnow className="w-10 h-10 sm:w-12 sm:h-12 text-sky-100 drop-shadow-[0_0_12px_rgba(224,242,254,0.7)]" />
+          </div>
+        );
+      case 'CloudLightning':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-amber-400/30 rounded-full blur-lg animate-pulse" />
+            <CloudLightning className="w-10 h-10 sm:w-12 sm:h-12 text-amber-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
+          </div>
+        );
+      case 'CloudFog':
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-slate-400/20 rounded-full blur-lg" />
+            <CloudFog className="w-10 h-10 sm:w-12 sm:h-12 text-slate-200 drop-shadow-[0_0_12px_rgba(226,232,240,0.5)]" />
+          </div>
+        );
+      default:
+        return (
+          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
+            <div className="absolute inset-0 bg-slate-400/20 rounded-full blur-lg" />
+            <Cloud className="w-10 h-10 sm:w-12 sm:h-12 text-slate-200 drop-shadow-[0_0_12px_rgba(226,232,240,0.5)]" />
+          </div>
+        );
+    }
+  };
+
   return (
     <section 
       aria-label="Current Weather Conditions"
-      className="w-full glass-panel-elevated rounded-3xl p-6 sm:p-8 lg:p-10 relative overflow-hidden transition-all duration-300"
+      className="w-full glass-panel-elevated rounded-3xl p-6 sm:p-8 relative overflow-hidden transition-all duration-300 shadow-2xl"
     >
-      {/* Refined ambient atmospheric lighting bloom */}
+      {/* Decorative ambient atmospheric lighting bloom */}
       <div 
         className="absolute -top-24 -right-24 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" 
         aria-hidden="true" 
@@ -58,218 +127,183 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
         aria-hidden="true" 
       />
 
-      <div className="relative z-10 flex flex-col gap-8">
+      <div className="relative z-10 flex flex-col gap-6 sm:gap-7">
         
-        {/* Top Header: Unboxed Metadata & Location Actions */}
-        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 pb-3 border-b border-white/8">
-          
-          {/* Metadata Row: Anti-slop unboxed text with · separators */}
-          <div className="flex flex-wrap items-center gap-2 text-xs text-sky-200/80">
-            <span className="font-semibold text-white tracking-wide">Live Atmospheric Observation</span>
-            <span aria-hidden="true" className="text-white/30">·</span>
-            <span className="flex items-center gap-1.5 text-white/70">
-              <Clock className="w-3.5 h-3.5 text-sky-400" />
-              <span>Updated {updateTimeFormatted}</span>
-            </span>
-            <span aria-hidden="true" className="text-white/30">·</span>
-            <span className="flex items-center gap-1.5 font-medium text-sky-300">
-              {locationMode === 'gps' ? (
-                <>
-                  <Navigation className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>GPS Sensor Verified</span>
-                </>
-              ) : locationMode === 'network' ? (
-                <>
-                  <Globe className="w-3.5 h-3.5 text-sky-400" />
-                  <span>Network Position</span>
-                </>
-              ) : (
-                <>
-                  <MapPin className="w-3.5 h-3.5 text-amber-300" />
-                  <span>Selected Station</span>
-                </>
-              )}
-            </span>
-          </div>
+        {/* Top Header: Metadata Badges & Verification Status */}
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs">
+          {/* Live Conditions Pill */}
+          <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white font-semibold shadow-sm">
+            Live Conditions
+          </span>
 
-          {/* Quick GPS Geolocation Action */}
-          {onGetCurrentLocation && (
-            <button
-              onClick={onGetCurrentLocation}
-              disabled={isLoading}
-              className="px-3.5 py-2 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/30 text-sky-200 text-xs font-semibold transition flex items-center gap-2 disabled:opacity-50 self-start sm:self-auto touch-target btn-hover-lift"
-              title="Detect physical device coordinates via GPS"
-              aria-label="Detect My Physical Location"
-            >
-              {isLoading ? (
-                <RefreshCw className="w-4 h-4 text-sky-400 animate-spin" />
-              ) : (
-                <Navigation className="w-4 h-4 text-emerald-400" />
-              )}
-              <span>My Location</span>
-            </button>
-          )}
+          {/* Timestamp */}
+          <span className="flex items-center gap-1.5 text-white/70 font-medium">
+            <Clock className="w-3.5 h-3.5 text-sky-400" />
+            <span>Updated {updateTimeFormatted}</span>
+          </span>
+
+          {/* Verification Pill */}
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1 border">
+            {locationMode === 'gps' ? (
+              <span className="bg-emerald-500/20 border-emerald-400/30 text-emerald-300 flex items-center gap-1 px-2 py-0.5 rounded-full">
+                <Navigation className="w-3 h-3 text-emerald-400" />
+                <span>GPS SENSOR</span>
+              </span>
+            ) : locationMode === 'network' ? (
+              <span className="bg-sky-500/20 border-sky-400/30 text-sky-300 flex items-center gap-1 px-2 py-0.5 rounded-full">
+                <Globe className="w-3 h-3 text-sky-400" />
+                <span>IP APPROX</span>
+              </span>
+            ) : (
+              <span className="bg-amber-500/20 border-amber-400/30 text-amber-300 flex items-center gap-1 px-2 py-0.5 rounded-full">
+                <MapPin className="w-3 h-3 text-amber-300" />
+                <span>SEARCHED</span>
+              </span>
+            )}
+          </span>
         </div>
 
-        {/* Centerpiece Hero Split: Architectural Weather Data & 3D Sculpture */}
-        <div className="flex flex-col lg:grid lg:grid-cols-12 gap-6 lg:gap-8 items-center">
+        {/* Main Body Split: Left Info & Right 2x2 Metric Grid */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 lg:gap-8">
           
-          {/* Left Column (7 cols): Location, Giant Display Temp & Atmospheric Context */}
-          <div className="w-full lg:col-span-7 flex flex-col justify-center space-y-4">
+          {/* Left Column: Location, "My Location" Button, Large Temperature & Condition */}
+          <div className="flex flex-col justify-center space-y-3.5 flex-1 min-w-0">
             
-            {/* Location Title & Mobile Sculpture Lockup */}
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight font-heading break-words text-balance">
-                  {location.name}
-                </h2>
-                <p className="text-xs sm:text-sm text-sky-200/70 font-medium mt-1">
-                  {location.admin1 ? `${location.admin1}, ` : ''}{location.country || 'Global Station'}
-                </p>
-              </div>
+            {/* City Title & "My Location" Action Button */}
+            <div className="flex flex-wrap items-center gap-3">
+              <h2 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight font-heading break-words">
+                {location.name}
+              </h2>
 
-              {/* On mobile devices (<1024px), display sculpture immediately alongside title */}
-              <div className="lg:hidden shrink-0">
-                <DimensionalWeatherSculpture 
-                  theme={condition.theme}
-                  isDay={Boolean(current.is_day)}
-                  size="md"
-                  interactive={true}
-                />
-              </div>
+              {onGetCurrentLocation && (
+                <button
+                  onClick={onGetCurrentLocation}
+                  disabled={isLoading}
+                  className="px-3.5 py-1.5 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/35 text-sky-200 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 btn-hover-lift shadow-sm"
+                  title="Detect physical device coordinates via GPS"
+                  aria-label="Detect My Physical Location"
+                >
+                  {isLoading ? (
+                    <RefreshCw className="w-3.5 h-3.5 text-sky-400 animate-spin" />
+                  ) : (
+                    <Navigation className="w-3.5 h-3.5 text-emerald-400" />
+                  )}
+                  <span>My Location</span>
+                </button>
+              )}
             </div>
 
-            {/* Giant Architectural Temperature Display & Condition Description */}
-            <div className="flex flex-wrap items-baseline gap-4 pt-1 sm:pt-2">
+            {/* Subtitle / Region */}
+            <p className="text-xs sm:text-sm text-sky-200/70 font-medium">
+              {location.admin1 ? `${location.admin1}, ` : ''}{location.country || 'Coordinates View'}
+            </p>
+
+            {/* Main Temperature & Weather Condition Row */}
+            <div className="flex items-center gap-5 sm:gap-6 pt-2 flex-wrap sm:flex-nowrap">
+              {/* Giant Temperature */}
               <div className="flex items-start">
-                <span className="text-6xl sm:text-8xl lg:text-9xl font-black text-white tracking-tighter tabular-nums font-heading leading-none">
+                <span className="text-6xl sm:text-7xl lg:text-8xl font-black text-white tracking-tighter tabular-nums font-heading leading-none">
                   {formatTemp(current.temperature_2m, unit).replace('°C', '').replace('°F', '')}
                 </span>
-                <span className="text-2xl sm:text-4xl font-bold text-sky-300 ml-1.5 font-heading">
+                <span className="text-2xl sm:text-3xl font-bold text-sky-300 ml-1 font-heading">
                   °{unit}
                 </span>
               </div>
 
-              <div className="flex flex-col justify-center pl-2 sm:pl-4 border-l border-white/15 my-auto">
-                <div className="text-xl sm:text-2xl font-bold text-white font-heading">
-                  {condition.label}
+              {/* Condition Block with subtle vertical divider */}
+              <div className="flex items-center gap-3.5 pl-4 sm:pl-5 border-l border-white/15 my-auto">
+                <div className="shrink-0">
+                  {renderConditionIcon(condition.icon)}
                 </div>
-                <div className="text-xs sm:text-sm text-sky-200/80 mt-1">
-                  Feels like <strong className="text-white tabular-nums">{formatTemp(current.apparent_temperature, unit)}</strong>
-                </div>
-                <div className="flex items-center gap-3 mt-2 text-xs">
-                  <span className="flex items-center gap-1 text-sky-300 font-semibold tabular-nums">
-                    <ArrowUp className="w-3.5 h-3.5 text-sky-400" /> High {formatTemp(maxTemp, unit)}
-                  </span>
-                  <span className="text-white/20">·</span>
-                  <span className="flex items-center gap-1 text-indigo-300 font-semibold tabular-nums">
-                    <ArrowDown className="w-3.5 h-3.5 text-indigo-400" /> Low {formatTemp(minTemp, unit)}
-                  </span>
+
+                <div className="flex flex-col justify-center">
+                  <div className="text-xl sm:text-2xl font-bold text-white font-heading leading-tight">
+                    {condition.label}
+                  </div>
+                  <div className="text-xs sm:text-sm text-sky-200/80 mt-0.5">
+                    Feels like <strong className="text-white tabular-nums">{formatTemp(current.apparent_temperature, unit)}</strong>
+                  </div>
+                  <div className="flex items-center gap-3 mt-1.5 text-xs">
+                    <span className="flex items-center gap-1 text-sky-300 font-semibold tabular-nums">
+                      <ArrowUp className="w-3.5 h-3.5 text-sky-400" /> {formatTemp(maxTemp, unit)}
+                    </span>
+                    <span className="flex items-center gap-1 text-indigo-300 font-semibold tabular-nums">
+                      <ArrowDown className="w-3.5 h-3.5 text-indigo-400" /> {formatTemp(minTemp, unit)}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
           </div>
 
-          {/* Right Column (5 cols, Desktop showcase): Majestic 3D Weather Sculpture */}
-          <div className="hidden lg:flex lg:col-span-5 flex-col items-center justify-center py-2 sm:py-4">
-            <div className="relative flex items-center justify-center p-4">
-              {/* Backlight halo glow */}
-              <div 
-                className="absolute inset-0 rounded-full blur-2xl opacity-40 scale-90 pointer-events-none"
-                style={{
-                  background: condition.theme === 'sunny' 
-                    ? 'radial-gradient(circle, #f59e0b 0%, transparent 70%)'
-                    : condition.theme === 'rainy'
-                      ? 'radial-gradient(circle, #0284c7 0%, transparent 70%)'
-                      : condition.theme === 'thunder'
-                        ? 'radial-gradient(circle, #a855f7 0%, transparent 70%)'
-                        : 'radial-gradient(circle, #38bdf8 0%, transparent 70%)'
-                }}
-                aria-hidden="true"
-              />
-
-              {/* 3D Interactive Weather Sculpture */}
-              <DimensionalWeatherSculpture 
-                theme={condition.theme}
-                isDay={Boolean(current.is_day)}
-                size="hero"
-                interactive={true}
-              />
-            </div>
+          {/* Right Column: 2x2 Metric Grid matching reference screenshot */}
+          <div className="grid grid-cols-2 gap-3 w-full lg:w-80 shrink-0">
             
-            <p className="text-[11px] text-sky-200/50 text-center font-medium mt-1">
-              Interactive 3D Atmospheric Element
-            </p>
-          </div>
+            {/* 1. Humidity */}
+            <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
+                <span>Humidity</span>
+                <Droplets className="w-4 h-4 text-sky-400" />
+              </div>
+              <div className="mt-2.5">
+                <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
+                  {current.relative_humidity_2m}%
+                </div>
+                <div className="text-xs text-sky-200/60 mt-0.5 truncate">
+                  {airComfort}
+                </div>
+              </div>
+            </div>
 
-        </div>
+            {/* 2. Wind */}
+            <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
+                <span>Wind</span>
+                <Wind className="w-4 h-4 text-teal-300" />
+              </div>
+              <div className="mt-2.5">
+                <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
+                  {formatWind(current.wind_speed_10m, unit)}
+                </div>
+                <div className="text-xs text-sky-200/60 mt-0.5 truncate tabular-nums">
+                  {getWindDirectionLabel(current.wind_direction_10m)} ({current.wind_direction_10m}°)
+                </div>
+              </div>
+            </div>
 
-        {/* Bottom Atmospheric Vitals Shelf (4 Disciplined Metrics) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5 pt-4 border-t border-white/8">
-          
-          {/* 1. Humidity */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all">
-            <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
-              <span>Humidity</span>
-              <Droplets className="w-4 h-4 text-sky-400" />
-            </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-white tabular-nums font-heading">
-                {current.relative_humidity_2m}%
+            {/* 3. UV Index */}
+            <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
+                <span>UV Index</span>
+                <Sun className="w-4 h-4 text-amber-300" />
               </div>
-              <div className="text-[11px] text-sky-200/60 mt-0.5 truncate">
-                {airComfort}
+              <div className="mt-2.5">
+                <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
+                  {uvMax}
+                </div>
+                <div className="text-xs text-sky-200/60 mt-0.5 truncate">
+                  {uvDescription}
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 2. Wind Dynamics */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all">
-            <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
-              <span>Wind Velocity</span>
-              <Wind className="w-4 h-4 text-teal-300" />
-            </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-white tabular-nums font-heading">
-                {formatWind(current.wind_speed_10m, unit)}
+            {/* 4. Pressure */}
+            <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all flex flex-col justify-between">
+              <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
+                <span>Pressure</span>
+                <Gauge className="w-4 h-4 text-indigo-300" />
               </div>
-              <div className="text-[11px] text-sky-200/60 mt-0.5 truncate tabular-nums">
-                {getWindDirectionLabel(current.wind_direction_10m)} · {current.wind_direction_10m}°
+              <div className="mt-2.5">
+                <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
+                  {current.surface_pressure} <span className="text-xs font-normal text-white/50">hPa</span>
+                </div>
+                <div className="text-xs text-sky-200/60 mt-0.5 truncate">
+                  Barometric
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* 3. UV Radiation */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all">
-            <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
-              <span>UV Index</span>
-              <Sun className="w-4 h-4 text-amber-300" />
-            </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-white tabular-nums font-heading">
-                {uvMax}
-              </div>
-              <div className="text-[11px] text-sky-200/60 mt-0.5 truncate">
-                {uvDescription} Exposure
-              </div>
-            </div>
-          </div>
-
-          {/* 4. Barometric Pressure */}
-          <div className="p-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/8 transition-all">
-            <div className="flex items-center justify-between text-sky-200/70 text-xs font-medium">
-              <span>Pressure</span>
-              <Gauge className="w-4 h-4 text-indigo-300" />
-            </div>
-            <div className="mt-2">
-              <div className="text-xl sm:text-2xl font-black text-white tabular-nums font-heading">
-                {current.surface_pressure} <span className="text-xs font-normal text-white/50">hPa</span>
-              </div>
-              <div className="text-[11px] text-sky-200/60 mt-0.5 truncate">
-                Atmospheric Sea Level
-              </div>
-            </div>
           </div>
 
         </div>

@@ -24,7 +24,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-[#070e1c]/90 backdrop-blur-2xl border-t border-white/12 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
+      className="fixed bottom-0 left-0 right-0 z-40 lg:hidden bg-[#070e1c]/90 backdrop-blur-2xl border-t border-white/12 px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
     >
       <div className="max-w-md mx-auto grid grid-cols-5 items-center justify-items-center">
         
@@ -116,7 +116,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
             )}
           </div>
           <span className="text-[10px] font-semibold tracking-tight mt-1">
-            {user ? 'Account' : 'Sign In'}
+            Account
           </span>
         </button>
 

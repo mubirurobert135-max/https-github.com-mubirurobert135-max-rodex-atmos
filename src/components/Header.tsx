@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check, User, ShieldCheck, Bell } from 'lucide-react';
+import { Search, MapPin, Compass, Sparkles, AlertCircle, RefreshCw, Navigation, Globe, Check, User, ShieldCheck, Bell, Send } from 'lucide-react';
 import { SAMPLE_CITIES } from '../utils/weatherUtils';
 import { LocationMode } from '../types';
 import { useAuth } from '../context/AuthContext';
@@ -143,16 +143,16 @@ export const Header: React.FC<HeaderProps> = ({
               RODEX <span className="text-sky-300 font-light">Atmos</span>
             </h1>
             <p className="text-[11px] text-sky-200/70 font-medium font-body leading-none mt-0.5">
-              Atmospheric Intelligence
+              Understand your day
             </p>
           </div>
         </div>
 
-        {/* Desktop / Tablet Navigation Tabs */}
+        {/* Desktop Navigation Tabs */}
         {onSelectTab && (
           <nav
             aria-label="Primary Navigation"
-            className="hidden md:flex items-center p-1 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 shadow-inner"
+            className="hidden lg:flex items-center p-1 rounded-2xl bg-white/8 backdrop-blur-md border border-white/12 shadow-inner"
           >
             <button
               onClick={() => onSelectTab('dashboard')}
@@ -202,23 +202,22 @@ export const Header: React.FC<HeaderProps> = ({
             />
 
             {!searchTerm && !isInputFocused && (
-              <span className={`absolute left-9 text-xs sm:text-sm text-sky-200/60 pointer-events-none transition-opacity duration-300 truncate max-w-[190px] sm:max-w-none ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
+              <span className={`absolute left-9 right-8 text-xs sm:text-sm text-sky-200/60 pointer-events-none transition-opacity duration-300 truncate ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
                 {PLACEHOLDER_MESSAGES[placeholderIndex]}
               </span>
             )}
 
             <button
-              type="button"
-              onClick={onGetCurrentLocation}
+              type="submit"
               disabled={isLoading}
-              className="absolute right-1.5 p-1.5 rounded-xl hover:bg-white/15 text-sky-300 transition"
-              title="Detect physical location via GPS"
-              aria-label="Use current physical location"
+              className="absolute right-1.5 p-1.5 rounded-xl hover:bg-white/15 text-sky-400 hover:text-sky-300 transition"
+              title="Search forecast location"
+              aria-label="Submit search"
             >
               {isLoading ? (
                 <RefreshCw className="w-3.5 h-3.5 text-sky-400 animate-spin" />
               ) : (
-                <Navigation className="w-3.5 h-3.5 text-emerald-400 hover:scale-110 transition-transform" />
+                <Send className="w-3.5 h-3.5 text-sky-400 -rotate-12 hover:scale-110 transition-transform" />
               )}
             </button>
           </form>
@@ -307,10 +306,10 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Compact RODEX AI Trigger (Desktop / Tablet) */}
+          {/* Compact RODEX AI Trigger (Desktop) */}
           <button
             onClick={onOpenAssistant}
-            className="hidden md:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-300/40 group btn-hover-lift"
+            className="hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-300/40 group btn-hover-lift"
             title="Open RODEX AI Voice & Chat Assistant"
             aria-label="Open RODEX AI Voice and Chat Assistant"
           >
@@ -318,10 +317,10 @@ export const Header: React.FC<HeaderProps> = ({
             <span>AI Assistant</span>
           </button>
 
-          {/* Account / Profile Button (Desktop / Tablet) */}
+          {/* Account / Profile Button (Desktop) */}
           <button
             onClick={onOpenAuth}
-            className={`hidden md:flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm border btn-hover-lift ${
+            className={`hidden lg:flex items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm border btn-hover-lift ${
               user 
                 ? isVerified 
                   ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-400/40' 

@@ -349,8 +349,10 @@ export default function App() {
               <span className="text-white/40">•</span>
               <span className="text-sky-200/80">{weatherData.providerInfo.disclaimer}</span>
             </div>
-            <div className="flex items-center gap-2 text-[11px] text-sky-200/90 font-medium">
-              <span>{locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}</span>
+            <div className="flex items-center gap-2">
+              <span className="px-3 py-1 rounded-full bg-sky-500/15 border border-sky-400/25 text-[11px] font-medium text-sky-200">
+                {locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}
+              </span>
             </div>
           </div>
         )}
@@ -434,6 +436,7 @@ export default function App() {
                 <DailyBriefingCard
                   data={weatherData}
                   onOpenAssistant={handleOpenAssistant}
+                  unit={unit}
                 />
               </div>
             ) : (
@@ -451,6 +454,7 @@ export default function App() {
                 <DailyBriefingCard
                   data={weatherData}
                   onOpenAssistant={handleOpenAssistant}
+                  unit={unit}
                 />
 
                 {/* Quick Map Teaser Banner */}
@@ -498,8 +502,8 @@ export default function App() {
 
       </main>
 
-      {/* Floating Action Button for RODEX AI Assistant (Hidden on mobile where MobileNavBar orb takes precedence) */}
-      <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden md:flex">
+      {/* Floating Action Button for RODEX AI Assistant (Hidden on mobile/tablet where MobileNavBar orb takes precedence) */}
+      <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden lg:flex">
         <button
           onClick={() => handleOpenAssistant()}
           className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-2xl shadow-sky-500/40 border border-sky-300/40 transition transform hover:scale-105 group backdrop-blur-md"

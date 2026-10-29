@@ -690,3 +690,96 @@
     margin-top: 54px;
   }
 }
+
+
+/* Final proportion tuning for the reference's broad rail and stacked right column */
+@media (min-width: 1101px) {
+  .wx-reference-shell {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+  .wx-reference-rail {
+    padding-left: 10px;
+    padding-right: 10px;
+    gap: 11px;
+  }
+  .wx-reference-mark {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+  .wx-reference-rail-button {
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+  }
+  .wx-reference-rail-status {
+    width: 44px;
+    height: 32px;
+  }
+  .wx-reference-layout {
+    grid-template-columns: minmax(0, 1fr) minmax(340px, 37%);
+    gap: 25px;
+  }
+  .wx-storm-title {
+    font-size: clamp(42px, 4.05vw, 58px);
+    letter-spacing: -.052em;
+  }
+  .wx-story-copy {
+    font-size: 12px;
+    line-height: 1.8;
+  }
+  .wx-story-label {
+    font-size: 10px;
+  }
+  .wx-hourly-heading {
+    font-size: 11px;
+  }
+  .wx-hourly-heading-note {
+    font-size: 10px;
+  }
+  .wx-hourly-temperature > span {
+    font-size: 10px;
+  }
+  .wx-hourly-temperature strong {
+    font-size: clamp(17px, 1.5vw, 22px);
+  }
+  .wx-hourly-temperature small {
+    font-size: 9px;
+  }
+  .wx-live-weather-temp {
+    font-size: clamp(52px, 4.6vw, 66px);
+  }
+  .wx-live-weather-condition {
+    font-size: 12px;
+  }
+  .wx-live-weather-feels {
+    font-size: 10px;
+  }
+  .wx-live-weather-metrics span {
+    font-size: 9px;
+  }
+  .wx-live-weather-metrics strong {
+    font-size: 11px;
+  }
+  .wx-nearby-heading span {
+    font-size: 11px;
+  }
+  .wx-nearby-city-name {
+    font-size: 11px;
+  }
+  .wx-nearby-city-condition {
+    font-size: 9px;
+  }
+  .wx-nearby-city > strong {
+    font-size: 14px;
+  }
+  .wx-weekly-day > span {
+    font-size: 9px;
+  }
+  .wx-weekly-day strong {
+    font-size: 12px;
+  }
+  .wx-weekly-day small {
+    font-size: 9px;
+  }
+}

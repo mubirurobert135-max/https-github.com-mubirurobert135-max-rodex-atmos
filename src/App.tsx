@@ -516,7 +516,7 @@ export default function App() {
       </aside>
       )}
 
-      {/* RODEX AI Live Voice & Text Assistant Modal */
+      {/* RODEX AI Live Voice & Text Assistant Modal */}
       <AssistantModal
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}

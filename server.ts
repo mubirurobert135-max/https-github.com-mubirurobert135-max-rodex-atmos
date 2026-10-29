@@ -954,51 +954,65 @@ async function startServer() {
     }
   });
 
-  // Heuristic generator to produce rich, grounded atmospheric insights when AI models are unavailable or rate-limited
+  // Deterministic weather advice is a safe fallback when AI is unavailable.
   function generateWeatherInsights(location: any, current: any, daily: any) {
-    const temp = current?.temperature_2m ?? 20;
-    const humidity = current?.relative_humidity_2m ?? 50;
-    const code = current?.weather_code ?? 0;
-    const uv = daily?.uv_index_max?.[0] ?? 4;
+    const tempValue = current?.temperature_2m;
+    const humidityValue = current?.relative_humidity_2m;
+    const codeValue = current?.weather_code;
+    const uvValue = daily?.uv_index_max?.[0];
+    const temp = typeof tempValue === 'number' && Number.isFinite(tempValue) ? tempValue : null;
+    const humidity = typeof humidityValue === 'number' && Number.isFinite(humidityValue) ? humidityValue : null;
+    const code = typeof codeValue === 'number' && Number.isFinite(codeValue) && codeValue >= 0 ? codeValue : null;
+    const uv = typeof uvValue === 'number' && Number.isFinite(uvValue) ? uvValue : null;
     const locName = location?.name || 'this location';
+    const condition = code == null ? 'conditions unavailable' : getWeatherConditionLabel(code, current?.is_day ?? 1);
 
-    let summary = `Atmospheric conditions in ${locName} are currently ${temp > 20 ? 'warm and pleasant' : temp > 12 ? 'mild with a gentle breeze' : 'cool and crisp'} at ${Math.round(temp)}°C.`;
-    if (code >= 51 && code <= 67) {
-      summary = `Rainy conditions across ${locName} with a temperature of ${Math.round(temp)}°C and elevated humidity of ${humidity}%.`;
-    } else if (code === 95) {
-      summary = `Thunderstorm activity present in ${locName}. Atmospheric pressure is shifting at ${current?.surface_pressure ?? 1013} hPa.`;
-    } else if (code >= 71 && code <= 77) {
-      summary = `Snowfall in ${locName} bringing crisp winter air at ${Math.round(temp)}°C.`;
+    let summary: string;
+    if (temp == null && code == null) {
+      summary = 'The latest weather measurements for ' + locName + ' are incomplete. Refresh the forecast to get a reliable update.';
+    } else if (temp == null) {
+      summary = 'Current conditions in ' + locName + ' are reported as ' + condition.toLowerCase() + '; temperature data is unavailable.';
+    } else {
+      const feel = temp > 28 ? 'hot' : temp > 22 ? 'warm' : temp > 15 ? 'mild' : 'cool';
+      summary = 'Current conditions in ' + locName + ' are ' + (code == null ? feel : condition.toLowerCase()) + ' at ' + Math.round(temp) + '°C.';
+      if (humidity != null) summary += ' Relative humidity is ' + Math.round(humidity) + '%.';
     }
 
-    let clothing = 'Comfortable light layers or a casual jacket suitable for current temperatures.';
-    if (temp < 8) {
-      clothing = 'Heavy warm coat, scarf, and thermal layers to stay comfortable in the cold.';
-    } else if (temp < 16) {
-      clothing = 'A medium jacket, sweater, or fleece layer paired with trousers.';
-    } else if (temp > 24) {
-      clothing = 'Breathable lightweight cottons, shorts, and UV-filtering sunglasses.';
-    }
-    if (code >= 51 && code <= 67) {
-      clothing += ' Don’t forget a waterproof umbrella or rain shell.';
-    }
-
-    let activities = 'Great conditions for an outdoor walk, jogging, or relaxed leisure.';
-    if (code >= 51 && code <= 67) {
-      activities = 'Best suited for indoor cafes, museum visits, or cozy reading spaces.';
-    } else if (code === 95) {
-      activities = 'Stay safely indoors until storm cells pass through the area.';
-    } else if (temp > 22 && uv < 7) {
-      activities = 'Ideal for open-air parks, outdoor running, or patio dining.';
+    let clothing = temp == null
+      ? 'Current temperature data is unavailable, so a precise temperature-based clothing recommendation is not possible.'
+      : temp < 8
+        ? 'Consider a warm coat and insulating layers for the cold.'
+        : temp < 16
+          ? 'A sweater or light-to-medium jacket should be comfortable.'
+          : temp > 28
+            ? 'Choose breathable, lightweight clothing and consider sun protection.'
+            : temp > 24
+              ? 'Breathable, lightweight clothing should be comfortable.'
+              : 'Comfortable light layers are a reasonable choice.';
+    if (code != null && ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))) {
+      clothing += ' Consider carrying an umbrella or rain shell.';
     }
 
-    let health = 'Stay comfortably hydrated throughout the day.';
-    if (uv >= 6) {
-      health = `UV index is high (${uv}). Apply SPF 30+ sunscreen and wear sunglasses during peak daylight hours.`;
-    } else if (humidity > 80) {
-      health = 'High humidity levels; ensure good airflow and steady hydration during activities.';
-    } else if (temp < 5) {
-      health = 'Cold outdoor air; protect extremities and moisturize skin.';
+    let activities = 'Check the hourly forecast before making weather-sensitive outdoor plans.';
+    if (code != null && (code === 95 || code === 96 || code === 99)) {
+      activities = 'Avoid exposed outdoor areas during thunderstorms and wait for conditions to improve.';
+    } else if (code != null && ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))) {
+      activities = 'Consider indoor activities while rain is reported or forecast.';
+    } else if (temp != null && temp > 32) {
+      activities = 'Prefer shade and lower-intensity outdoor activities during the hottest hours.';
+    } else if (code != null && code >= 0 && code <= 3 && temp != null) {
+      activities = 'Outdoor activities may be comfortable; check the hourly forecast for changes.';
+    }
+
+    let health = 'Follow the latest local forecast and stay hydrated as appropriate.';
+    if (uv != null && uv >= 6) {
+      health = 'The forecast UV index reaches ' + Math.round(uv) + '. Use sun protection, including shade, suitable clothing, and sunscreen.';
+    } else if (humidity != null && humidity > 80) {
+      health = 'Humidity is high (' + Math.round(humidity) + '%); take breaks and stay hydrated during strenuous activity.';
+    } else if (temp != null && temp >= 32) {
+      health = 'Warm conditions are reported. Drink water regularly and take breaks in shade.';
+    } else if (uv == null) {
+      health = 'UV forecast data is unavailable; consider checking a local UV forecast before extended sun exposure.';
     }
 
     return { summary, clothing, activities, health };
@@ -1014,12 +1028,14 @@ async function startServer() {
     try {
       const prompt = `You are RODEX Atmos AI, an expert meteorologist and lifestyle assistant. 
 Analyze these current weather conditions for ${location?.name || 'Location'}:
-- Temperature: ${current?.temperature_2m}°C (Feels like ${current?.apparent_temperature}°C)
-- Humidity: ${current?.relative_humidity_2m}%
-- Wind Speed: ${current?.wind_speed_10m} km/h
-- Weather Code: ${current?.weather_code}
-- UV Index max: ${daily?.uv_index_max?.[0] ?? 'N/A'}
+- Temperature: ${typeof current?.temperature_2m === 'number' && Number.isFinite(current.temperature_2m) ? current.temperature_2m + '°C' : 'unavailable'}
+- Feels-like temperature: ${typeof current?.apparent_temperature === 'number' && Number.isFinite(current.apparent_temperature) ? current.apparent_temperature + '°C' : 'unavailable'}
+- Humidity: ${typeof current?.relative_humidity_2m === 'number' && Number.isFinite(current.relative_humidity_2m) ? current.relative_humidity_2m + '%' : 'unavailable'}
+- Wind Speed: ${typeof current?.wind_speed_10m === 'number' && Number.isFinite(current.wind_speed_10m) ? current.wind_speed_10m + ' km/h' : 'unavailable'}
+- Weather Code: ${current?.weather_code ?? 'unavailable'}
+- UV Index max: ${typeof daily?.uv_index_max?.[0] === 'number' && Number.isFinite(daily.uv_index_max[0]) ? daily.uv_index_max[0] : 'unavailable'}
 
+Use only supplied data. Never invent missing measurements, claim rain from probability alone, or manufacture official warnings.
 Provide a JSON response with exactly these 4 keys:
 1. "summary": A poetic and informative 2-sentence atmospheric summary of the current vibe and conditions.
 2. "clothing": Specific clothing recommendations (layers, jacket, umbrella, sunglasses, etc.).
@@ -1067,21 +1083,37 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       return res.status(400).json({ error: 'Missing required weather parameters for daily briefing.' });
     }
 
-    const highTemp = daily?.temperature_2m_max?.[0] != null ? Math.round(daily.temperature_2m_max[0]) : Math.round(current.temperature_2m);
-    const lowTemp = daily?.temperature_2m_min?.[0] != null ? Math.round(daily.temperature_2m_min[0]) : Math.round(current.temperature_2m);
-    const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
-    const windSpeed = current.wind_speed_10m ? Math.round(current.wind_speed_10m) : 0;
+    const rawHigh = daily?.temperature_2m_max?.[0];
+    const rawLow = daily?.temperature_2m_min?.[0];
+    const rawCurrentTemp = current?.temperature_2m;
+    const highTemp = typeof rawHigh === 'number' && Number.isFinite(rawHigh) ? Math.round(rawHigh) : null;
+    const lowTemp = typeof rawLow === 'number' && Number.isFinite(rawLow) ? Math.round(rawLow) : null;
+    const currentTemp = typeof rawCurrentTemp === 'number' && Number.isFinite(rawCurrentTemp) ? Math.round(rawCurrentTemp) : null;
+    const rainProbabilities = Array.isArray(hourly?.precipitation_probability)
+      ? hourly.precipitation_probability.slice(0, 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
+      : [];
+    const maxPrecipProb = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
+    const rawWind = current?.wind_speed_10m;
+    const windSpeed = typeof rawWind === 'number' && Number.isFinite(rawWind) ? Math.round(rawWind) : null;
 
-    let rainLikelihood = 'Minimal risk of precipitation today.';
-    if (maxPrecipProb >= 70) {
-      rainLikelihood = `High likelihood of rain (${maxPrecipProb}% peak chance) during the day.`;
-    } else if (maxPrecipProb >= 40) {
-      rainLikelihood = `Moderate chance of scattered rainfall (${maxPrecipProb}% chance).`;
-    } else if (maxPrecipProb >= 20) {
-      rainLikelihood = `Slight chance of isolated showers (${maxPrecipProb}%).`;
+    let rainLikelihood = 'Rain probability data is unavailable.';
+    if (maxPrecipProb != null) {
+      if (maxPrecipProb >= 70) {
+        rainLikelihood = 'High likelihood of rain (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else if (maxPrecipProb >= 40) {
+        rainLikelihood = 'Moderate chance of rain (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else if (maxPrecipProb >= 20) {
+        rainLikelihood = 'Lower but non-zero rain chance (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else {
+        rainLikelihood = 'Peak rain probability over the next 12 hours is ' + maxPrecipProb + '%.';
+      }
     }
 
-    const windCondition = windSpeed > 30 ? `Breezy with winds up to ${windSpeed} km/h.` : `Gentle breeze at ${windSpeed} km/h.`;
+    const windCondition = windSpeed == null
+      ? 'Wind speed data is unavailable.'
+      : windSpeed > 30
+        ? 'Strong winds are reported at about ' + windSpeed + ' km/h.'
+        : 'Wind speed is about ' + windSpeed + ' km/h.';
 
     const topAlert = Array.isArray(alerts) && alerts.length > 0 ? alerts[0] : null;
     const headlineAlert = topAlert ? `[${topAlert.type === 'official' ? 'Official Warning' : 'Forecast Alert'}] ${topAlert.title}: ${topAlert.description}` : undefined;
@@ -1095,12 +1127,15 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     if (ai) {
       try {
         const prompt = `Generate a concise, professional 2-sentence daily weather briefing for ${location.name}, ${location.country || ''}.
-Current temp: ${Math.round(current.temperature_2m)}°C, High: ${highTemp}°C, Low: ${lowTemp}°C.
-Rain probability: ${maxPrecipProb}%.
-Wind: ${windSpeed} km/h.
-Active alerts: ${headlineAlert || 'None'}.
+Current temperature: ${currentTemp == null ? 'unavailable' : currentTemp + '°C'}.
+Forecast high: ${highTemp == null ? 'unavailable' : highTemp + '°C'}; forecast low: ${lowTemp == null ? 'unavailable' : lowTemp + '°C'}.
+Peak rain probability in the next 12 hours: ${maxPrecipProb == null ? 'unavailable' : maxPrecipProb + '%'}.
+Wind speed: ${windSpeed == null ? 'unavailable' : windSpeed + ' km/h'}.
+Weather condition code: ${current?.weather_code ?? 'unavailable'}.
+Active alert records: ${headlineAlert || 'No alert records supplied; do not claim an official all-clear'}.
 Greeting: ${greetingTime}.
-Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations). Do NOT invent fake weather numbers.`;
+Use only supplied facts. Do not invent missing numbers, weather conditions, or official warnings.
+Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations).`;
 
         const aiRes = await ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
@@ -1132,15 +1167,23 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     return res.json({
       greeting: `${greetingTime}, ${location.name}`,
       locationName: location.name,
-      summary: `${location.name} is expecting a high of ${highTemp}°C and a low of ${lowTemp}°C today with ${getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()} conditions.`,
+      summary: (() => {
+        const conditions = current?.weather_code != null && current.weather_code >= 0
+          ? getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()
+          : 'conditions unavailable';
+        const temperatureRange = highTemp != null && lowTemp != null
+          ? 'a forecast high of ' + highTemp + '°C and low of ' + lowTemp + '°C'
+          : 'forecast high and low temperatures unavailable';
+        return location.name + ' has ' + temperatureRange + ', with ' + conditions + ' reported in the current data.';
+      })(),
       highTemp,
       lowTemp,
       rainLikelihood,
       windCondition,
       headlineAlert,
       recommendations: [
-        maxPrecipProb >= 40 ? 'Keep an umbrella handy for expected rainfall.' : 'Dress comfortably for prevailing temperatures.',
-        windSpeed > 30 ? 'Take care outdoors with loose equipment due to gusty winds.' : 'Enjoy safe and pleasant conditions throughout the day.'
+        maxPrecipProb != null && maxPrecipProb >= 40 ? 'Consider carrying rain protection based on the forecast rain probability.' : 'Check the hourly forecast before weather-sensitive outdoor plans.',
+        windSpeed != null && windSpeed > 30 ? 'Take care outdoors because elevated wind speeds are reported.' : 'Recheck the forecast for any later weather changes.'
       ],
       generatedAt: new Date().toISOString()
     });

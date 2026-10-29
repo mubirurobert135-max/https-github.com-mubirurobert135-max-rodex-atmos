@@ -67,42 +67,63 @@ export const Header: React.FC<HeaderProps> = ({
   const [isFadingOut, setIsFadingOut] = useState(false);
 
   useEffect(() => {
-    if (isInputFocused || searchTerm.length > 0) return;
+    if (isInputFocused || searchTerm.length > 0) {
+      setIsFadingOut(false);
+      return;
+    }
 
-    const interval = setInterval(() => {
+    let transitionTimer: number | undefined;
+    const interval = window.setInterval(() => {
       setIsFadingOut(true);
-      const timer = setTimeout(() => {
+      transitionTimer = window.setTimeout(() => {
         setPlaceholderIndex((prev) => (prev + 1) % PLACEHOLDER_MESSAGES.length);
         setIsFadingOut(false);
-      }, 350);
-      return () => clearTimeout(timer);
-    }, 3500);
+      }, 240);
+    }, 3800);
 
-    return () => clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      if (transitionTimer !== undefined) window.clearTimeout(transitionTimer);
+    };
   }, [isInputFocused, searchTerm, PLACEHOLDER_MESSAGES.length]);
 
-  // Debounced live geocoding search
+  // Debounced geocoding search; cancel stale requests so older results cannot replace newer queries.
   useEffect(() => {
-    if (!searchTerm.trim() || searchTerm.trim().length < 2) {
+    const query = searchTerm.trim();
+    if (query.length < 2) {
       setLiveSearchResults([]);
       setIsSearchingLive(false);
       return;
     }
 
+    const controller = new AbortController();
     setIsSearchingLive(true);
-    const timer = setTimeout(() => {
-      fetch(`/api/weather/geocoding-search?q=${encodeURIComponent(searchTerm.trim())}`)
-        .then((res) => res.json())
+    const timer = window.setTimeout(() => {
+      fetch(`/api/weather/geocoding-search?q=${encodeURIComponent(query)}`, {
+        signal: controller.signal
+      })
+        .then((res) => {
+          if (!res.ok) throw new Error(`Location search failed (${res.status})`);
+          return res.json();
+        })
         .then((data) => {
-          if (data && Array.isArray(data.results)) {
-            setLiveSearchResults(data.results);
+          if (!controller.signal.aborted) {
+            setLiveSearchResults(Array.isArray(data?.results) ? data.results : []);
           }
         })
-        .catch(() => {})
-        .finally(() => setIsSearchingLive(false));
+        .catch((error: unknown) => {
+          const aborted = error instanceof DOMException && error.name === 'AbortError';
+          if (!controller.signal.aborted && !aborted) setLiveSearchResults([]);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setIsSearchingLive(false);
+        });
     }, 300);
 
-    return () => clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [searchTerm]);
 
   const fallbackCities = SAMPLE_CITIES.filter(c => 

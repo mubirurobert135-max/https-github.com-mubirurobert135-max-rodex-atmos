@@ -1284,6 +1284,8 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
   const TTS_CACHE_TTL_MS = 10 * 60 * 1000;
   const TTS_CACHE_MAX_ENTRIES = 48;
   const TTS_CACHE_MAX_TEXT_LENGTH = 160;
+  const TTS_TOTAL_BUDGET_MS = 10000;
+  const TTS_REQUEST_TIMEOUT_MS = 6500;
 
   interface InternalSynthesisResult {
     audio: string | null;
@@ -1371,6 +1373,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         throw new Error('Gemini TTS Interactions API is unavailable in the installed SDK.');
       }
 
+      const remainingBudgetMs = TTS_TOTAL_BUDGET_MS - (Date.now() - tStart);
+      if (remainingBudgetMs < 900) throw new Error('Atmos TTS total time budget reached.');
+
       const interaction = await interactions.create({
         model,
         input: [{
@@ -1388,6 +1393,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         generation_config: {
           speech_config: [{ voice }]
         }
+      }, {
+        timeout_ms: Math.min(TTS_REQUEST_TIMEOUT_MS, remainingBudgetMs),
+        retries: 0
       });
 
       const outputAudio = interaction && interaction.output_audio;
@@ -1412,7 +1420,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     let usedVoiceId = ATMOS_SIGNATURE_VOICE_ID;
 
     for (const model of models) {
+      if (Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
       if (Date.now() < (ttsModelCooldowns.get(model.name) || 0)) continue;
+      let tierCooldownMs = model.cooldownMs;
 
       const primaryVoiceKey = model.name + ':' + ATMOS_SIGNATURE_VOICE_ID;
       if (Date.now() >= (ttsVoiceCooldowns.get(primaryVoiceKey) || 0)) {
@@ -1425,7 +1435,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         } catch (primaryError: any) {
           const errMsg = primaryError && primaryError.message ? primaryError.message : String(primaryError);
           const isQuotaError = /429|RESOURCE_EXHAUSTED|rate.?limit|quota/i.test(errMsg);
-          ttsVoiceCooldowns.set(primaryVoiceKey, Date.now() + (isQuotaError ? 15 : 10) * 60 * 1000);
+          const isTimeoutError = /timeout|timed out|deadline|time budget/i.test(errMsg);
+          tierCooldownMs = isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : tierCooldownMs);
+          ttsVoiceCooldowns.set(primaryVoiceKey, Date.now() + (isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : 10 * 60 * 1000)));
 
           if (isQuotaError) {
             ttsModelCooldowns.set(model.name, Date.now() + 15 * 60 * 1000);
@@ -1436,7 +1448,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         }
       }
 
-      if (audioData) break;
+      if (audioData || Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
 
       const fallbackVoiceKey = model.name + ':' + ATMOS_SIGNATURE_LIVE_VOICE;
       if (Date.now() >= (ttsVoiceCooldowns.get(fallbackVoiceKey) || 0)) {
@@ -1449,15 +1461,18 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
         } catch (fallbackError: any) {
           const errMsg = fallbackError && fallbackError.message ? fallbackError.message : String(fallbackError);
           const isQuotaError = /429|RESOURCE_EXHAUSTED|rate.?limit|quota/i.test(errMsg);
-          ttsVoiceCooldowns.set(fallbackVoiceKey, Date.now() + (isQuotaError ? 15 : 5) * 60 * 1000);
+          const isTimeoutError = /timeout|timed out|deadline|time budget/i.test(errMsg);
+          tierCooldownMs = isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : tierCooldownMs);
+          ttsVoiceCooldowns.set(fallbackVoiceKey, Date.now() + (isQuotaError ? 15 * 60 * 1000 : (isTimeoutError ? 30 * 1000 : 5 * 60 * 1000)));
           if (isQuotaError) ttsModelCooldowns.set(model.name, Date.now() + 15 * 60 * 1000);
           console.warn('[RODEX TTS] ' + model.name + ' ' + ATMOS_SIGNATURE_LIVE_VOICE + ' fallback unavailable:', errMsg.slice(0, 120));
         }
       }
 
       if (audioData) break;
+      if (Date.now() - tStart >= TTS_TOTAL_BUDGET_MS) break;
       if (Date.now() >= (ttsModelCooldowns.get(model.name) || 0)) {
-        ttsModelCooldowns.set(model.name, Date.now() + model.cooldownMs);
+        ttsModelCooldowns.set(model.name, Date.now() + tierCooldownMs);
       }
     }
 

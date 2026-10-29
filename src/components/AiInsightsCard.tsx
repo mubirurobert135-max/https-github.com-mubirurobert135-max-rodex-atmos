@@ -83,6 +83,7 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data, onOpenAssi
           ? 'Check the forecast UV index before extended sun exposure and stay hydrated.'
           : 'UV forecast data is unavailable; use appropriate sun protection during extended exposure.'
       });
+      setCacheKey(currentKey);
     } finally {
       setIsLoading(false);
     }

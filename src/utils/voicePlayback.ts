@@ -90,3 +90,18 @@ export async function getPreferredAtmosVoice(
   });
 }
 
+
+
+/** Build a consistent browser fallback utterance with the selected energetic voice. */
+export async function createAtmosBrowserUtterance(
+  text: string,
+  synthesis: SpeechSynthesis
+): Promise<SpeechSynthesisUtterance> {
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
+  utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
+  utterance.volume = 1;
+  const preferredVoice = await getPreferredAtmosVoice(synthesis);
+  if (preferredVoice) utterance.voice = preferredVoice;
+  return utterance;
+}

@@ -62,8 +62,22 @@ try {
   await searchInput.waitFor({ state: 'visible', timeout: 5000 });
 
   await page.setViewportSize({ width: 390, height: 844 });
+  const mobileNav = page.locator('nav[aria-label="Mobile Navigation"]');
+  const selectedBeforeMap = mobileNav.locator('button[aria-current="page"]');
+  if (await selectedBeforeMap.count() !== 1 || await selectedBeforeMap.getAttribute('aria-label') !== 'Weather Dashboard') {
+    throw new Error('Mobile dashboard tab does not expose a single accessible active state.');
+  }
+  const rootBottomPadding = await page.locator('#root').evaluate((el) => Number.parseFloat(getComputedStyle(el).paddingBottom));
+  if (rootBottomPadding < 90) {
+    throw new Error(`Mobile content lacks bottom clearance for the navigation dock (${rootBottomPadding}px).`);
+  }
+
   await page.getByRole('button', { name: 'Interactive Weather Map' }).click();
   await page.locator('.wx-reference-shell').waitFor({ state: 'detached', timeout: 10000 });
+  const selectedMapTab = mobileNav.locator('button[aria-current="page"]');
+  if (await selectedMapTab.count() !== 1 || await selectedMapTab.getAttribute('aria-label') !== 'Interactive Weather Map') {
+    throw new Error('Mobile map tab does not expose a single accessible active state.');
+  }
   await page.getByRole('button', { name: 'Weather Dashboard' }).click();
   await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 10000 });
 

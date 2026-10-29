@@ -131,11 +131,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
       return new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     }
   })();
-  const heroTitle = current.weather_code >= 95
-    ? 'Storm with Heavy Rain'
-    : current.weather_code >= 61 && current.weather_code <= 82
-      ? 'Storm with Heavy Rain'
-      : condition.label;
+  const heroTitle = condition.label;
   const rainChance = Math.max(0, ...nextHours.map((item) => item.probability));
   const maxTempText = formatTemp(maxTemperature, unit);
   const minTempText = formatTemp(minTemperature, unit);
@@ -289,7 +285,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
 
             <section className="wx-nearby-panel">
               <div className="wx-nearby-heading">
-                <div><span>Nearby forecast</span><small>Live conditions around the region</small></div>
+                <div><span>Regional forecast</span><small>Live conditions across selected cities</small></div>
                 <MapPinned className="h-4 w-4" />
               </div>
               {nearbyLoading && nearbyWeather.length === 0 ? (
@@ -310,7 +306,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
               }) : (
                 <div className="wx-nearby-empty">Nearby forecasts are temporarily unavailable.</div>
               )}
-              <button type="button" onClick={onOpenMap} className="wx-nearby-map-link"><MapPinned className="h-3.5 w-3.5" /> Explore all locations</button>
+              <button type="button" onClick={onOpenMap} className="wx-nearby-map-link"><MapPinned className="h-3.5 w-3.5" /> Explore weather map</button>
             </section>
           </aside>
         </div>

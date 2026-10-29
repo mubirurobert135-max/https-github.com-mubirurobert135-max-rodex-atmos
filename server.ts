@@ -32,8 +32,28 @@ interface ProviderUsage {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 250;
+const inFlightWeatherRequests = new Map<string, Promise<any>>();
 const providerUsageMap = new Map<string, ProviderUsage>();
+
+function normalizeWeatherQuery(query: string): string {
+  return query.trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',').toLocaleLowerCase();
+}
+
+function coordinateCacheKey(lat: number, lon: number): string {
+  return 'coords:' + lat.toFixed(3) + ',' + lon.toFixed(3);
+}
+
+function saveWeatherCache(cacheKey: string, data: any): void {
+  cache.delete(cacheKey);
+  cache.set(cacheKey, { timestamp: Date.now(), data });
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+  }
+}
 
 /**
  * Hourly window reset: Resets every 60 minutes (rolling interval from the start of each window).
@@ -319,7 +339,7 @@ async function startServer() {
     const q = typeof queryOrCoords === 'string' ? queryOrCoords : `${queryOrCoords.lat},${queryOrCoords.lon}`;
     const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=yes`;
     
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 6000);
     if (!res.ok) {
       const errBody = await res.text();
       throw new Error(`WeatherAPI error (${res.status}): ${errBody}`);
@@ -434,7 +454,7 @@ async function startServer() {
 
     if (typeof queryOrCoords === 'string') {
       const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(queryOrCoords)}&limit=1&appid=${apiKey}`;
-      const geoRes = await fetch(geoUrl);
+      const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
       const geoData = await geoRes.json();
       if (!geoData || geoData.length === 0) {
         throw new Error('City not found via OpenWeather geocoding');
@@ -449,7 +469,7 @@ async function startServer() {
     }
 
     const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
-    const forecastRes = await fetch(forecastUrl);
+    const forecastRes = await fetchWithTimeout(forecastUrl, {}, 6000);
     if (!forecastRes.ok) throw new Error(`OpenWeather error: ${forecastRes.statusText}`);
     const data = await forecastRes.json();
 
@@ -553,7 +573,7 @@ async function startServer() {
     const trySearch = async (term: string) => {
       try {
         const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=10&language=en&format=json`;
-        const geoRes = await fetch(geoUrl);
+        const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
         if (!geoRes.ok) return null;
         const geoData = await geoRes.json();
         return geoData.results && geoData.results.length > 0 ? geoData.results : null;
@@ -632,115 +652,6 @@ async function startServer() {
       clearTimeout(id);
       throw err;
     }
-  }
-
-  // Fallback weather generator when external Open-Meteo connection times out
-  function generateFallbackForecast(lat: number, lon: number, name: string, country = '', admin1 = '') {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const isDay = currentHour >= 6 && currentHour < 19 ? 1 : 0;
-    const baseTemp = Math.round(28 - Math.abs(lat) * 0.25);
-
-    const hourlyTime: string[] = [];
-    const hourlyTemp: number[] = [];
-    const hourlyPrecip: number[] = [];
-    const hourlyCode: number[] = [];
-    const hourlyIsDay: number[] = [];
-
-    for (let i = 0; i < 168; i++) {
-      const d = new Date(now.getTime() + i * 3600 * 1000);
-      hourlyTime.push(d.toISOString().slice(0, 13) + ':00');
-      const hour = d.getHours();
-      const dayFactor = Math.sin(((hour - 6) / 12) * Math.PI);
-      hourlyTemp.push(Math.round((baseTemp + (dayFactor > 0 ? dayFactor * 5 : dayFactor * 3)) * 10) / 10);
-      hourlyPrecip.push(Math.floor(Math.random() * 15));
-      hourlyCode.push(hour >= 6 && hour < 19 ? (Math.random() > 0.8 ? 2 : 0) : 0);
-      hourlyIsDay.push(hour >= 6 && hour < 19 ? 1 : 0);
-    }
-
-    const dailyTime: string[] = [];
-    const dailyCode: number[] = [];
-    const dailyMax: number[] = [];
-    const dailyMin: number[] = [];
-    const dailySunrise: string[] = [];
-    const dailySunset: string[] = [];
-    const dailyUv: number[] = [];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(now.getTime() + i * 86400 * 1000);
-      const dateStr = d.toISOString().slice(0, 10);
-      dailyTime.push(dateStr);
-      dailyCode.push(0);
-      dailyMax.push(baseTemp + 4);
-      dailyMin.push(baseTemp - 3);
-      dailySunrise.push(`${dateStr}T06:30`);
-      dailySunset.push(`${dateStr}T18:30`);
-      dailyUv.push(8.0);
-    }
-
-    const fallbackLocation = {
-      name: name || 'Local Area',
-      country: country || 'Uganda',
-      admin1,
-      latitude: lat,
-      longitude: lon,
-      timezone: 'Africa/Kampala'
-    };
-    const fallbackCurrent = {
-      time: now.toISOString().slice(0, 16),
-      interval: 900,
-      temperature_2m: baseTemp + 2,
-      relative_humidity_2m: 62,
-      apparent_temperature: baseTemp + 3,
-      is_day: isDay,
-      precipitation: 0,
-      weather_code: isDay ? 0 : 0,
-      wind_speed_10m: 7.5,
-      wind_direction_10m: 110,
-      surface_pressure: 1012
-    };
-    const fallbackHourly = {
-      time: hourlyTime,
-      temperature_2m: hourlyTemp,
-      precipitation_probability: hourlyPrecip,
-      weather_code: hourlyCode,
-      is_day: hourlyIsDay
-    };
-    const fallbackDaily = {
-      time: dailyTime,
-      weather_code: dailyCode,
-      temperature_2m_max: dailyMax,
-      temperature_2m_min: dailyMin,
-      sunrise: dailySunrise,
-      sunset: dailySunset,
-      uv_index_max: dailyUv
-    };
-    const alerts = processWeatherAlerts({
-      location: fallbackLocation,
-      current: fallbackCurrent,
-      hourly: fallbackHourly,
-      daily: fallbackDaily
-    });
-
-    return {
-      location: fallbackLocation,
-      weather: {
-        latitude: lat,
-        longitude: lon,
-        utc_offset_seconds: 10800,
-        timezone: 'Africa/Kampala',
-        current: fallbackCurrent,
-        hourly: fallbackHourly,
-        daily: fallbackDaily
-      },
-      alerts,
-      providerInfo: {
-        name: 'RODEX Offline Weather Engine',
-        credit: 'RODEX Atmospheric Predictive Engine',
-        disclaimer: 'Generated estimated weather profile due to external Open-Meteo timeout.'
-      },
-      source: 'live' as const
-    };
   }
 
   // Reverse geocoding helper using Nominatim with coordinates fallback
@@ -830,8 +741,8 @@ async function startServer() {
         source: 'live' as const
       };
     } catch (err: any) {
-      console.warn(`[Open-Meteo Fallback Activated] ${err.message || err}. Serving estimated weather for (${lat}, ${lon}).`);
-      return generateFallbackForecast(lat, lon, name || 'Kampala', country || 'Uganda', admin1);
+      console.warn(`[Open-Meteo Request Failed] ${err.message || err}. Letting the router try another provider.`);
+      throw err;
     }
   }
 
@@ -903,7 +814,7 @@ async function startServer() {
       }
 
       const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`;
-      const geoRes = await fetch(geoUrl);
+      const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
       if (!geoRes.ok) return res.json({ results: [] });
       const data = await geoRes.json();
       const results = (data.results || []).map((r: any) => ({
@@ -924,14 +835,14 @@ async function startServer() {
   // IP Geolocation Endpoint (2nd priority fallback in progressive location strategy)
   app.get('/api/weather/ip-location', async (req, res) => {
     try {
-      const ipRes = await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
+      const ipRes = await fetchWithTimeout('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
         headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' }
-      });
+      }, 4500);
       if (!ipRes.ok) {
         throw new Error('IP geolocation service unavailable');
       }
       const ipData = await ipRes.json();
-      if (ipData.status !== 'success' || !ipData.lat || !ipData.lon) {
+      if (ipData.status !== 'success' || !Number.isFinite(ipData.lat) || !Number.isFinite(ipData.lon)) {
         throw new Error(ipData.message || 'Could not resolve network location from IP');
       }
 
@@ -940,7 +851,7 @@ async function startServer() {
       const cityName = ipData.city || 'Network Location';
       const countryName = ipData.country || '';
 
-      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const cacheKey = coordinateCacheKey(lat, lon);
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI({ lat, lon });
@@ -951,9 +862,10 @@ async function startServer() {
         }
       }, cacheKey);
 
-      result.location.isApproximateNetwork = true;
-      result.location.detectedIP = ipData.query;
-      res.json(result);
+      res.json({
+        ...result,
+        location: { ...result.location, isApproximateNetwork: true, detectedIP: ipData.query }
+      });
     } catch (error: any) {
       console.warn('IP geolocation error, falling back:', error.message);
       res.status(503).json({
@@ -971,7 +883,7 @@ async function startServer() {
         return res.status(400).json({ error: 'Query parameter is required' });
       }
 
-      const cacheKey = `search:${query.toLowerCase().trim()}`;
+      const cacheKey = `search:${normalizeWeatherQuery(query)}`;
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI(query);
@@ -1002,11 +914,13 @@ async function startServer() {
       const lon = Number(req.query.lon);
       const cityName = (req.query.name as string) || 'Current Location';
 
-      if (isNaN(lat) || isNaN(lon)) {
-        return res.status(400).json({ error: 'Valid latitude and longitude are required' });
+      if (req.query.lat == null || req.query.lon == null ||
+          !Number.isFinite(lat) || !Number.isFinite(lon) ||
+          lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        return res.status(400).json({ error: 'Latitude must be between -90 and 90 and longitude between -180 and 180.' });
       }
 
-      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const cacheKey = coordinateCacheKey(lat, lon);
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI({ lat, lon });
@@ -1769,12 +1683,12 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
               if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[0]);
               else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[0]);
               else return await fetchOpenMeteo(comparisonCities[0]);
-            }, `search:${comparisonCities[0].toLowerCase().trim()}`),
+            }, `search:${normalizeWeatherQuery(comparisonCities[0])}`),
             routeForecastRequest(async (provider) => {
               if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[1]);
               else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[1]);
               else return await fetchOpenMeteo(comparisonCities[1]);
-            }, `search:${comparisonCities[1].toLowerCase().trim()}`)
+            }, `search:${normalizeWeatherQuery(comparisonCities[1])}`)
           ]);
           weatherFetchMs = Date.now() - tWeatherStart;
 
@@ -1818,7 +1732,7 @@ Compare current location against the selected map location directly and clearly.
         } else {
           try {
             const tWeatherStart = Date.now();
-            const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
+            const cacheKey = `search:${normalizeWeatherQuery(requestedCity)}`;
             const fetchedData = await routeForecastRequest(async (provider) => {
               if (provider.name === 'WeatherAPI.com') {
                 return await fetchWeatherAPI(requestedCity);

@@ -11,6 +11,7 @@ import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherMap } from './components/WeatherMap';
+import { Interactive3DGlobe } from './components/Interactive3DGlobe';
 import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboard';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { MobileNavBar } from './components/MobileNavBar';
@@ -22,6 +23,7 @@ import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigatio
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
+  const [mapDisplayMode, setMapDisplayMode] = useState<'map' | 'globe'>('map');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
   const [locationMode, setLocationMode] = useState<LocationMode>('gps');
@@ -409,35 +411,54 @@ export default function App() {
           <>
             {activeTab === 'map' ? (
               <div className="space-y-6 animate-fade-in">
-                {/* Interactive Weather Map Component */}
-                <WeatherMap
-                  currentWeatherData={weatherData}
-                  deviceLocationData={deviceLocationData}
-                  unit={unit}
-                  onSelectCoordinates={handleSelectCoordinates}
-                  onOpenAssistant={handleOpenAssistant}
-                  locationMode={locationMode}
-                  onMapContextChange={(mapLoc, layer) => {
-                    if (mapLoc) setMapContextLocation(mapLoc);
-                    if (layer) setActiveMapLayer(layer);
-                  }}
-                />
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-white">Explore weather around the world</h2>
+                    <p className="text-xs text-white/65 mt-1">Switch between the interactive map and 3D weather globe.</p>
+                  </div>
+                  <div className="flex items-center gap-1 p-1 rounded-xl border border-white/20 bg-white/8 backdrop-blur-xl" role="group" aria-label="Map display mode">
+                    <button type="button" onClick={() => setMapDisplayMode('map')} aria-pressed={mapDisplayMode === 'map'} className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${mapDisplayMode === 'map' ? 'bg-white/20 text-white shadow' : 'text-white/65 hover:text-white'}`}>2D map</button>
+                    <button type="button" onClick={() => setMapDisplayMode('globe')} aria-pressed={mapDisplayMode === 'globe'} className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${mapDisplayMode === 'globe' ? 'bg-white/20 text-white shadow' : 'text-white/65 hover:text-white'}`}>3D globe</button>
+                  </div>
+                </div>
 
-                {/* Hero Current Weather Summary under map */}
-                <CurrentWeatherCard 
-                  data={weatherData} 
-                  unit={unit} 
+                {mapDisplayMode === 'map' ? (
+                  <WeatherMap
+                    currentWeatherData={weatherData}
+                    deviceLocationData={deviceLocationData}
+                    unit={unit}
+                    onSelectCoordinates={handleSelectCoordinates}
+                    onOpenAssistant={handleOpenAssistant}
+                    locationMode={locationMode}
+                    onMapContextChange={(mapLoc, layer) => {
+                      if (mapLoc) setMapContextLocation(mapLoc);
+                      if (layer) setActiveMapLayer(layer);
+                    }}
+                  />
+                ) : (
+                  <div className="glass-panel-elevated rounded-3xl border border-white/15 overflow-hidden p-2 sm:p-4">
+                    <Interactive3DGlobe
+                      lat={weatherData.location.latitude}
+                      lon={weatherData.location.longitude}
+                      cityName={weatherData.location.name}
+                      country={weatherData.location.country}
+                      temperature={weatherData.weather.current.temperature_2m}
+                      condition={getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).label}
+                      unit={unit}
+                      onSelectCoordinates={handleSelectCoordinates}
+                    />
+                  </div>
+                )}
+
+                <CurrentWeatherCard
+                  data={weatherData}
+                  unit={unit}
                   onGetCurrentLocation={() => initializeStartupLocation(true)}
                   locationMode={locationMode}
                   isLoading={isLoading}
                 />
 
-                {/* Proactive Personalised Daily Weather Briefing */}
-                <DailyBriefingCard
-                  data={weatherData}
-                  onOpenAssistant={handleOpenAssistant}
-                  unit={unit}
-                />
+                <DailyBriefingCard data={weatherData} onOpenAssistant={handleOpenAssistant} unit={unit} />
               </div>
             ) : (
               <div className="space-y-5 animate-fade-in">

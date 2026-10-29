@@ -6,6 +6,8 @@ on:
       - ui/dribbble-weather-redesign
       - perf/weather-speed-accuracy
       - fix/vercel-preview-api-routing
+      - fix/preview-health-and-startup-errors
+      - main
       - design/white-purple-responsive
   workflow_dispatch:
 
@@ -71,6 +73,12 @@ jobs:
 
           node scripts/verify_weather_dashboard_visual.js
           node scripts/verify_voice_service.js
+
+      - name: Verify deployed Vercel website, API, and live weather
+        if: github.ref == 'refs/heads/main'
+        env:
+          RODEX_ATMOS_BASE_URL: https://https-github-com-mubirurobert135-ma.vercel.app
+        run: node scripts/verify_live_deployment.mjs
 
       - name: Upload desktop and mobile screenshots
         if: always()

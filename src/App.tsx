@@ -499,7 +499,8 @@ export default function App() {
 
       </main>
 
-      {/* Floating Action Button for RODEX AI Assistant (Hidden on mobile/tablet where MobileNavBar orb takes precedence) */}
+      {/* Keep the desktop floating assistant off the reference dashboard; its voice action is in the left rail. */}
+      {activeTab !== 'dashboard' && (
       <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden lg:flex">
         <button
           onClick={() => handleOpenAssistant()}
@@ -513,8 +514,9 @@ export default function App() {
           <span>RODEX AI (Voice & Chat)</span>
         </button>
       </aside>
+      )}
 
-      {/* RODEX AI Live Voice & Text Assistant Modal */}
+      {/* RODEX AI Live Voice & Text Assistant Modal */
       <AssistantModal
         isOpen={isAssistantOpen}
         onClose={() => setIsAssistantOpen(false)}

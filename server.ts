@@ -11,9 +11,15 @@ dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Shared Express app: Vercel's catch-all API function awaits route registration and invokes this app.
+// Shared Express application used by local development and explicit Vercel API functions.
 export const app = express();
-const isVercelRuntime = process.env.VERCEL === '1';
+
+// Vercel sets platform-specific environment values; use all documented runtime signals
+// instead of relying on one variable being present in every build/runtime configuration.
+const isVercelRuntime =
+  process.env.VERCEL === '1' ||
+  Boolean(process.env.VERCEL_ENV) ||
+  Boolean(process.env.VERCEL_URL);
 
 interface ProviderConfig {
   name: string;

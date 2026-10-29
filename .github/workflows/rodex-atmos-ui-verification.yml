@@ -8,8 +8,12 @@ on:
       - fix/vercel-preview-api-routing
       - fix/vercel-explicit-api-routes
       - fix/preview-health-and-startup-errors-v2
+      - fix/vercel-serverless-runtime-bootstrap
       - main
       - design/white-purple-responsive
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
@@ -74,6 +78,13 @@ jobs:
 
           node scripts/verify_weather_dashboard_visual.js
           node scripts/verify_voice_service.js
+
+      - name: Verify actual Vercel pull-request preview, API, and live weather
+        if: github.event_name == 'pull_request'
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: node scripts/verify_preview_deployment.mjs
 
       - name: Verify deployed Vercel website, API, and live weather
         if: github.ref == 'refs/heads/main'

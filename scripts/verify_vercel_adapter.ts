@@ -2,7 +2,10 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-process.env.VERCEL = '1';
+// Exercise the production-safe detection path when only Vercel's environment/URL signals exist.
+delete process.env.VERCEL;
+process.env.VERCEL_ENV = 'preview';
+process.env.VERCEL_URL = 'rodex-atmos-test.vercel.app';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => Promise<void> | void;
 

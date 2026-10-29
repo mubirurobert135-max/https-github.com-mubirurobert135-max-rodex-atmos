@@ -15,6 +15,16 @@ try {
   });
 
   const address = server.address() as AddressInfo;
+  const healthResponse = await fetch(`http://127.0.0.1:${address.port}/api/health`);
+  if (healthResponse.status !== 200) {
+    throw new Error(`Expected /api/health HTTP 200, received HTTP ${healthResponse.status}.`);
+  }
+  const health = await healthResponse.json() as { ok?: boolean; service?: string; runtime?: string };
+  if (health.ok !== true || health.service !== 'rodex-atmos-api' || health.runtime !== 'vercel') {
+    throw new Error(`Unexpected /api/health payload: ${JSON.stringify(health)}`);
+  }
+  console.log('PASS Vercel health endpoint: API initialized and reports the expected runtime.');
+
   const response = await fetch(
     `http://127.0.0.1:${address.port}/api/weather/coordinates?lat=91&lon=0`
   );

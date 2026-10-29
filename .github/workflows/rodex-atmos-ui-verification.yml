@@ -5,6 +5,7 @@ on:
     branches:
       - ui/dribbble-weather-redesign
       - perf/weather-speed-accuracy
+      - fix/vercel-preview-api-routing
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,9 @@ jobs:
 
       - name: Run unit tests
         run: bun test
+
+      - name: Verify Vercel serverless API adapter
+        run: bun run scripts/verify_vercel_adapter.ts
 
       - name: TypeScript check
         run: bun run lint

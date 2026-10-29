@@ -41,3 +41,9 @@ test('night-time clear and partly cloudy conditions use night themes', () => {
   assert.equal(getWeatherCondition(1, 0).theme, 'night');
   assert.equal(getWeatherCondition(2, 0).theme, 'night');
 });
+
+test('unknown weather codes are not presented as clear skies', () => {
+  const condition = getWeatherCondition(999);
+  assert.equal(condition.label, 'Conditions Unavailable');
+  assert.equal(condition.theme, 'overcast');
+});

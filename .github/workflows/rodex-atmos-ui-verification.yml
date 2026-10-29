@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - ui/dribbble-weather-redesign
+      - perf/weather-speed-accuracy
   workflow_dispatch:
 
 permissions:

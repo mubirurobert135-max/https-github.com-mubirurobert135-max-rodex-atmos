@@ -441,60 +441,80 @@ export default function App() {
               </div>
             ) : (
               <div className="space-y-6 animate-fade-in">
-                {/* Hero Current Weather */}
-                <CurrentWeatherCard 
-                  data={weatherData} 
-                  unit={unit} 
-                  onGetCurrentLocation={() => initializeStartupLocation(true)}
-                  locationMode={locationMode}
-                  isLoading={isLoading}
-                />
+                {/* Reference-led responsive weather dashboard grid */}
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 sm:gap-5 xl:gap-6 animate-fade-in">
+                  {/* Main weather hero */}
+                  <section className="xl:col-span-8 min-w-0" aria-label="Current weather overview">
+                    <CurrentWeatherCard
+                      data={weatherData}
+                      unit={unit}
+                      onGetCurrentLocation={() => initializeStartupLocation(true)}
+                      locationMode={locationMode}
+                      isLoading={isLoading}
+                    />
+                  </section>
 
-                {/* Proactive Personalised Daily Weather Briefing */}
-                <DailyBriefingCard
-                  data={weatherData}
-                  onOpenAssistant={handleOpenAssistant}
-                  unit={unit}
-                />
+                  {/* Atmospheric intelligence stays prominent beside the hero on desktop */}
+                  <section className="xl:col-span-4 min-w-0" aria-label="AI weather insights">
+                    <AiInsightsCard
+                      data={weatherData}
+                      onOpenAssistant={() => handleOpenAssistant()}
+                    />
+                  </section>
 
-                {/* Quick Map Teaser Banner */}
-                <div 
-                  onClick={() => setActiveTab('map')}
-                  className="glass-card rounded-3xl p-5 border border-sky-400/30 bg-gradient-to-r from-sky-500/20 via-indigo-600/20 to-purple-600/20 cursor-pointer flex flex-col sm:flex-row items-center justify-between gap-4 group"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-sky-500/30 border border-sky-400/40 flex items-center justify-center text-sky-300 group-hover:scale-110 transition-transform">
-                      <Globe className="w-6 h-6 animate-spin-slow" />
+                  {/* Full-width personal briefing */}
+                  <section className="xl:col-span-12 min-w-0" aria-label="Daily weather briefing">
+                    <DailyBriefingCard
+                      data={weatherData}
+                      onOpenAssistant={handleOpenAssistant}
+                      unit={unit}
+                    />
+                  </section>
+
+                  {/* Map stays one action away and remains connected to the real map view */}
+                  <section className="xl:col-span-12 min-w-0" aria-label="Interactive weather map shortcut">
+                    <div
+                      onClick={() => setActiveTab('map')}
+                      className="glass-card rounded-3xl p-4 sm:p-5 border border-sky-400/25 bg-gradient-to-r from-sky-500/15 via-indigo-600/15 to-purple-600/15 cursor-pointer flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group transition-colors hover:border-sky-300/45"
+                    >
+                      <div className="flex items-center gap-4 min-w-0">
+                        <div className="w-11 h-11 rounded-2xl bg-sky-500/20 border border-sky-400/30 flex items-center justify-center text-sky-300 shrink-0">
+                          <Globe className="w-5 h-5" aria-hidden="true" />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2 font-heading">
+                            <span>Interactive Weather Map</span>
+                          </h3>
+                          <p className="text-xs text-sky-100/70 mt-1 leading-relaxed">
+                            Explore temperature, precipitation and wind using the existing interactive map.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setActiveTab('map');
+                        }}
+                        className="px-4 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold text-xs shadow-lg transition shrink-0 min-h-[42px]"
+                      >
+                        Open weather map
+                      </button>
                     </div>
-                    <div>
-                      <h3 className="text-base font-bold text-white flex items-center gap-2 font-heading">
-                        <span>Interactive Weather Map & Location Explorer</span>
-                        <span className="px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-200 text-[10px] font-extrabold uppercase border border-sky-400/40">New</span>
-                      </h3>
-                      <p className="text-xs text-sky-200/80">
-                        Explore temperatures, rain probabilities, and wind speeds visually across the globe.
-                      </p>
-                    </div>
-                  </div>
-                  <button className="px-4 py-2 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs shadow-lg transition btn-hover-lift shrink-0">
-                    Open Weather Map
-                  </button>
+                  </section>
+
+                  {/* Forecast and atmospheric measurements form a balanced lower dashboard */}
+                  <section className="xl:col-span-7 min-w-0" aria-label="Hourly forecast">
+                    <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                  </section>
+                  <section className="xl:col-span-5 min-w-0" aria-label="Weather details">
+                    <WeatherDetailsGrid data={weatherData} unit={unit} />
+                  </section>
+
+                  <section className="xl:col-span-12 min-w-0" aria-label="Seven-day forecast">
+                    <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
+                  </section>
                 </div>
-
-                {/* AI Atmospheric Insights Card */}
-                <AiInsightsCard 
-                  data={weatherData} 
-                  onOpenAssistant={() => handleOpenAssistant()}
-                />
-
-                {/* Hourly Forecast */}
-                <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
-
-                {/* Details Grid (Sunrise, Wind, Pressure) */}
-                <WeatherDetailsGrid data={weatherData} unit={unit} />
-
-                {/* 7-Day Weekly Forecast */}
-                <WeeklyForecast daily={weatherData.weather.daily} unit={unit} />
               </div>
             )}
           </>

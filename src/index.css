@@ -625,4 +625,30 @@
 @media (prefers-reduced-motion: reduce) {
   .wx-reference-rail-button, .wx-nearby-city { transition: none; }
 }
+.wx-reference-quick-location {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 7px 9px;
+  color: rgba(255,255,255,.94);
+  border: 1px solid rgba(245,250,247,.24);
+  border-radius: 999px;
+  background: rgba(235,245,239,.09);
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .18s ease, border-color .18s ease;
+}
+.wx-reference-quick-location:hover:not(:disabled) {
+  background: rgba(235,245,239,.17);
+  border-color: rgba(245,250,247,.4);
+}
+.wx-reference-quick-location:disabled { opacity: .6; cursor: wait; }
+@media (max-width: 600px) {
+  .wx-reference-heading-right { flex-wrap: wrap; align-items: center; }
+  .wx-reference-quick-location { min-height: 34px; }
+}
 

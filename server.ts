@@ -564,58 +564,50 @@ async function startServer() {
 
     const clean = query.trim().replace(/^[,\s.-]+|[?!.,\s-]+$/g, '');
     const cleanLower = clean.toLowerCase();
+    const hasQualifier = clean.includes(',');
+    const parts = clean.split(',');
+    const cityPart = parts[0].trim();
+    const qualifier = parts.slice(1).join(',').trim().toLowerCase();
 
-    // Check direct verified dictionary first
-    if (defaultCities[cleanLower]) {
-      return defaultCities[cleanLower];
-    }
+    // Bundled coordinates are only safe for an exact, unqualified city query.
+    if (!hasQualifier && defaultCities[cleanLower]) return defaultCities[cleanLower];
 
     const trySearch = async (term: string) => {
       try {
-        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=10&language=en&format=json`;
+        const geoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(term) + '&count=10&language=en&format=json';
         const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
         if (!geoRes.ok) return null;
         const geoData = await geoRes.json();
         return geoData.results && geoData.results.length > 0 ? geoData.results : null;
-      } catch (err) {
+      } catch {
         return null;
       }
     };
 
-    // Step 1: Search exact query in Open-Meteo geocoding API
-    let results = await trySearch(clean);
-
-    // Step 2: If query contains a comma (e.g., "Kampala, Uganda"), search the city part and match country
-    if (!results && clean.includes(',')) {
-      const parts = clean.split(',');
-      const cityPart = parts[0].trim();
-      const countryPart = parts.slice(1).join(',').trim().toLowerCase();
-      results = await trySearch(cityPart);
-      if (results && countryPart) {
-        const matched = results.find((r: any) => 
-          r.country?.toLowerCase().includes(countryPart) || 
-          r.country_code?.toLowerCase() === countryPart ||
-          r.admin1?.toLowerCase().includes(countryPart)
-        );
-        if (matched) {
-          return {
-            lat: matched.latitude,
-            lon: matched.longitude,
-            name: matched.name,
-            country: matched.country || '',
-            admin1: matched.admin1 || '',
-            timezone: matched.timezone || 'auto'
-          };
-        }
+    if (hasQualifier) {
+      const candidates = await trySearch(cityPart);
+      const matched = candidates?.find((r: any) =>
+        [r.country, r.country_code, r.admin1, r.admin2].some((value: unknown) =>
+          typeof value === 'string' && value.toLowerCase().includes(qualifier)
+        )
+      );
+      if (matched) {
+        return {
+          lat: matched.latitude,
+          lon: matched.longitude,
+          name: matched.name,
+          country: matched.country || '',
+          admin1: matched.admin1 || '',
+          timezone: matched.timezone || 'auto'
+        };
       }
+      throw new Error('Location "' + query + '" could not be resolved in the requested country or region.');
     }
 
-    // Step 3: Strip common trailing geographic words like "city", "town", "district"
+    let results = await trySearch(clean);
     if (!results && /\b(city|town|province|state|district|area|region)\b/i.test(clean)) {
       const stripped = clean.replace(/\b(city|town|province|state|district|area|region)\b/gi, '').trim();
-      if (stripped.length >= 2) {
-        results = await trySearch(stripped);
-      }
+      if (stripped.length >= 2) results = await trySearch(stripped);
     }
 
     if (results && results.length > 0) {
@@ -630,14 +622,7 @@ async function startServer() {
       };
     }
 
-    // Check if cleanLower contains any key in defaultCities
-    for (const [key, val] of Object.entries(defaultCities)) {
-      if (cleanLower.includes(key)) {
-        return val;
-      }
-    }
-
-    throw new Error(`Location "${query}" could not be resolved via Open-Meteo geocoding.`);
+    throw new Error('Location "' + query + '" could not be resolved via Open-Meteo geocoding.');
   }
 
   // Helper for fetch with timeout (6000ms default)
@@ -746,63 +731,88 @@ async function startServer() {
     }
   }
 
-  function mapWeatherAPIcode(code: number, isDay: number): number {
-    if (code === 1000) return isDay ? 0 : 0;
-    if ([1003, 1006, 1009].includes(code)) return 2;
-    if ([1030, 1135, 1147].includes(code)) return 45;
-    if ([1063, 1150, 1153, 1180, 1183, 1186, 1189].includes(code)) return 61;
-    if ([1192, 1195, 1240, 1243].includes(code)) return 65;
-    if ([1066, 1114, 1210, 1213, 1216, 1219, 1222, 1225].includes(code)) return 71;
+  function mapWeatherAPIcode(code: number, _isDay: number): number {
+    if (code === 1000) return 0;
+    if (code === 1003) return 2;
+    if ([1006, 1009].includes(code)) return 3;
+    if (code === 1030 || code === 1135) return 45;
+    if (code === 1147) return 48;
+    if ([1072, 1168].includes(code)) return 56;
+    if (code === 1171) return 57;
+    if ([1150, 1153].includes(code)) return 51;
+    if ([1063, 1180, 1183].includes(code)) return 61;
+    if ([1186, 1189].includes(code)) return 63;
+    if ([1192, 1195].includes(code)) return 65;
+    if (code === 1198) return 66;
+    if (code === 1201) return 67;
+    if ([1066, 1069, 1114, 1117, 1204, 1207, 1210, 1213].includes(code)) return 71;
+    if ([1216, 1219, 1222].includes(code)) return 73;
+    if (code === 1225) return 75;
+    if (code === 1237) return 77;
+    if ([1240, 1249, 1261].includes(code)) return 80;
+    if ([1243, 1252, 1264].includes(code)) return 81;
+    if (code === 1246) return 82;
+    if (code === 1255) return 85;
+    if (code === 1258) return 86;
     if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 95;
-    return 0;
+    return -1;
   }
 
-  function mapOpenWeatherCode(conditionId: number): number {
-    if (!conditionId) return 0;
+  function mapOpenWeatherCode(conditionId?: number): number {
+    if (conditionId == null || !Number.isFinite(conditionId)) return -1;
     if (conditionId >= 200 && conditionId < 300) return 95;
-    if (conditionId >= 300 && conditionId < 500) return 51;
-    if (conditionId >= 500 && conditionId < 600) return 61;
-    if (conditionId >= 600 && conditionId < 700) return 71;
+    if (conditionId >= 300 && conditionId < 400) return 51;
+    if (conditionId >= 500 && conditionId < 600) return conditionId >= 502 ? 65 : 61;
+    if (conditionId >= 600 && conditionId < 700) return conditionId >= 602 ? 75 : 71;
     if (conditionId >= 700 && conditionId < 800) return 45;
     if (conditionId === 800) return 0;
-    if (conditionId > 800) return 2;
-    return 0;
+    if (conditionId === 801) return 1;
+    if (conditionId === 802) return 2;
+    if (conditionId >= 803 && conditionId < 900) return 3;
+    return -1;
   }
 
-  // Router dispatcher with Cache, Quota Budgets, Health, & Failover
+  // Bounded LRU cache, request coalescing, and provider failover reduce latency and duplicate API usage.
   async function routeForecastRequest(fetcher: (provider: ProviderConfig) => Promise<any>, cacheKey: string) {
-    if (cache.has(cacheKey)) {
-      const cached = cache.get(cacheKey)!;
-      if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        console.log(`[Cache Hit] Serving forecast from 10-minute cache for key: ${cacheKey}`);
-        return cached.data; // Cached responses do NOT count as outbound provider requests
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      cache.delete(cacheKey);
+      cache.set(cacheKey, cached);
+      return cached.data;
+    }
+
+    const inFlight = inFlightWeatherRequests.get(cacheKey);
+    if (inFlight) return inFlight;
+
+    const request = (async () => {
+      const eligibleProviders = getEligibleProviders();
+      if (eligibleProviders.length === 0) {
+        throw new Error('Temporary Weather Service Notice: All weather providers have reached their hourly usage budgets or are temporarily cooling down due to recent errors. Please try again shortly.');
       }
-    }
 
-    const eligibleProviders = getEligibleProviders();
-    if (eligibleProviders.length === 0) {
-      throw new Error('Temporary Weather Service Notice: All weather providers have reached their hourly usage budgets or are temporarily cooling down due to recent errors. Please try again shortly.');
-    }
-
-    let lastError: any = null;
-    for (const provider of eligibleProviders) {
-      try {
-        console.log(`[Outbound Call Attempt] Routing weather request through provider: ${provider.name}`);
-        // Count every actual outbound attempt before sending it (whether it succeeds or fails)
-        recordProviderAttempt(provider.name);
-        
-        const result = await fetcher(provider);
-        recordProviderSuccess(provider.name);
-        cache.set(cacheKey, { timestamp: Date.now(), data: result });
-        return result;
-      } catch (err: any) {
-        console.warn(`[Provider Failure] Provider ${provider.name} failed:`, err.message);
-        recordProviderError(provider.name);
-        lastError = err;
+      let lastError: any = null;
+      for (const provider of eligibleProviders) {
+        try {
+          recordProviderAttempt(provider.name);
+          const result = await fetcher(provider);
+          recordProviderSuccess(provider.name);
+          saveWeatherCache(cacheKey, result);
+          return result;
+        } catch (err: any) {
+          console.warn('[Provider Failure] Provider ' + provider.name + ' failed:', err.message);
+          recordProviderError(provider.name);
+          lastError = err;
+        }
       }
-    }
+      throw lastError || new Error('All eligible weather providers failed.');
+    })();
 
-    throw lastError || new Error('All eligible weather providers failed.');
+    inFlightWeatherRequests.set(cacheKey, request);
+    try {
+      return await request;
+    } finally {
+      if (inFlightWeatherRequests.get(cacheKey) === request) inFlightWeatherRequests.delete(cacheKey);
+    }
   }
 
   // Geocoding Autocomplete Search Endpoint for Header

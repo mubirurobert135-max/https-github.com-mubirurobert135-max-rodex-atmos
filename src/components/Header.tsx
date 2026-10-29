@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="w-full py-3 px-3 sm:px-6 lg:px-8 border-b border-white/10 lg:border-b-0 bg-[#070e1c]/80 lg:bg-transparent backdrop-blur-2xl sticky top-0 z-50 transition-all">
+    <header className={`w-full py-2.5 px-3 sm:px-6 lg:px-8 ${activeTab === 'dashboard' ? 'border-b-0 bg-transparent' : 'border-b border-white/10 bg-[#070e1c]/75'} backdrop-blur-xl sticky top-0 z-50 transition-all`}>
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
         
         {/* Brand Logo & Title */}
@@ -138,14 +138,16 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-indigo-600 to-emerald-500 flex items-center justify-center shadow-lg shadow-sky-500/20 text-white font-bold text-lg shrink-0">
             <Compass className="w-5 h-5 sm:w-6 sm:h-6 animate-spin-slow" />
           </div>
-          <div className="hidden sm:block">
-            <h1 className="text-lg sm:text-xl font-black tracking-wide text-white flex items-center gap-1.5 font-heading">
-              RODEX <span className="text-sky-300 font-light">Atmos</span>
-            </h1>
-            <p className="text-[11px] text-sky-200/70 font-medium font-body leading-none mt-0.5">
-              Understand your day
-            </p>
-          </div>
+          {activeTab !== 'dashboard' && (
+            <div className="hidden sm:block">
+              <h1 className="text-lg sm:text-xl font-black tracking-wide text-white flex items-center gap-1.5 font-heading">
+                RODEX <span className="text-sky-300 font-light">Atmos</span>
+              </h1>
+              <p className="text-[11px] text-sky-200/70 font-medium font-body leading-none mt-0.5">
+                Understand your day
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Desktop Navigation Tabs */}

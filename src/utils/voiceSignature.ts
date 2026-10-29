@@ -10,8 +10,8 @@ export const ATMOS_SIGNATURE_VOICE_ID = 'voice_nv4v693k2132';
 export const ATMOS_SIGNATURE_VOICE_NAME = 'RODEX Atmos Signature';
 export const ATMOS_SIGNATURE_GENDER = 'female';
 export const ATMOS_SIGNATURE_TTS_MODEL = 'gemini-3.8-flash-lite-tts';
-export const ATMOS_SIGNATURE_LIVE_VOICE = 'Aoede';
-export const ATMOS_SIGNATURE_STYLE = 'Warm, confident, personable, lightly playful, clear and concise';
+export const ATMOS_SIGNATURE_LIVE_VOICE = 'Laomedeia';
+export const ATMOS_SIGNATURE_STYLE = 'Bright, warm, feminine, upbeat and expressive; brisk conversational pace, crisp articulation, lively inflection and a playful spark; never flat or sleepy.';
 export const ATMOS_SIGNATURE_AUDITION_URL = '/atmos-signature-audition.wav';
 
 export interface VoiceMetadata {
@@ -37,7 +37,7 @@ export const ATMOS_SIGNATURE_METADATA: VoiceMetadata = {
   type: 'prompted',
   ttsModel: ATMOS_SIGNATURE_TTS_MODEL,
   liveVoice: ATMOS_SIGNATURE_LIVE_VOICE,
-  description: 'An original, distinctive feminine voice for a premium modern AI assistant. Warm, sophisticated, confident and charismatic, with a bright playful sparkle and understated glamour.',
+  description: 'A modern feminine assistant voice with warm brightness, upbeat energy, expressive natural rhythm, crisp articulation and a confident playful spark.',
   hasAuditionSample: true,
   auditionUrl: ATMOS_SIGNATURE_AUDITION_URL
 };

@@ -32,8 +32,38 @@ interface ProviderUsage {
 }
 
 const cache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+const CACHE_TTL_MS = 10 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 250;
+const inFlightWeatherRequests = new Map<string, Promise<any>>();
 const providerUsageMap = new Map<string, ProviderUsage>();
+
+function normalizeWeatherQuery(query: string): string {
+  return query.trim().replace(/\s+/g, ' ').replace(/\s*,\s*/g, ',').toLocaleLowerCase();
+}
+
+function coordinateCacheKey(lat: number, lon: number): string {
+  return 'coords:' + lat.toFixed(3) + ',' + lon.toFixed(3);
+}
+
+function saveWeatherCache(cacheKey: string, data: any): void {
+  cache.delete(cacheKey);
+  cache.set(cacheKey, { timestamp: Date.now(), data });
+  while (cache.size > CACHE_MAX_ENTRIES) {
+    const oldestKey = cache.keys().next().value;
+    if (oldestKey === undefined) break;
+    cache.delete(oldestKey);
+  }
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(label + ' timed out after ' + timeoutMs + 'ms')), timeoutMs);
+    promise.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (error) => { clearTimeout(timer); reject(error); }
+    );
+  });
+}
 
 /**
  * Hourly window reset: Resets every 60 minutes (rolling interval from the start of each window).
@@ -319,7 +349,7 @@ async function startServer() {
     const q = typeof queryOrCoords === 'string' ? queryOrCoords : `${queryOrCoords.lat},${queryOrCoords.lon}`;
     const url = `https://api.weatherapi.com/v1/forecast.json?key=${apiKey}&q=${encodeURIComponent(q)}&days=7&aqi=no&alerts=yes`;
     
-    const res = await fetch(url);
+    const res = await fetchWithTimeout(url, {}, 6000);
     if (!res.ok) {
       const errBody = await res.text();
       throw new Error(`WeatherAPI error (${res.status}): ${errBody}`);
@@ -422,7 +452,8 @@ async function startServer() {
     };
   }
 
-  // Helper to fetch weather via OpenWeather
+  // Optional OpenWeather integration: current observations come from the current-conditions endpoint,
+  // while daily ranges are derived from actual forecast samples (never current temperature +/- a guess).
   async function fetchOpenWeather(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     const apiKey = process.env.OPENWEATHER_API_KEY;
     if (!apiKey) throw new Error('OPENWEATHER_API_KEY not configured');
@@ -433,10 +464,11 @@ async function startServer() {
     let country = '';
 
     if (typeof queryOrCoords === 'string') {
-      const geoUrl = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(queryOrCoords)}&limit=1&appid=${apiKey}`;
-      const geoRes = await fetch(geoUrl);
+      const geoUrl = 'https://api.openweathermap.org/geo/1.0/direct?q=' + encodeURIComponent(queryOrCoords) + '&limit=1&appid=' + apiKey;
+      const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
+      if (!geoRes.ok) throw new Error('OpenWeather geocoding failed: HTTP ' + geoRes.status);
       const geoData = await geoRes.json();
-      if (!geoData || geoData.length === 0) {
+      if (!Array.isArray(geoData) || geoData.length === 0) {
         throw new Error('City not found via OpenWeather geocoding');
       }
       lat = geoData[0].lat;
@@ -448,23 +480,40 @@ async function startServer() {
       lon = queryOrCoords.lon;
     }
 
-    const forecastUrl = `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&units=metric&appid=${apiKey}`;
-    const forecastRes = await fetch(forecastUrl);
-    if (!forecastRes.ok) throw new Error(`OpenWeather error: ${forecastRes.statusText}`);
-    const data = await forecastRes.json();
+    const currentUrl = 'https://api.openweathermap.org/data/2.5/weather?lat=' + lat + '&lon=' + lon + '&units=metric&appid=' + apiKey;
+    const forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast?lat=' + lat + '&lon=' + lon + '&units=metric&appid=' + apiKey;
+    const [currentRes, forecastRes] = await Promise.all([
+      fetchWithTimeout(currentUrl, {}, 6000),
+      fetchWithTimeout(forecastUrl, {}, 6000)
+    ]);
+    if (!currentRes.ok) throw new Error('OpenWeather current conditions failed: HTTP ' + currentRes.status);
+    if (!forecastRes.ok) throw new Error('OpenWeather forecast failed: HTTP ' + forecastRes.status);
 
-    const currentItem = data.list[0] || {};
+    const currentData = await currentRes.json();
+    const forecastData = await forecastRes.json();
+    if (!Array.isArray(forecastData.list) || forecastData.list.length === 0) {
+      throw new Error('OpenWeather returned no forecast samples');
+    }
+
+    const timezoneOffset = Number.isFinite(currentData.timezone) ? currentData.timezone : 0;
+    const currentTimestamp = Number.isFinite(currentData.dt) ? currentData.dt : Math.floor(Date.now() / 1000);
+    const sunriseTimestamp = currentData.sys?.sunrise;
+    const sunsetTimestamp = currentData.sys?.sunset;
+    const isDay = Number.isFinite(sunriseTimestamp) && Number.isFinite(sunsetTimestamp)
+      ? (currentTimestamp >= sunriseTimestamp && currentTimestamp < sunsetTimestamp ? 1 : 0)
+      : 1;
+    const currentWeatherCode = mapOpenWeatherCode(currentData.weather?.[0]?.id);
     const current = {
-      time: currentItem.dt_txt || new Date().toISOString(),
-      temperature_2m: currentItem.main?.temp || 20,
-      relative_humidity_2m: currentItem.main?.humidity || 50,
-      apparent_temperature: currentItem.main?.feels_like || 20,
-      is_day: 1,
-      precipitation: currentItem.rain?.['3h'] || 0,
-      weather_code: mapOpenWeatherCode(currentItem.weather?.[0]?.id),
-      wind_speed_10m: (currentItem.wind?.speed || 3) * 3.6,
-      wind_direction_10m: currentItem.wind?.deg || 0,
-      surface_pressure: currentItem.main?.pressure || 1013
+      time: new Date(currentTimestamp * 1000).toISOString(),
+      temperature_2m: Number.isFinite(currentData.main?.temp) ? currentData.main.temp : null,
+      relative_humidity_2m: Number.isFinite(currentData.main?.humidity) ? currentData.main.humidity : null,
+      apparent_temperature: Number.isFinite(currentData.main?.feels_like) ? currentData.main.feels_like : null,
+      is_day: isDay,
+      precipitation: Number.isFinite(currentData.rain?.['1h']) ? currentData.rain['1h'] : 0,
+      weather_code: currentWeatherCode,
+      wind_speed_10m: Number.isFinite(currentData.wind?.speed) ? currentData.wind.speed * 3.6 : null,
+      wind_direction_10m: Number.isFinite(currentData.wind?.deg) ? currentData.wind.deg : null,
+      surface_pressure: Number.isFinite(currentData.main?.pressure) ? currentData.main.pressure : null
     };
 
     const hourlyTimes: string[] = [];
@@ -472,56 +521,100 @@ async function startServer() {
     const hourlyPrecipProb: number[] = [];
     const hourlyCodes: number[] = [];
     const hourlyIsDay: number[] = [];
+    const dailyByDate = new Map<string, { temps: number[]; codes: number[]; codeHours: number[] }>();
 
-    data.list.forEach((item: any) => {
-      hourlyTimes.push(item.dt_txt);
-      hourlyTemps.push(item.main?.temp);
-      hourlyPrecipProb.push(Math.round((item.pop || 0) * 100));
-      hourlyCodes.push(mapOpenWeatherCode(item.weather?.[0]?.id));
+    for (const item of forecastData.list) {
+      const timestamp = Number.isFinite(item.dt) ? item.dt : null;
+      if (timestamp == null) continue;
+      const localDate = new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(0, 10);
+      const localHour = Number(new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(11, 13));
+      const temp = Number.isFinite(item.main?.temp) ? item.main.temp : null;
+      const code = mapOpenWeatherCode(item.weather?.[0]?.id);
+
+      // OpenWeather's standard forecast feed provides 3-hour samples, not one-hour samples.
+      hourlyTimes.push(new Date(timestamp * 1000).toISOString());
+      hourlyTemps.push(temp == null ? Number.NaN : temp);
+      hourlyPrecipProb.push(Number.isFinite(item.pop) ? Math.round(item.pop * 100) : Number.NaN);
+      hourlyCodes.push(code);
       hourlyIsDay.push(1);
-    });
 
-    const alerts = processWeatherAlerts({
-      location: { name: data.city?.name || name, country: data.city?.country || country },
-      current,
-      hourly: { time: hourlyTimes, temperature_2m: hourlyTemps, precipitation_probability: hourlyPrecipProb, weather_code: hourlyCodes, is_day: hourlyIsDay },
-      daily: { time: [new Date().toISOString().split('T')[0]], weather_code: [current.weather_code], temperature_2m_max: [current.temperature_2m + 3], temperature_2m_min: [current.temperature_2m - 3], sunrise: ['06:00'], sunset: ['18:00'], uv_index_max: [5] }
-    });
+      if (!dailyByDate.has(localDate)) dailyByDate.set(localDate, { temps: [], codes: [], codeHours: [] });
+      const day = dailyByDate.get(localDate)!;
+      if (temp != null) day.temps.push(temp);
+      if (code >= 0) {
+        day.codes.push(code);
+        day.codeHours.push(localHour);
+      }
+    }
+
+    const dailyTimes = Array.from(dailyByDate.keys()).sort();
+    const dailyCodes: number[] = [];
+    const dailyMax: number[] = [];
+    const dailyMin: number[] = [];
+    const dailySunrise: string[] = [];
+    const dailySunset: string[] = [];
+
+    const formatOffsetTime = (timestamp: unknown): string => {
+      if (typeof timestamp !== 'number' || !Number.isFinite(timestamp)) return 'Unavailable';
+      return new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(11, 16);
+    };
+
+    for (const date of dailyTimes) {
+      const day = dailyByDate.get(date)!;
+      // Use the available samples closest to local noon to represent a day's reported condition.
+      let representativeCode = -1;
+      if (day.codes.length) {
+        const closestNoonIndex = day.codeHours.reduce((bestIndex, hour, index) =>
+          Math.abs(hour - 12) < Math.abs(day.codeHours[bestIndex] - 12) ? index : bestIndex, 0);
+        representativeCode = day.codes[closestNoonIndex];
+      }
+      dailyCodes.push(representativeCode);
+      dailyMax.push(day.temps.length ? Math.max(...day.temps) : Number.NaN);
+      dailyMin.push(day.temps.length ? Math.min(...day.temps) : Number.NaN);
+      if (date === new Date((currentTimestamp + timezoneOffset) * 1000).toISOString().slice(0, 10)) {
+        dailySunrise.push(formatOffsetTime(sunriseTimestamp));
+        dailySunset.push(formatOffsetTime(sunsetTimestamp));
+      } else {
+        dailySunrise.push('Unavailable');
+        dailySunset.push('Unavailable');
+      }
+    }
+
+    const location = {
+      name: currentData.name || forecastData.city?.name || name,
+      country: currentData.sys?.country || forecastData.city?.country || country,
+      admin1: '',
+      latitude: lat,
+      longitude: lon,
+      timezone: 'UTC'
+    };
+    const hourly = {
+      time: hourlyTimes,
+      temperature_2m: hourlyTemps,
+      precipitation_probability: hourlyPrecipProb,
+      weather_code: hourlyCodes,
+      is_day: hourlyIsDay
+    };
+    const daily = {
+      time: dailyTimes,
+      weather_code: dailyCodes,
+      temperature_2m_max: dailyMax,
+      temperature_2m_min: dailyMin,
+      sunrise: dailySunrise,
+      sunset: dailySunset,
+      // This OpenWeather endpoint does not provide UV forecasts; don't fabricate them.
+      uv_index_max: [] as number[]
+    };
+    const alerts = processWeatherAlerts({ location, current, hourly, daily });
 
     return {
-      location: {
-        name: data.city?.name || name,
-        country: data.city?.country || country,
-        admin1: '',
-        latitude: lat,
-        longitude: lon,
-        timezone: 'UTC'
-      },
-      weather: {
-        timezone: 'UTC',
-        current,
-        hourly: {
-          time: hourlyTimes,
-          temperature_2m: hourlyTemps,
-          precipitation_probability: hourlyPrecipProb,
-          weather_code: hourlyCodes,
-          is_day: hourlyIsDay
-        },
-        daily: {
-          time: [new Date().toISOString().split('T')[0]],
-          weather_code: [current.weather_code],
-          temperature_2m_max: [current.temperature_2m + 3],
-          temperature_2m_min: [current.temperature_2m - 3],
-          sunrise: ['06:00'],
-          sunset: ['18:00'],
-          uv_index_max: [5]
-        }
-      },
+      location,
+      weather: { timezone: 'UTC', current, hourly, daily },
       alerts,
       providerInfo: {
         name: 'OpenWeather',
         credit: 'Powered by OpenWeather',
-        disclaimer: 'OpenWeather commercial API subscription.'
+        disclaimer: 'Current observations are from OpenWeather; daily ranges are derived from available 3-hour forecast samples. UV forecast data is unavailable in this feed.'
       },
       source: 'live' as const
     };
@@ -544,58 +637,50 @@ async function startServer() {
 
     const clean = query.trim().replace(/^[,\s.-]+|[?!.,\s-]+$/g, '');
     const cleanLower = clean.toLowerCase();
+    const hasQualifier = clean.includes(',');
+    const parts = clean.split(',');
+    const cityPart = parts[0].trim();
+    const qualifier = parts.slice(1).join(',').trim().toLowerCase();
 
-    // Check direct verified dictionary first
-    if (defaultCities[cleanLower]) {
-      return defaultCities[cleanLower];
-    }
+    // Bundled coordinates are only safe for an exact, unqualified city query.
+    if (!hasQualifier && defaultCities[cleanLower]) return defaultCities[cleanLower];
 
     const trySearch = async (term: string) => {
       try {
-        const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(term)}&count=10&language=en&format=json`;
-        const geoRes = await fetch(geoUrl);
+        const geoUrl = 'https://geocoding-api.open-meteo.com/v1/search?name=' + encodeURIComponent(term) + '&count=10&language=en&format=json';
+        const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
         if (!geoRes.ok) return null;
         const geoData = await geoRes.json();
         return geoData.results && geoData.results.length > 0 ? geoData.results : null;
-      } catch (err) {
+      } catch {
         return null;
       }
     };
 
-    // Step 1: Search exact query in Open-Meteo geocoding API
-    let results = await trySearch(clean);
-
-    // Step 2: If query contains a comma (e.g., "Kampala, Uganda"), search the city part and match country
-    if (!results && clean.includes(',')) {
-      const parts = clean.split(',');
-      const cityPart = parts[0].trim();
-      const countryPart = parts.slice(1).join(',').trim().toLowerCase();
-      results = await trySearch(cityPart);
-      if (results && countryPart) {
-        const matched = results.find((r: any) => 
-          r.country?.toLowerCase().includes(countryPart) || 
-          r.country_code?.toLowerCase() === countryPart ||
-          r.admin1?.toLowerCase().includes(countryPart)
-        );
-        if (matched) {
-          return {
-            lat: matched.latitude,
-            lon: matched.longitude,
-            name: matched.name,
-            country: matched.country || '',
-            admin1: matched.admin1 || '',
-            timezone: matched.timezone || 'auto'
-          };
-        }
+    if (hasQualifier) {
+      const candidates = await trySearch(cityPart);
+      const matched = candidates?.find((r: any) =>
+        [r.country, r.country_code, r.admin1, r.admin2].some((value: unknown) =>
+          typeof value === 'string' && value.toLowerCase().includes(qualifier)
+        )
+      );
+      if (matched) {
+        return {
+          lat: matched.latitude,
+          lon: matched.longitude,
+          name: matched.name,
+          country: matched.country || '',
+          admin1: matched.admin1 || '',
+          timezone: matched.timezone || 'auto'
+        };
       }
+      throw new Error('Location "' + query + '" could not be resolved in the requested country or region.');
     }
 
-    // Step 3: Strip common trailing geographic words like "city", "town", "district"
+    let results = await trySearch(clean);
     if (!results && /\b(city|town|province|state|district|area|region)\b/i.test(clean)) {
       const stripped = clean.replace(/\b(city|town|province|state|district|area|region)\b/gi, '').trim();
-      if (stripped.length >= 2) {
-        results = await trySearch(stripped);
-      }
+      if (stripped.length >= 2) results = await trySearch(stripped);
     }
 
     if (results && results.length > 0) {
@@ -610,14 +695,7 @@ async function startServer() {
       };
     }
 
-    // Check if cleanLower contains any key in defaultCities
-    for (const [key, val] of Object.entries(defaultCities)) {
-      if (cleanLower.includes(key)) {
-        return val;
-      }
-    }
-
-    throw new Error(`Location "${query}" could not be resolved via Open-Meteo geocoding.`);
+    throw new Error('Location "' + query + '" could not be resolved via Open-Meteo geocoding.');
   }
 
   // Helper for fetch with timeout (6000ms default)
@@ -632,115 +710,6 @@ async function startServer() {
       clearTimeout(id);
       throw err;
     }
-  }
-
-  // Fallback weather generator when external Open-Meteo connection times out
-  function generateFallbackForecast(lat: number, lon: number, name: string, country = '', admin1 = '') {
-    const now = new Date();
-    const currentHour = now.getHours();
-    const isDay = currentHour >= 6 && currentHour < 19 ? 1 : 0;
-    const baseTemp = Math.round(28 - Math.abs(lat) * 0.25);
-
-    const hourlyTime: string[] = [];
-    const hourlyTemp: number[] = [];
-    const hourlyPrecip: number[] = [];
-    const hourlyCode: number[] = [];
-    const hourlyIsDay: number[] = [];
-
-    for (let i = 0; i < 168; i++) {
-      const d = new Date(now.getTime() + i * 3600 * 1000);
-      hourlyTime.push(d.toISOString().slice(0, 13) + ':00');
-      const hour = d.getHours();
-      const dayFactor = Math.sin(((hour - 6) / 12) * Math.PI);
-      hourlyTemp.push(Math.round((baseTemp + (dayFactor > 0 ? dayFactor * 5 : dayFactor * 3)) * 10) / 10);
-      hourlyPrecip.push(Math.floor(Math.random() * 15));
-      hourlyCode.push(hour >= 6 && hour < 19 ? (Math.random() > 0.8 ? 2 : 0) : 0);
-      hourlyIsDay.push(hour >= 6 && hour < 19 ? 1 : 0);
-    }
-
-    const dailyTime: string[] = [];
-    const dailyCode: number[] = [];
-    const dailyMax: number[] = [];
-    const dailyMin: number[] = [];
-    const dailySunrise: string[] = [];
-    const dailySunset: string[] = [];
-    const dailyUv: number[] = [];
-
-    for (let i = 0; i < 7; i++) {
-      const d = new Date(now.getTime() + i * 86400 * 1000);
-      const dateStr = d.toISOString().slice(0, 10);
-      dailyTime.push(dateStr);
-      dailyCode.push(0);
-      dailyMax.push(baseTemp + 4);
-      dailyMin.push(baseTemp - 3);
-      dailySunrise.push(`${dateStr}T06:30`);
-      dailySunset.push(`${dateStr}T18:30`);
-      dailyUv.push(8.0);
-    }
-
-    const fallbackLocation = {
-      name: name || 'Local Area',
-      country: country || 'Uganda',
-      admin1,
-      latitude: lat,
-      longitude: lon,
-      timezone: 'Africa/Kampala'
-    };
-    const fallbackCurrent = {
-      time: now.toISOString().slice(0, 16),
-      interval: 900,
-      temperature_2m: baseTemp + 2,
-      relative_humidity_2m: 62,
-      apparent_temperature: baseTemp + 3,
-      is_day: isDay,
-      precipitation: 0,
-      weather_code: isDay ? 0 : 0,
-      wind_speed_10m: 7.5,
-      wind_direction_10m: 110,
-      surface_pressure: 1012
-    };
-    const fallbackHourly = {
-      time: hourlyTime,
-      temperature_2m: hourlyTemp,
-      precipitation_probability: hourlyPrecip,
-      weather_code: hourlyCode,
-      is_day: hourlyIsDay
-    };
-    const fallbackDaily = {
-      time: dailyTime,
-      weather_code: dailyCode,
-      temperature_2m_max: dailyMax,
-      temperature_2m_min: dailyMin,
-      sunrise: dailySunrise,
-      sunset: dailySunset,
-      uv_index_max: dailyUv
-    };
-    const alerts = processWeatherAlerts({
-      location: fallbackLocation,
-      current: fallbackCurrent,
-      hourly: fallbackHourly,
-      daily: fallbackDaily
-    });
-
-    return {
-      location: fallbackLocation,
-      weather: {
-        latitude: lat,
-        longitude: lon,
-        utc_offset_seconds: 10800,
-        timezone: 'Africa/Kampala',
-        current: fallbackCurrent,
-        hourly: fallbackHourly,
-        daily: fallbackDaily
-      },
-      alerts,
-      providerInfo: {
-        name: 'RODEX Offline Weather Engine',
-        credit: 'RODEX Atmospheric Predictive Engine',
-        disclaimer: 'Generated estimated weather profile due to external Open-Meteo timeout.'
-      },
-      source: 'live' as const
-    };
   }
 
   // Reverse geocoding helper using Nominatim with coordinates fallback
@@ -776,6 +745,7 @@ async function startServer() {
     let country = '';
     let admin1 = '';
     let timezone = 'auto';
+    let reverseGeoPromise: Promise<{ name: string; country: string; admin1: string }> | null = null;
 
     try {
       if (typeof queryOrCoords === 'string') {
@@ -790,10 +760,8 @@ async function startServer() {
         lat = queryOrCoords.lat;
         lon = queryOrCoords.lon;
         if (!name || name === 'Current Location' || name === 'My Location' || name === 'Location') {
-          const geo = await reverseGeocodeCoordinates(lat, lon);
-          name = geo.name;
-          country = geo.country;
-          admin1 = geo.admin1;
+          // Reverse geocoding is independent of the forecast request; start it now and await both together.
+          reverseGeoPromise = reverseGeocodeCoordinates(lat, lon);
         }
       }
 
@@ -801,6 +769,12 @@ async function startServer() {
       const weatherRes = await fetchWithTimeout(weatherUrl, {}, 6000);
       if (!weatherRes.ok) throw new Error(`Open-Meteo HTTP ${weatherRes.statusText}`);
       const weatherData = await weatherRes.json();
+      if (reverseGeoPromise) {
+        const geo = await reverseGeoPromise;
+        name = geo.name;
+        country = geo.country;
+        admin1 = geo.admin1;
+      }
 
       const openMeteoLocation = {
         name,
@@ -830,68 +804,93 @@ async function startServer() {
         source: 'live' as const
       };
     } catch (err: any) {
-      console.warn(`[Open-Meteo Fallback Activated] ${err.message || err}. Serving estimated weather for (${lat}, ${lon}).`);
-      return generateFallbackForecast(lat, lon, name || 'Kampala', country || 'Uganda', admin1);
+      console.warn(`[Open-Meteo Request Failed] ${err.message || err}. Letting the router try another provider.`);
+      throw err;
     }
   }
 
-  function mapWeatherAPIcode(code: number, isDay: number): number {
-    if (code === 1000) return isDay ? 0 : 0;
-    if ([1003, 1006, 1009].includes(code)) return 2;
-    if ([1030, 1135, 1147].includes(code)) return 45;
-    if ([1063, 1150, 1153, 1180, 1183, 1186, 1189].includes(code)) return 61;
-    if ([1192, 1195, 1240, 1243].includes(code)) return 65;
-    if ([1066, 1114, 1210, 1213, 1216, 1219, 1222, 1225].includes(code)) return 71;
+  function mapWeatherAPIcode(code: number, _isDay: number): number {
+    if (code === 1000) return 0;
+    if (code === 1003) return 2;
+    if ([1006, 1009].includes(code)) return 3;
+    if (code === 1030 || code === 1135) return 45;
+    if (code === 1147) return 48;
+    if ([1072, 1168].includes(code)) return 56;
+    if (code === 1171) return 57;
+    if ([1150, 1153].includes(code)) return 51;
+    if ([1063, 1180, 1183].includes(code)) return 61;
+    if ([1186, 1189].includes(code)) return 63;
+    if ([1192, 1195].includes(code)) return 65;
+    if (code === 1198) return 66;
+    if (code === 1201) return 67;
+    if ([1066, 1069, 1114, 1117, 1204, 1207, 1210, 1213].includes(code)) return 71;
+    if ([1216, 1219, 1222].includes(code)) return 73;
+    if (code === 1225) return 75;
+    if (code === 1237) return 77;
+    if ([1240, 1249, 1261].includes(code)) return 80;
+    if ([1243, 1252, 1264].includes(code)) return 81;
+    if (code === 1246) return 82;
+    if (code === 1255) return 85;
+    if (code === 1258) return 86;
     if ([1087, 1273, 1276, 1279, 1282].includes(code)) return 95;
-    return 0;
+    return -1;
   }
 
-  function mapOpenWeatherCode(conditionId: number): number {
-    if (!conditionId) return 0;
+  function mapOpenWeatherCode(conditionId?: number): number {
+    if (conditionId == null || !Number.isFinite(conditionId)) return -1;
     if (conditionId >= 200 && conditionId < 300) return 95;
-    if (conditionId >= 300 && conditionId < 500) return 51;
-    if (conditionId >= 500 && conditionId < 600) return 61;
-    if (conditionId >= 600 && conditionId < 700) return 71;
+    if (conditionId >= 300 && conditionId < 400) return 51;
+    if (conditionId >= 500 && conditionId < 600) return conditionId >= 502 ? 65 : 61;
+    if (conditionId >= 600 && conditionId < 700) return conditionId >= 602 ? 75 : 71;
     if (conditionId >= 700 && conditionId < 800) return 45;
     if (conditionId === 800) return 0;
-    if (conditionId > 800) return 2;
-    return 0;
+    if (conditionId === 801) return 1;
+    if (conditionId === 802) return 2;
+    if (conditionId >= 803 && conditionId < 900) return 3;
+    return -1;
   }
 
-  // Router dispatcher with Cache, Quota Budgets, Health, & Failover
+  // Bounded LRU cache, request coalescing, and provider failover reduce latency and duplicate API usage.
   async function routeForecastRequest(fetcher: (provider: ProviderConfig) => Promise<any>, cacheKey: string) {
-    if (cache.has(cacheKey)) {
-      const cached = cache.get(cacheKey)!;
-      if (Date.now() - cached.timestamp < CACHE_TTL_MS) {
-        console.log(`[Cache Hit] Serving forecast from 10-minute cache for key: ${cacheKey}`);
-        return cached.data; // Cached responses do NOT count as outbound provider requests
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      cache.delete(cacheKey);
+      cache.set(cacheKey, cached);
+      return cached.data;
+    }
+
+    const inFlight = inFlightWeatherRequests.get(cacheKey);
+    if (inFlight) return inFlight;
+
+    const request = (async () => {
+      const eligibleProviders = getEligibleProviders();
+      if (eligibleProviders.length === 0) {
+        throw new Error('Temporary Weather Service Notice: All weather providers have reached their hourly usage budgets or are temporarily cooling down due to recent errors. Please try again shortly.');
       }
-    }
 
-    const eligibleProviders = getEligibleProviders();
-    if (eligibleProviders.length === 0) {
-      throw new Error('Temporary Weather Service Notice: All weather providers have reached their hourly usage budgets or are temporarily cooling down due to recent errors. Please try again shortly.');
-    }
-
-    let lastError: any = null;
-    for (const provider of eligibleProviders) {
-      try {
-        console.log(`[Outbound Call Attempt] Routing weather request through provider: ${provider.name}`);
-        // Count every actual outbound attempt before sending it (whether it succeeds or fails)
-        recordProviderAttempt(provider.name);
-        
-        const result = await fetcher(provider);
-        recordProviderSuccess(provider.name);
-        cache.set(cacheKey, { timestamp: Date.now(), data: result });
-        return result;
-      } catch (err: any) {
-        console.warn(`[Provider Failure] Provider ${provider.name} failed:`, err.message);
-        recordProviderError(provider.name);
-        lastError = err;
+      let lastError: any = null;
+      for (const provider of eligibleProviders) {
+        try {
+          recordProviderAttempt(provider.name);
+          const result = await fetcher(provider);
+          recordProviderSuccess(provider.name);
+          saveWeatherCache(cacheKey, result);
+          return result;
+        } catch (err: any) {
+          console.warn('[Provider Failure] Provider ' + provider.name + ' failed:', err.message);
+          recordProviderError(provider.name);
+          lastError = err;
+        }
       }
-    }
+      throw lastError || new Error('All eligible weather providers failed.');
+    })();
 
-    throw lastError || new Error('All eligible weather providers failed.');
+    inFlightWeatherRequests.set(cacheKey, request);
+    try {
+      return await request;
+    } finally {
+      if (inFlightWeatherRequests.get(cacheKey) === request) inFlightWeatherRequests.delete(cacheKey);
+    }
   }
 
   // Geocoding Autocomplete Search Endpoint for Header
@@ -903,7 +902,7 @@ async function startServer() {
       }
 
       const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(q)}&count=8&language=en&format=json`;
-      const geoRes = await fetch(geoUrl);
+      const geoRes = await fetchWithTimeout(geoUrl, {}, 4500);
       if (!geoRes.ok) return res.json({ results: [] });
       const data = await geoRes.json();
       const results = (data.results || []).map((r: any) => ({
@@ -924,14 +923,14 @@ async function startServer() {
   // IP Geolocation Endpoint (2nd priority fallback in progressive location strategy)
   app.get('/api/weather/ip-location', async (req, res) => {
     try {
-      const ipRes = await fetch('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
+      const ipRes = await fetchWithTimeout('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
         headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' }
-      });
+      }, 4500);
       if (!ipRes.ok) {
         throw new Error('IP geolocation service unavailable');
       }
       const ipData = await ipRes.json();
-      if (ipData.status !== 'success' || !ipData.lat || !ipData.lon) {
+      if (ipData.status !== 'success' || !Number.isFinite(ipData.lat) || !Number.isFinite(ipData.lon)) {
         throw new Error(ipData.message || 'Could not resolve network location from IP');
       }
 
@@ -940,7 +939,7 @@ async function startServer() {
       const cityName = ipData.city || 'Network Location';
       const countryName = ipData.country || '';
 
-      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const cacheKey = coordinateCacheKey(lat, lon);
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI({ lat, lon });
@@ -951,9 +950,10 @@ async function startServer() {
         }
       }, cacheKey);
 
-      result.location.isApproximateNetwork = true;
-      result.location.detectedIP = ipData.query;
-      res.json(result);
+      res.json({
+        ...result,
+        location: { ...result.location, isApproximateNetwork: true, detectedIP: ipData.query }
+      });
     } catch (error: any) {
       console.warn('IP geolocation error, falling back:', error.message);
       res.status(503).json({
@@ -971,7 +971,7 @@ async function startServer() {
         return res.status(400).json({ error: 'Query parameter is required' });
       }
 
-      const cacheKey = `search:${query.toLowerCase().trim()}`;
+      const cacheKey = `search:${normalizeWeatherQuery(query)}`;
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI(query);
@@ -1002,11 +1002,13 @@ async function startServer() {
       const lon = Number(req.query.lon);
       const cityName = (req.query.name as string) || 'Current Location';
 
-      if (isNaN(lat) || isNaN(lon)) {
-        return res.status(400).json({ error: 'Valid latitude and longitude are required' });
+      if (req.query.lat == null || req.query.lon == null ||
+          !Number.isFinite(lat) || !Number.isFinite(lon) ||
+          lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+        return res.status(400).json({ error: 'Latitude must be between -90 and 90 and longitude between -180 and 180.' });
       }
 
-      const cacheKey = `coords:${lat.toFixed(2)},${lon.toFixed(2)}`;
+      const cacheKey = coordinateCacheKey(lat, lon);
       const result = await routeForecastRequest(async (provider) => {
         if (provider.name === 'WeatherAPI.com') {
           return await fetchWeatherAPI({ lat, lon });
@@ -1030,51 +1032,65 @@ async function startServer() {
     }
   });
 
-  // Heuristic generator to produce rich, grounded atmospheric insights when AI models are unavailable or rate-limited
+  // Deterministic weather advice is a safe fallback when AI is unavailable.
   function generateWeatherInsights(location: any, current: any, daily: any) {
-    const temp = current?.temperature_2m ?? 20;
-    const humidity = current?.relative_humidity_2m ?? 50;
-    const code = current?.weather_code ?? 0;
-    const uv = daily?.uv_index_max?.[0] ?? 4;
+    const tempValue = current?.temperature_2m;
+    const humidityValue = current?.relative_humidity_2m;
+    const codeValue = current?.weather_code;
+    const uvValue = daily?.uv_index_max?.[0];
+    const temp = typeof tempValue === 'number' && Number.isFinite(tempValue) ? tempValue : null;
+    const humidity = typeof humidityValue === 'number' && Number.isFinite(humidityValue) ? humidityValue : null;
+    const code = typeof codeValue === 'number' && Number.isFinite(codeValue) && codeValue >= 0 ? codeValue : null;
+    const uv = typeof uvValue === 'number' && Number.isFinite(uvValue) ? uvValue : null;
     const locName = location?.name || 'this location';
+    const condition = code == null ? 'conditions unavailable' : getWeatherConditionLabel(code, current?.is_day ?? 1);
 
-    let summary = `Atmospheric conditions in ${locName} are currently ${temp > 20 ? 'warm and pleasant' : temp > 12 ? 'mild with a gentle breeze' : 'cool and crisp'} at ${Math.round(temp)}°C.`;
-    if (code >= 51 && code <= 67) {
-      summary = `Rainy conditions across ${locName} with a temperature of ${Math.round(temp)}°C and elevated humidity of ${humidity}%.`;
-    } else if (code === 95) {
-      summary = `Thunderstorm activity present in ${locName}. Atmospheric pressure is shifting at ${current?.surface_pressure ?? 1013} hPa.`;
-    } else if (code >= 71 && code <= 77) {
-      summary = `Snowfall in ${locName} bringing crisp winter air at ${Math.round(temp)}°C.`;
+    let summary: string;
+    if (temp == null && code == null) {
+      summary = 'The latest weather measurements for ' + locName + ' are incomplete. Refresh the forecast to get a reliable update.';
+    } else if (temp == null) {
+      summary = 'Current conditions in ' + locName + ' are reported as ' + condition.toLowerCase() + '; temperature data is unavailable.';
+    } else {
+      const feel = temp > 28 ? 'hot' : temp > 22 ? 'warm' : temp > 15 ? 'mild' : 'cool';
+      summary = 'Current conditions in ' + locName + ' are ' + (code == null ? feel : condition.toLowerCase()) + ' at ' + Math.round(temp) + '°C.';
+      if (humidity != null) summary += ' Relative humidity is ' + Math.round(humidity) + '%.';
     }
 
-    let clothing = 'Comfortable light layers or a casual jacket suitable for current temperatures.';
-    if (temp < 8) {
-      clothing = 'Heavy warm coat, scarf, and thermal layers to stay comfortable in the cold.';
-    } else if (temp < 16) {
-      clothing = 'A medium jacket, sweater, or fleece layer paired with trousers.';
-    } else if (temp > 24) {
-      clothing = 'Breathable lightweight cottons, shorts, and UV-filtering sunglasses.';
-    }
-    if (code >= 51 && code <= 67) {
-      clothing += ' Don’t forget a waterproof umbrella or rain shell.';
-    }
-
-    let activities = 'Great conditions for an outdoor walk, jogging, or relaxed leisure.';
-    if (code >= 51 && code <= 67) {
-      activities = 'Best suited for indoor cafes, museum visits, or cozy reading spaces.';
-    } else if (code === 95) {
-      activities = 'Stay safely indoors until storm cells pass through the area.';
-    } else if (temp > 22 && uv < 7) {
-      activities = 'Ideal for open-air parks, outdoor running, or patio dining.';
+    let clothing = temp == null
+      ? 'Current temperature data is unavailable, so a precise temperature-based clothing recommendation is not possible.'
+      : temp < 8
+        ? 'Consider a warm coat and insulating layers for the cold.'
+        : temp < 16
+          ? 'A sweater or light-to-medium jacket should be comfortable.'
+          : temp > 28
+            ? 'Choose breathable, lightweight clothing and consider sun protection.'
+            : temp > 24
+              ? 'Breathable, lightweight clothing should be comfortable.'
+              : 'Comfortable light layers are a reasonable choice.';
+    if (code != null && ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))) {
+      clothing += ' Consider carrying an umbrella or rain shell.';
     }
 
-    let health = 'Stay comfortably hydrated throughout the day.';
-    if (uv >= 6) {
-      health = `UV index is high (${uv}). Apply SPF 30+ sunscreen and wear sunglasses during peak daylight hours.`;
-    } else if (humidity > 80) {
-      health = 'High humidity levels; ensure good airflow and steady hydration during activities.';
-    } else if (temp < 5) {
-      health = 'Cold outdoor air; protect extremities and moisturize skin.';
+    let activities = 'Check the hourly forecast before making weather-sensitive outdoor plans.';
+    if (code != null && (code === 95 || code === 96 || code === 99)) {
+      activities = 'Avoid exposed outdoor areas during thunderstorms and wait for conditions to improve.';
+    } else if (code != null && ((code >= 51 && code <= 67) || (code >= 80 && code <= 82))) {
+      activities = 'Consider indoor activities while rain is reported or forecast.';
+    } else if (temp != null && temp > 32) {
+      activities = 'Prefer shade and lower-intensity outdoor activities during the hottest hours.';
+    } else if (code != null && code >= 0 && code <= 3 && temp != null) {
+      activities = 'Outdoor activities may be comfortable; check the hourly forecast for changes.';
+    }
+
+    let health = 'Follow the latest local forecast and stay hydrated as appropriate.';
+    if (uv != null && uv >= 6) {
+      health = 'The forecast UV index reaches ' + Math.round(uv) + '. Use sun protection, including shade, suitable clothing, and sunscreen.';
+    } else if (humidity != null && humidity > 80) {
+      health = 'Humidity is high (' + Math.round(humidity) + '%); take breaks and stay hydrated during strenuous activity.';
+    } else if (temp != null && temp >= 32) {
+      health = 'Warm conditions are reported. Drink water regularly and take breaks in shade.';
+    } else if (uv == null) {
+      health = 'UV forecast data is unavailable; consider checking a local UV forecast before extended sun exposure.';
     }
 
     return { summary, clothing, activities, health };
@@ -1083,19 +1099,42 @@ async function startServer() {
   // AI Insights endpoint using @google/genai with automatic quota failover
   app.post('/api/ai/insights', async (req, res) => {
     const { location, current, daily } = req.body || {};
+    if (!location || !current) {
+      return res.status(400).json({ error: 'Location and current weather measurements are required.' });
+    }
+
+    const insightsCacheKey = 'ai:insights:' + JSON.stringify([
+      location.name, location.country, location.latitude, location.longitude,
+      current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
+      current.wind_speed_10m, current.precipitation, current.weather_code,
+      daily?.uv_index_max?.[0]
+    ]);
+    const cachedInsights = cache.get(insightsCacheKey);
+    if (cachedInsights && Date.now() - cachedInsights.timestamp < CACHE_TTL_MS) {
+      cache.delete(insightsCacheKey);
+      cache.set(insightsCacheKey, cachedInsights);
+      return res.json(cachedInsights.data);
+    }
+    const sendFallbackInsights = () => {
+      const payload = generateWeatherInsights(location, current, daily);
+      saveWeatherCache(insightsCacheKey, payload);
+      return res.json(payload);
+    };
     if (!ai) {
-      return res.json(generateWeatherInsights(location, current, daily));
+      return sendFallbackInsights();
     }
 
     try {
       const prompt = `You are RODEX Atmos AI, an expert meteorologist and lifestyle assistant. 
 Analyze these current weather conditions for ${location?.name || 'Location'}:
-- Temperature: ${current?.temperature_2m}°C (Feels like ${current?.apparent_temperature}°C)
-- Humidity: ${current?.relative_humidity_2m}%
-- Wind Speed: ${current?.wind_speed_10m} km/h
-- Weather Code: ${current?.weather_code}
-- UV Index max: ${daily?.uv_index_max?.[0] ?? 'N/A'}
+- Temperature: ${typeof current?.temperature_2m === 'number' && Number.isFinite(current.temperature_2m) ? current.temperature_2m + '°C' : 'unavailable'}
+- Feels-like temperature: ${typeof current?.apparent_temperature === 'number' && Number.isFinite(current.apparent_temperature) ? current.apparent_temperature + '°C' : 'unavailable'}
+- Humidity: ${typeof current?.relative_humidity_2m === 'number' && Number.isFinite(current.relative_humidity_2m) ? current.relative_humidity_2m + '%' : 'unavailable'}
+- Wind Speed: ${typeof current?.wind_speed_10m === 'number' && Number.isFinite(current.wind_speed_10m) ? current.wind_speed_10m + ' km/h' : 'unavailable'}
+- Weather Code: ${current?.weather_code ?? 'unavailable'}
+- UV Index max: ${typeof daily?.uv_index_max?.[0] === 'number' && Number.isFinite(daily.uv_index_max[0]) ? daily.uv_index_max[0] : 'unavailable'}
 
+Use only supplied data. Never invent missing measurements, claim rain from probability alone, or manufacture official warnings.
 Provide a JSON response with exactly these 4 keys:
 1. "summary": A poetic and informative 2-sentence atmospheric summary of the current vibe and conditions.
 2. "clothing": Specific clothing recommendations (layers, jacket, umbrella, sunglasses, etc.).
@@ -1106,33 +1145,31 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
 
       let response: any;
       try {
-        response = await ai.models.generateContent({
+        response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: {
-            responseMimeType: 'application/json'
-          }
-        });
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
+        }), 3200, 'AI insights');
       } catch (liteErr: any) {
-        // Fallback to gemini-3.8-flash if flash-lite is not enabled
-        response = await ai.models.generateContent({
+        // Do not stack a second slow request after a timeout; deterministic insights are faster and safer.
+        if (String(liteErr?.message || liteErr).toLowerCase().includes('timed out')) throw liteErr;
+        response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: prompt,
-          config: {
-            responseMimeType: 'application/json'
-          }
-        });
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
+        }), 2200, 'AI insights fallback');
       }
 
       const text = response?.text;
       const parsed = JSON.parse(text || '{}');
-      if (parsed.summary && parsed.clothing) {
+      if (parsed.summary && parsed.clothing && parsed.activities && parsed.health) {
+        saveWeatherCache(insightsCacheKey, parsed);
         return res.json(parsed);
       }
-      res.json(generateWeatherInsights(location, current, daily));
+      return sendFallbackInsights();
     } catch (err: any) {
-      // Graceful fallback without throwing unhandled 429 errors
-      res.json(generateWeatherInsights(location, current, daily));
+      // A bounded, deterministic fallback is more useful than surfacing quota and timeout errors.
+      return sendFallbackInsights();
     }
   });
 
@@ -1143,21 +1180,52 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       return res.status(400).json({ error: 'Missing required weather parameters for daily briefing.' });
     }
 
-    const highTemp = daily?.temperature_2m_max?.[0] != null ? Math.round(daily.temperature_2m_max[0]) : Math.round(current.temperature_2m);
-    const lowTemp = daily?.temperature_2m_min?.[0] != null ? Math.round(daily.temperature_2m_min[0]) : Math.round(current.temperature_2m);
-    const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
-    const windSpeed = current.wind_speed_10m ? Math.round(current.wind_speed_10m) : 0;
-
-    let rainLikelihood = 'Minimal risk of precipitation today.';
-    if (maxPrecipProb >= 70) {
-      rainLikelihood = `High likelihood of rain (${maxPrecipProb}% peak chance) during the day.`;
-    } else if (maxPrecipProb >= 40) {
-      rainLikelihood = `Moderate chance of scattered rainfall (${maxPrecipProb}% chance).`;
-    } else if (maxPrecipProb >= 20) {
-      rainLikelihood = `Slight chance of isolated showers (${maxPrecipProb}%).`;
+    const briefingCacheKey = 'ai:briefing:' + JSON.stringify([
+      location.name, location.country, location.latitude, location.longitude,
+      current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
+      current.wind_speed_10m, current.precipitation, current.weather_code,
+      daily?.temperature_2m_max?.[0], daily?.temperature_2m_min?.[0], daily?.uv_index_max?.[0],
+      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(0, 12) : [],
+      Array.isArray(alerts) ? alerts.map((alert: any) => [alert.type, alert.severity, alert.title, alert.description]) : []
+    ]);
+    const cachedBriefing = cache.get(briefingCacheKey);
+    if (cachedBriefing && Date.now() - cachedBriefing.timestamp < CACHE_TTL_MS) {
+      cache.delete(briefingCacheKey);
+      cache.set(briefingCacheKey, cachedBriefing);
+      return res.json(cachedBriefing.data);
     }
 
-    const windCondition = windSpeed > 30 ? `Breezy with winds up to ${windSpeed} km/h.` : `Gentle breeze at ${windSpeed} km/h.`;
+    const rawHigh = daily?.temperature_2m_max?.[0];
+    const rawLow = daily?.temperature_2m_min?.[0];
+    const rawCurrentTemp = current?.temperature_2m;
+    const highTemp = typeof rawHigh === 'number' && Number.isFinite(rawHigh) ? Math.round(rawHigh) : null;
+    const lowTemp = typeof rawLow === 'number' && Number.isFinite(rawLow) ? Math.round(rawLow) : null;
+    const currentTemp = typeof rawCurrentTemp === 'number' && Number.isFinite(rawCurrentTemp) ? Math.round(rawCurrentTemp) : null;
+    const rainProbabilities = Array.isArray(hourly?.precipitation_probability)
+      ? hourly.precipitation_probability.slice(0, 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
+      : [];
+    const maxPrecipProb = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
+    const rawWind = current?.wind_speed_10m;
+    const windSpeed = typeof rawWind === 'number' && Number.isFinite(rawWind) ? Math.round(rawWind) : null;
+
+    let rainLikelihood = 'Rain probability data is unavailable.';
+    if (maxPrecipProb != null) {
+      if (maxPrecipProb >= 70) {
+        rainLikelihood = 'High likelihood of rain (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else if (maxPrecipProb >= 40) {
+        rainLikelihood = 'Moderate chance of rain (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else if (maxPrecipProb >= 20) {
+        rainLikelihood = 'Lower but non-zero rain chance (' + maxPrecipProb + '% peak chance) in the next 12 hours.';
+      } else {
+        rainLikelihood = 'Peak rain probability over the next 12 hours is ' + maxPrecipProb + '%.';
+      }
+    }
+
+    const windCondition = windSpeed == null
+      ? 'Wind speed data is unavailable.'
+      : windSpeed > 30
+        ? 'Strong winds are reported at about ' + windSpeed + ' km/h.'
+        : 'Wind speed is about ' + windSpeed + ' km/h.';
 
     const topAlert = Array.isArray(alerts) && alerts.length > 0 ? alerts[0] : null;
     const headlineAlert = topAlert ? `[${topAlert.type === 'official' ? 'Official Warning' : 'Forecast Alert'}] ${topAlert.title}: ${topAlert.description}` : undefined;
@@ -1171,22 +1239,25 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     if (ai) {
       try {
         const prompt = `Generate a concise, professional 2-sentence daily weather briefing for ${location.name}, ${location.country || ''}.
-Current temp: ${Math.round(current.temperature_2m)}°C, High: ${highTemp}°C, Low: ${lowTemp}°C.
-Rain probability: ${maxPrecipProb}%.
-Wind: ${windSpeed} km/h.
-Active alerts: ${headlineAlert || 'None'}.
+Current temperature: ${currentTemp == null ? 'unavailable' : currentTemp + '°C'}.
+Forecast high: ${highTemp == null ? 'unavailable' : highTemp + '°C'}; forecast low: ${lowTemp == null ? 'unavailable' : lowTemp + '°C'}.
+Peak rain probability in the next 12 hours: ${maxPrecipProb == null ? 'unavailable' : maxPrecipProb + '%'}.
+Wind speed: ${windSpeed == null ? 'unavailable' : windSpeed + ' km/h'}.
+Weather condition code: ${current?.weather_code ?? 'unavailable'}.
+Active alert records: ${headlineAlert || 'No alert records supplied; do not claim an official all-clear'}.
 Greeting: ${greetingTime}.
-Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations). Do NOT invent fake weather numbers.`;
+Use only supplied facts. Do not invent missing numbers, weather conditions, or official warnings.
+Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations).`;
 
-        const aiRes = await ai.models.generateContent({
+        const aiRes = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: { responseMimeType: 'application/json' }
-        });
+          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 160 }
+        }), 3200, 'Daily briefing AI');
 
         const parsed = JSON.parse(aiRes.text || '{}');
         if (parsed.summary && Array.isArray(parsed.recommendations)) {
-          return res.json({
+          const payload = {
             greeting: parsed.greeting || `${greetingTime}, ${location.name}`,
             locationName: location.name,
             summary: parsed.summary,
@@ -1197,7 +1268,9 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
             headlineAlert,
             recommendations: parsed.recommendations,
             generatedAt: new Date().toISOString()
-          });
+          };
+          saveWeatherCache(briefingCacheKey, payload);
+          return res.json(payload);
         }
       } catch (err) {
         console.warn('[Briefing AI Warning] Gemini briefing fallback activated:', err);
@@ -1205,21 +1278,31 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     }
 
     // Deterministic fallback briefing
-    return res.json({
+    const payload = {
       greeting: `${greetingTime}, ${location.name}`,
       locationName: location.name,
-      summary: `${location.name} is expecting a high of ${highTemp}°C and a low of ${lowTemp}°C today with ${getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()} conditions.`,
+      summary: (() => {
+        const conditions = current?.weather_code != null && current.weather_code >= 0
+          ? getWeatherConditionLabel(current.weather_code, current.is_day).toLowerCase()
+          : 'conditions unavailable';
+        const temperatureRange = highTemp != null && lowTemp != null
+          ? 'a forecast high of ' + highTemp + '°C and low of ' + lowTemp + '°C'
+          : 'forecast high and low temperatures unavailable';
+        return location.name + ' has ' + temperatureRange + ', with ' + conditions + ' reported in the current data.';
+      })(),
       highTemp,
       lowTemp,
       rainLikelihood,
       windCondition,
       headlineAlert,
       recommendations: [
-        maxPrecipProb >= 40 ? 'Keep an umbrella handy for expected rainfall.' : 'Dress comfortably for prevailing temperatures.',
-        windSpeed > 30 ? 'Take care outdoors with loose equipment due to gusty winds.' : 'Enjoy safe and pleasant conditions throughout the day.'
+        maxPrecipProb != null && maxPrecipProb >= 40 ? 'Consider carrying rain protection based on the forecast rain probability.' : 'Check the hourly forecast before weather-sensitive outdoor plans.',
+        windSpeed != null && windSpeed > 30 ? 'Take care outdoors because elevated wind speeds are reported.' : 'Recheck the forecast for any later weather changes.'
       ],
       generatedAt: new Date().toISOString()
-    });
+    };
+    saveWeatherCache(briefingCacheKey, payload);
+    return res.json(payload);
   });
 
   // Configured vocal identity: RODEX Atmos Signature (voice_nv4v693k2132)
@@ -1769,12 +1852,12 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
               if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[0]);
               else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[0]);
               else return await fetchOpenMeteo(comparisonCities[0]);
-            }, `search:${comparisonCities[0].toLowerCase().trim()}`),
+            }, `search:${normalizeWeatherQuery(comparisonCities[0])}`),
             routeForecastRequest(async (provider) => {
               if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI(comparisonCities[1]);
               else if (provider.name === 'OpenWeather') return await fetchOpenWeather(comparisonCities[1]);
               else return await fetchOpenMeteo(comparisonCities[1]);
-            }, `search:${comparisonCities[1].toLowerCase().trim()}`)
+            }, `search:${normalizeWeatherQuery(comparisonCities[1])}`)
           ]);
           weatherFetchMs = Date.now() - tWeatherStart;
 
@@ -1818,7 +1901,7 @@ Compare current location against the selected map location directly and clearly.
         } else {
           try {
             const tWeatherStart = Date.now();
-            const cacheKey = `search:${requestedCity.toLowerCase().trim()}`;
+            const cacheKey = `search:${normalizeWeatherQuery(requestedCity)}`;
             const fetchedData = await routeForecastRequest(async (provider) => {
               if (provider.name === 'WeatherAPI.com') {
                 return await fetchWeatherAPI(requestedCity);
@@ -1870,14 +1953,15 @@ Compare current location against the selected map location directly and clearly.
 
       // Layer explanation context
       const activeLayerName = activeMapLayer || 'temperature';
-      const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+      const suppliedRainProbabilities = Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(0, 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)) : [];
+      const maxPrecipProb = suppliedRainProbabilities.length ? Math.max(...suppliedRainProbabilities) : null;
       const layerContext = `
 ACTIVE WEATHER MAP LAYER DATA (${activeLayerName.toUpperCase()} LAYER):
 - Active Layer Type: ${activeLayerName}
-- Temperature Layer Metrics: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20}°C (Feels like ${current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : 20}°C).
-- Rain / Precipitation Layer Metrics: Current rate ${current?.precipitation ?? 0} mm/h, peak 12h rain probability ${maxPrecipProb}%.
-- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 0} km/h, direction ${current?.wind_direction_10m ?? 0}°.
-If user asks about or asks to explain the active map layer, describe this layer accurately using these metrics.`;
+- Temperature Layer Metrics: ${current?.temperature_2m != null && Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) + '°C' : 'unavailable'} (Feels like ${current?.apparent_temperature != null && Number.isFinite(current.apparent_temperature) ? Math.round(current.apparent_temperature) + '°C' : 'unavailable'}).
+- Rain / Precipitation Layer Metrics: Current reading ${current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation + ' mm' : 'unavailable'}, peak 12h rain probability ${maxPrecipProb == null ? 'unavailable' : maxPrecipProb + '%'}.
+- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) + ' km/h' : 'unavailable'}, direction ${current?.wind_direction_10m ?? 'unavailable'}°.
+If user asks about the active map layer, use supplied provider values and acknowledge unavailable fields.`;
 
       // Calculate local time for the target city using provider timezone
       let localTime = 'N/A';
@@ -1895,29 +1979,37 @@ If user asks about or asks to explain the active map layer, describe this layer 
         localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       }
 
-      const conditionLabel = getWeatherConditionLabel(current?.weather_code ?? 0, current?.is_day ?? 1);
-      const temp = current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20;
-      const feelsLike = current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
-      const humidity = current?.relative_humidity_2m ?? 50;
-      const wind = current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 5;
-      const precip = current?.precipitation ?? 0;
+      const conditionLabel = current?.weather_code != null && current.weather_code >= 0 ? getWeatherConditionLabel(current.weather_code, current.is_day ?? 1) : 'conditions unavailable';
+      const temp = current?.temperature_2m != null && Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : null;
+      const feelsLike = current?.apparent_temperature != null && Number.isFinite(current.apparent_temperature) ? Math.round(current.apparent_temperature) : null;
+      const humidity = current?.relative_humidity_2m != null && Number.isFinite(current.relative_humidity_2m) ? Math.round(current.relative_humidity_2m) : null;
+      const wind = current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) : null;
+      const precip = current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation : null;
 
       // Produce 12-hour hourly summary (including precipitation probability)
       const hourlySummary = hourly?.time?.slice(0, 12).map((t: string, idx: number) => {
+        const temperature = hourly?.temperature_2m?.[idx];
+        const probability = hourly?.precipitation_probability?.[idx];
         const hourStr = new Date(t).toLocaleTimeString([], { hour: 'numeric', hour12: true });
-        return `${hourStr}: ${Math.round(hourly.temperature_2m[idx])}°C (${hourly.precipitation_probability[idx]}% rain)`;
+        if (!Number.isFinite(temperature)) return hourStr + ': temperature unavailable';
+        return Number.isFinite(probability)
+          ? hourStr + ': ' + Math.round(temperature) + '°C (' + Math.round(probability) + '% rain chance)'
+          : hourStr + ': ' + Math.round(temperature) + '°C (rain probability unavailable)';
       }).join(', ') || 'N/A';
 
       // Produce 7-day outlook
       const dailySummary = daily?.time?.slice(0, 7).map((d: string, idx: number) => {
         const dayName = idx === 0 ? 'Today' : new Date(d).toLocaleDateString([], { weekday: 'short' });
-        return `${dayName}: ${Math.round(daily.temperature_2m_min[idx])}°C to ${Math.round(daily.temperature_2m_max[idx])}°C`;
+        const low = daily?.temperature_2m_min?.[idx];
+        const high = daily?.temperature_2m_max?.[idx];
+        if (!Number.isFinite(low) || !Number.isFinite(high)) return `${dayName}: forecast temperatures unavailable`;
+        return `${dayName}: ${Math.round(low)}°C to ${Math.round(high)}°C`;
       }).join('; ') || 'N/A';
 
       const activeAlerts = targetWeatherData?.alerts || [];
       const alertsContext = activeAlerts.length > 0
         ? `\nACTIVE WEATHER ALERTS FOR ${location?.name || 'Selected City'}:\n` + activeAlerts.map((a: any) => `- [${a.type.toUpperCase()} / ${a.severity.toUpperCase()}] ${a.title}: ${a.description} (Authority: ${a.issuingAuthority || 'N/A'}, Instruction: ${a.instruction || 'None'})`).join('\n')
-        : '\nACTIVE WEATHER ALERTS: None active for this location currently.';
+        : '\nWEATHER ALERTS: No alert records were returned by this provider; do not claim an official all-clear.';
 
       const systemInstruction = `You are RODEX AI, the advanced meteorological and atmospheric assistant for the RODEX Atmos web app.
 You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
@@ -1929,7 +2021,7 @@ STRICT GROUNDING & LOCATION RULES:
 4. Explicit Location Override: If user names a specific city in their prompt (e.g. "What's the weather in Entebbe?"), prioritize that explicit city over map or device location.
 5. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
 6. Keep replies conversational, concise (strictly 1-2 natural sentences, under 35 words), and directly answer the question.
-7. Rain Queries: Distinguish current rain (precipitation: ${precip}mm, code: ${current?.weather_code ?? 0}) from future probability. Do NOT state it is currently raining unless precipitation > 0mm.
+7. Distinguish current precipitation (${precip == null ? 'unavailable' : precip + ' mm'}) and reported condition (${current?.weather_code ?? 'unavailable'}) from future rain probability; do not treat probability alone as proof that rain is falling.
 8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
 9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
 
@@ -1937,12 +2029,12 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
 - Local Time: ${localTime}
 - Condition: ${conditionLabel}
-- Temperature: ${temp}°C (Feels like: ${feelsLike}°C)
+- Temperature: ${temp == null ? 'unavailable' : temp + '°C'} (Feels like: ${feelsLike == null ? 'unavailable' : feelsLike + '°C'})
 - Weather Code: ${current?.weather_code ?? 'N/A'}
-- Humidity: ${humidity}%
-- Wind Speed: ${wind} km/h
-- Precipitation Volume: ${precip} mm
-- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa
+- Humidity: ${humidity == null ? 'unavailable' : humidity + '%'}
+- Wind Speed: ${wind == null ? 'unavailable' : wind + ' km/h'}
+- Precipitation Volume: ${precip == null ? 'unavailable' : precip + ' mm'}
+- Surface Pressure: ${current?.surface_pressure != null ? current.surface_pressure + ' hPa' : 'unavailable'}
 - Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
 - 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
 
@@ -1963,22 +2055,18 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
               return await ai!.models.generateContent({
                 model: 'gemini-3.8-flash',
                 contents: conversationContents,
-                config: { systemInstruction }
+                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
               });
             } catch (flashErr) {
               return await ai!.models.generateContent({
                 model: 'gemini-3.1-flash-lite',
                 contents: conversationContents,
-                config: { systemInstruction }
+                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
               });
             }
           };
 
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('AI generation service timeout (3500ms)')), 3500)
-          );
-
-          const response: any = await Promise.race([generateWithTimeout(), timeoutPromise]);
+          const response: any = await withTimeout(generateWithTimeout(), 3500, 'AI chat generation');
           aiGenMs = Date.now() - tAiStart;
 
           if (response?.text) {
@@ -1989,16 +2077,37 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
         }
       }
 
-      // Grounded deterministic response using provider fields
-      let fallbackReply = `In ${location?.name}${location?.country ? ', ' + location.country : ''}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}°C (feels like ${feelsLike}°C) with ${humidity}% humidity and wind at ${wind} km/h.`;
+      // Deterministic fallback uses provider facts only when Gemini is unavailable.
+      const currentFacts = [
+        temp == null ? null : temp + '°C',
+        conditionLabel !== 'conditions unavailable' ? conditionLabel : null,
+        humidity == null ? null : humidity + '% humidity',
+        wind == null ? null : 'wind ' + wind + ' km/h'
+      ].filter(Boolean);
+      let fallbackReply = currentFacts.length
+        ? 'In ' + (location?.name || 'the selected location') + ', the local time is ' + localTime + '. Current data reports ' + currentFacts.join(', ') + '.'
+        : 'I can’t provide a reliable current-weather answer for ' + (location?.name || 'this location') + ' because the latest measurements are incomplete. Please refresh the forecast.';
 
       if (/\b(wear|clothes|dress|jacket|coat)\b/i.test(lastUserMsg)) {
-        if (temp < 15) fallbackReply = `In ${location?.name}, it's ${temp}°C with ${conditionLabel.toLowerCase()}. A warm jacket or sweater layers are recommended today.`;
-        else if (temp > 24) fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Breathable lightweight cottons and sunglasses are ideal today.`;
-        else fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Comfortable light layers or a casual jacket will keep you feeling great.`;
+        if (temp == null) {
+          fallbackReply = 'I can’t make a temperature-based clothing recommendation for ' + (location?.name || 'this location') + ' because the current temperature is unavailable.';
+        } else if (temp < 15) {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. A warm jacket or sweater is a sensible choice.';
+        } else if (temp > 24) {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Breathable, lightweight clothing should be comfortable.';
+        } else {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Comfortable light layers are a reasonable choice.';
+        }
       } else if (/\b(umbrella|rain)\b/i.test(lastUserMsg)) {
-        if (precip > 0 || (current?.weather_code ?? 0) >= 51) fallbackReply = `In ${location?.name}, rain is actively falling. You will definitely want an umbrella.`;
-        else fallbackReply = `In ${location?.name}, no rain is falling right now with ${conditionLabel.toLowerCase()} conditions.`;
+        const rainIndicated = (precip != null && precip > 0) ||
+          (current?.weather_code != null && ((current.weather_code >= 51 && current.weather_code <= 67) || (current.weather_code >= 80 && current.weather_code <= 82)));
+        if (rainIndicated) {
+          fallbackReply = 'The latest weather data indicates rain in ' + (location?.name || 'this location') + '. Carrying an umbrella is a sensible precaution.';
+        } else if (precip === 0) {
+          fallbackReply = 'The latest reading reports no measurable precipitation in ' + (location?.name || 'this location') + ' right now.';
+        } else {
+          fallbackReply = 'I can’t confirm current rainfall in ' + (location?.name || 'this location') + ' because precipitation data is unavailable.';
+        }
       }
 
       return await sendChatResponse(fallbackReply, updatedCityWeather);

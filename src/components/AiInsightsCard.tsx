@@ -13,7 +13,21 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data, onOpenAssi
   const [cacheKey, setCacheKey] = useState<string>('');
 
   const fetchInsights = useCallback(async (forceRefresh = false) => {
-    const currentKey = `${data.location.name}-${data.weather.current.temperature_2m}-${data.weather.current.weather_code}`;
+    const current = data.weather.current;
+    const today = data.weather.daily;
+    const currentKey = [
+      data.location.name,
+      data.location.country,
+      current.temperature_2m,
+      current.apparent_temperature,
+      current.relative_humidity_2m,
+      current.weather_code,
+      current.wind_speed_10m,
+      current.precipitation,
+      today?.temperature_2m_max?.[0],
+      today?.temperature_2m_min?.[0],
+      today?.uv_index_max?.[0]
+    ].join('|');
     
     if (!forceRefresh && cacheKey === currentKey && insights) {
       return; // Use cached insight for same forecast state
@@ -49,12 +63,27 @@ export const AiInsightsCard: React.FC<AiInsightsCardProps> = ({ data, onOpenAssi
       }
     } catch (err: any) {
       console.warn('[AI Insights Notice] Using deterministic atmospheric insights fallback:', err?.message || err);
+      const currentTemp = data.weather.current?.temperature_2m;
+      const hasTemperature = typeof currentTemp === 'number' && Number.isFinite(currentTemp);
+      const conditionCode = data.weather.current?.weather_code;
+      const hasCondition = typeof conditionCode === 'number' && Number.isFinite(conditionCode) && conditionCode >= 0;
       setInsights({
-        summary: `Conditions in ${data.location.name} are currently stable with a temperature of ${Math.round(data.weather.current.temperature_2m)}°C.`,
-        clothing: 'Dress comfortably according to the outdoor temperature.',
-        activities: 'Suitable conditions for normal daily activities and outdoor walks.',
-        health: 'Stay adequately hydrated throughout the day.'
+        summary: hasTemperature
+          ? `Current temperature in ${data.location.name} is about ${Math.round(currentTemp)}°C.`
+          : hasCondition
+            ? `The reported weather condition in ${data.location.name} is available, but the current temperature reading is missing.`
+            : `Current weather measurements for ${data.location.name} are incomplete. Refresh the forecast to try again.`,
+        clothing: hasTemperature
+          ? 'Dress for the measured temperature and check the hourly forecast for changes.'
+          : 'Current temperature data is unavailable, so specific temperature-based clothing advice may be unreliable.',
+        activities: hasCondition
+          ? 'Use the latest hourly forecast to plan outdoor activities safely.'
+          : 'Check updated local conditions before making weather-sensitive outdoor plans.',
+        health: typeof data.weather.daily?.uv_index_max?.[0] === 'number' && Number.isFinite(data.weather.daily.uv_index_max[0])
+          ? 'Check the forecast UV index before extended sun exposure and stay hydrated.'
+          : 'UV forecast data is unavailable; use appropriate sun protection during extended exposure.'
       });
+      setCacheKey(currentKey);
     } finally {
       setIsLoading(false);
     }

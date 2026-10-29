@@ -1,6 +1,6 @@
 /**
- * RODEX Atmos Weather Grounding and Response Utilities
- * Provides deterministic observation generation and conversational bounding.
+ * RODEX Atmos weather grounding and response utilities.
+ * Keep direct weather answers deterministic and never invent missing measurements.
  */
 
 export interface WeatherObservationInput {
@@ -9,27 +9,37 @@ export interface WeatherObservationInput {
     country?: string;
   };
   current?: {
-    temperature_2m?: number;
-    apparent_temperature?: number;
-    relative_humidity_2m?: number;
-    weather_code?: number;
-    is_day?: number;
-    wind_speed_10m?: number;
-    precipitation?: number;
+    temperature_2m?: number | null;
+    apparent_temperature?: number | null;
+    relative_humidity_2m?: number | null;
+    weather_code?: number | null;
+    is_day?: number | null;
+    wind_speed_10m?: number | null;
+    precipitation?: number | null;
   };
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value);
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 export function isDirectCurrentWeatherQuery(query: string, currentCityName?: string): boolean {
   if (!query) return false;
   let clean = query.trim().toLowerCase();
 
-  // If query asks for advice, comparisons, future forecast, or explanations, it's not a direct simple observation query
-  if (/\b(wear|clothes|dress|jacket|umbrella|should i|compare|versus|vs|tomorrow|later|tonight|next week|explain|why|how come)\b/i.test(clean)) {
+  // Advice, comparisons and future forecasts need the full assistant flow.
+  if (/\b(wear|clothes|dress|jacket|umbrella|should i|compare|versus|vs|tomorrow|later|tonight|next week|explain|why|how come|forecast)\b/i.test(clean)) {
     return false;
   }
 
   if (currentCityName) {
-    clean = clean.replace(new RegExp(`\\b(?:in|for|at)\\s+${currentCityName.toLowerCase()}\\b`, 'gi'), '').trim();
+    const safeCityName = escapeRegExp(currentCityName.toLowerCase());
+    clean = clean.replace(new RegExp(`\\b(?:in|for|at)\\s+${safeCityName}\\b`, 'gi'), '');
+    clean = clean.replace(/\s+([?!.,])/g, '$1').trim();
   }
 
   const directPatterns = [
@@ -45,73 +55,140 @@ export function isDirectCurrentWeatherQuery(query: string, currentCityName?: str
   return directPatterns.some((pattern) => pattern.test(clean));
 }
 
-export function getWeatherConditionDescription(code?: number, isDay: number = 1): string {
+export function getWeatherConditionDescription(code?: number | null, isDay: number = 1): string {
   switch (code) {
     case 0:
       return isDay ? 'sunny and clear' : 'clear';
     case 1:
+      return 'mainly clear';
     case 2:
-      return isDay ? 'partly cloudy' : 'partly cloudy';
+      return 'partly cloudy';
     case 3:
       return 'overcast';
     case 45:
+      return 'foggy';
     case 48:
-      return 'foggy and misty';
+      return 'foggy with depositing rime';
     case 51:
-    case 53:
-    case 55:
       return 'light drizzle';
+    case 53:
+      return 'moderate drizzle';
+    case 55:
+      return 'dense drizzle';
+    case 56:
+      return 'light freezing drizzle';
+    case 57:
+      return 'dense freezing drizzle';
     case 61:
+      return 'light rain';
     case 63:
+      return 'moderate rain';
     case 65:
-      return 'rain showers';
-    case 71:
-    case 73:
-    case 75:
-      return 'snowfall';
-    case 80:
-    case 81:
-    case 82:
       return 'heavy rain';
+    case 66:
+      return 'light freezing rain';
+    case 67:
+      return 'heavy freezing rain';
+    case 71:
+      return 'light snowfall';
+    case 73:
+      return 'moderate snowfall';
+    case 75:
+      return 'heavy snowfall';
+    case 77:
+      return 'snow grains';
+    case 80:
+      return 'light rain showers';
+    case 81:
+      return 'moderate rain showers';
+    case 82:
+      return 'intense rain showers';
+    case 85:
+      return 'light snow showers';
+    case 86:
+      return 'heavy snow showers';
     case 95:
-    case 96:
-    case 99:
       return 'thunderstorms';
+    case 96:
+      return 'thunderstorms with hail';
+    case 99:
+      return 'severe thunderstorms with hail';
     default:
-      return 'fair';
+      return 'conditions unavailable';
   }
+}
+
+function isRainCode(code: number | null | undefined): boolean {
+  return isFiniteNumber(code) &&
+    ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99));
 }
 
 export function buildGroundedWeatherReply(
   weather: WeatherObservationInput,
   userQuery?: string
 ): string {
-  const locName = weather.location?.name || 'your area';
+  const loc = weather.location;
+  const locName = [loc?.name, loc?.country].filter(Boolean).join(', ') || 'your area';
   const current = weather.current || {};
-  const temp = current.temperature_2m != null ? Math.round(current.temperature_2m) : 22;
-  const feelsLike = current.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
-  const humidity = current.relative_humidity_2m != null ? Math.round(current.relative_humidity_2m) : 60;
-  const wind = current.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 8;
-  const precip = current.precipitation ?? 0;
-  const code = current.weather_code ?? 0;
-  const isDay = current.is_day ?? 1;
-  const condition = getWeatherConditionDescription(code, isDay);
+  const tempKnown = isFiniteNumber(current.temperature_2m);
+  const feelsLikeKnown = isFiniteNumber(current.apparent_temperature);
+  const humidityKnown = isFiniteNumber(current.relative_humidity_2m);
+  const windKnown = isFiniteNumber(current.wind_speed_10m);
+  const precipKnown = isFiniteNumber(current.precipitation);
+  const codeKnown = isFiniteNumber(current.weather_code) && current.weather_code >= 0;
+  const temp = tempKnown ? Math.round(current.temperature_2m as number) : null;
+  const feelsLike = feelsLikeKnown ? Math.round(current.apparent_temperature as number) : null;
+  const humidity = humidityKnown ? Math.round(current.relative_humidity_2m as number) : null;
+  const wind = windKnown ? Math.round(current.wind_speed_10m as number) : null;
+  const condition = codeKnown
+    ? getWeatherConditionDescription(current.weather_code, isFiniteNumber(current.is_day) ? current.is_day : 1)
+    : null;
 
-  const isRainQuery = userQuery && /\b(rain|raining|rainy)\b/i.test(userQuery);
-  const isActivelyRaining = precip > 0 || (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code === 95;
-
+  const isRainQuery = Boolean(userQuery && /\b(rain|raining|rainy|precipitation)\b/i.test(userQuery));
   if (isRainQuery) {
-    if (isActivelyRaining) {
-      return `In ${locName}, it is currently raining at ${temp}°C with ${humidity}% humidity.`;
-    } else {
-      return `In ${locName}, No rain is falling right now. Conditions are ${condition} at ${temp}°C with ${humidity}% humidity.`;
+    if (!precipKnown && !codeKnown) {
+      return `I can’t verify current rainfall in ${locName} because the latest precipitation data is unavailable.`;
     }
+
+    const raining = (precipKnown && (current.precipitation as number) > 0) || isRainCode(current.weather_code);
+    if (raining) {
+      const tempPart = tempKnown ? ` at about ${temp}°C` : '';
+      const evidence = precipKnown && (current.precipitation as number) > 0
+        ? 'The latest data reports measurable precipitation'
+        : 'The reported weather condition indicates rain or a thunderstorm';
+      return `${evidence} in ${locName}${tempPart}. Forecast rain probability is different from a direct observation.`;
+    }
+
+    if (precipKnown && (current.precipitation as number) === 0) {
+      const conditionPart = condition && condition !== 'conditions unavailable' ? ` Conditions are ${condition}.` : '';
+      return `The latest reading reports no measurable precipitation in ${locName} right now.${conditionPart}`;
+    }
+
+    if (condition && condition !== 'conditions unavailable') {
+      return `The current weather data for ${locName} reports ${condition}, but it does not provide a measurable precipitation reading.`;
+    }
+    return `I can’t confirm whether rain is falling in ${locName} from the available data.`;
   }
 
-  const feelsLikePart = Math.abs(feelsLike - temp) >= 2 ? ` (feels like ${feelsLike}°C)` : '';
-  const rainPart = isActivelyRaining ? ' with rain falling' : '';
+  if (!tempKnown && (!condition || condition === 'conditions unavailable') && !humidityKnown && !windKnown) {
+    return `I can’t provide a reliable current-weather reading for ${locName} because the latest measurements are incomplete. Please refresh the forecast and try again.`;
+  }
 
-  return `In ${locName}, it's currently ${temp}°C${feelsLikePart} and ${condition}${rainPart}. Humidity is ${humidity}%, with gentle winds at ${wind} km/h.`;
+  const facts: string[] = [];
+  if (tempKnown) facts.push(`about ${temp}°C`);
+  if (condition && condition !== 'conditions unavailable') facts.push(condition);
+  if (tempKnown && feelsLikeKnown && Math.abs((feelsLike as number) - (temp as number)) >= 2) {
+    facts.push(`feels like ${feelsLike}°C`);
+  }
+
+  let reply = `In ${locName}, current conditions are ${facts.length ? facts.join(', ') : 'partly unavailable'}.`;
+  const details: string[] = [];
+  if (humidityKnown) details.push(`${humidity}% humidity`);
+  if (windKnown) details.push(`wind at ${wind} km/h`);
+  if (details.length) reply += ` ${details.join(' with ')}.`;
+  if (!tempKnown) reply += ' The current temperature is not available in the latest data.';
+  if (!condition || condition === 'conditions unavailable') reply += ' The exact weather condition is not available in the latest data.';
+  return reply;
 }
 
 export function boundConversationHistory<T>(messages: T[], maxTurns: number = 6): T[] {

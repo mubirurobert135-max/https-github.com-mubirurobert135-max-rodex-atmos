@@ -1511,35 +1511,51 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       case 48:
         return 'Foggy & Misty';
       case 51:
-      case 53:
-      case 55:
-      case 56:
-      case 57:
         return 'Light Drizzle';
+      case 53:
+        return 'Moderate Drizzle';
+      case 55:
+        return 'Dense Drizzle';
+      case 56:
+        return 'Light Freezing Drizzle';
+      case 57:
+        return 'Dense Freezing Drizzle';
       case 61:
+        return 'Light Rain';
       case 63:
+        return 'Moderate Rain';
       case 65:
-      case 66:
-      case 67:
-        return 'Rain Showers';
-      case 71:
-      case 73:
-      case 75:
-      case 77:
-        return 'Snowfall';
-      case 80:
-      case 81:
-      case 82:
         return 'Heavy Rain';
+      case 66:
+        return 'Light Freezing Rain';
+      case 67:
+        return 'Heavy Freezing Rain';
+      case 71:
+        return 'Light Snowfall';
+      case 73:
+        return 'Moderate Snowfall';
+      case 75:
+        return 'Heavy Snowfall';
+      case 77:
+        return 'Snow Grains';
+      case 80:
+        return 'Light Rain Showers';
+      case 81:
+        return 'Moderate Rain Showers';
+      case 82:
+        return 'Intense Rain Showers';
       case 85:
+        return 'Light Snow Showers';
       case 86:
-        return 'Snow Showers';
+        return 'Heavy Snow Showers';
       case 95:
-      case 96:
-      case 99:
         return 'Thunderstorm';
+      case 96:
+        return 'Thunderstorm with Hail';
+      case 99:
+        return 'Severe Thunderstorm with Hail';
       default:
-        return 'Clear Skies';
+        return 'Conditions Unavailable';
     }
   }
 

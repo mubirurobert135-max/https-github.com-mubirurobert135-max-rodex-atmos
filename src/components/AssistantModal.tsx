@@ -16,7 +16,7 @@ import {
   buildNaturalGreetingResponse
 } from '../utils/greetingUtils';
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
-import { getPreferredAtmosVoice, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
+import { createAtmosBrowserUtterance, ATMOS_BROWSER_SPEECH_PITCH, ATMOS_BROWSER_SPEECH_RATE } from '../utils/voicePlayback';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
 
 import { LocationMode } from '../types';
@@ -185,6 +185,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Speak personalized time-aware greeting using RODEX Atmos Signature custom voice (voice_nv4v693k2132)
   const speakGreeting = useCallback(async (text: string, onDone?: () => void) => {
+    stopActiveAudioElement();
+    if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
+
     setCurrentAssistantSpoken(text);
     setLiveTranscripts((prev) => [
       ...prev,
@@ -192,80 +195,56 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     ]);
     setVoiceState('speaking');
 
-    // Attempt high-fidelity RODEX Atmos Signature voice synthesis first
-    let playedWithSignatureVoice = false;
+    let browserFallbackStarted = false;
+    let finished = false;
+    const finishGreeting = () => {
+      if (finished) return;
+      finished = true;
+      activeAudioElementRef.current = null;
+      setCurrentAssistantSpoken('');
+      setVoiceState('listening');
+      onDone?.();
+    };
+
+    const speakBrowserFallback = async () => {
+      if (browserFallbackStarted || finished) return;
+      browserFallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(text, window.speechSynthesis);
+        utterance.onend = finishGreeting;
+        utterance.onerror = finishGreeting;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        window.setTimeout(finishGreeting, 600);
+      }
+    };
+
     try {
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          style: ATMOS_SIGNATURE_STYLE
-        }),
+        body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
         signal: AbortSignal.timeout(7500)
       });
-
-      if (res.ok) {
-        const data = await res.json();
-        if (data.audio) {
-          const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
-          activeAudioElementRef.current = audio;
-          audio.onended = () => {
-            activeAudioElementRef.current = null;
-            setCurrentAssistantSpoken('');
-            setVoiceState('listening');
-            if (onDone) onDone();
-          };
-          audio.onerror = () => {
-            activeAudioElementRef.current = null;
-            setCurrentAssistantSpoken('');
-            setVoiceState('listening');
-            if (onDone) onDone();
-          };
-          await audio.play();
-          playedWithSignatureVoice = true;
-        }
+      const data = res.ok ? await res.json() : null;
+      if (data?.audio) {
+        const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
+        activeAudioElementRef.current = audio;
+        audio.onended = finishGreeting;
+        audio.onerror = () => {
+          console.warn('[RODEX Greeting Voice] Generated audio failed; using the browser voice.');
+          void speakBrowserFallback();
+        };
+        await audio.play();
+        return;
       }
     } catch (synthErr) {
-      console.warn('[RODEX Signature Voice Notice] Custom TTS fallback to Web Speech:', synthErr);
+      console.warn('[RODEX Greeting Voice] Generated speech unavailable; using the browser voice.', synthErr);
     }
 
-    if (playedWithSignatureVoice) return;
-
-    // Fallback to browser warm feminine speech synthesis
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
-      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-
-      const voices = window.speechSynthesis.getVoices();
-      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
-
-      if (preferredVoice) {
-        utterance.voice = preferredVoice;
-      }
-
-      utterance.onend = () => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      };
-
-      utterance.onerror = () => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      };
-
-      window.speechSynthesis.speak(utterance);
-    } else {
-      setTimeout(() => {
-        setCurrentAssistantSpoken('');
-        setVoiceState('listening');
-        if (onDone) onDone();
-      }, 1500);
-    }
+    await speakBrowserFallback();
   }, [stopActiveAudioElement]);
 
   // Audition the exact voice profile used in the assistant, not a stale bundled recording.

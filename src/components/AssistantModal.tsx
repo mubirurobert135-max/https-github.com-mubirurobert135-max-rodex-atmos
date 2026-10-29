@@ -322,40 +322,45 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
     finishAudition();
   }, [isAuditioning, stopActiveAudioElement]);
-  // Read any assistant message aloud using the RODEX Atmos Signature voice
+  // Read any assistant message aloud with reliable cleanup and a quick feminine browser fallback.
   const handleSpeakChatMessage = useCallback(async (text: string) => {
     stopActiveAudioElement();
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel();
+    }
+
     try {
       const res = await fetch('/api/ai/synthesize-speech', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text,
-          style: ATMOS_SIGNATURE_STYLE
-        }),
+        body: JSON.stringify({ text, style: ATMOS_SIGNATURE_STYLE }),
         signal: AbortSignal.timeout(10500)
       });
 
       if (res.ok) {
         const data = await res.json();
         if (data.audio) {
-          const audio = new Audio(`data:${data.mimeType || 'audio/wav'};base64,${data.audio}`);
+          const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
           activeAudioElementRef.current = audio;
+          const clearAudio = () => {
+            if (activeAudioElementRef.current === audio) activeAudioElementRef.current = null;
+          };
+          audio.onended = clearAudio;
+          audio.onerror = clearAudio;
           await audio.play();
           return;
         }
       }
     } catch (err) {
-      console.warn('Chat speech synthesis fallback:', err);
+      activeAudioElementRef.current = null;
+      console.warn('[RODEX Read Aloud] Generated voice unavailable; switching to browser speech.', err);
     }
 
-    // Fallback to browser speech synthesis
+    // Use a named, energetic English voice where available; never assume voices load synchronously.
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(text);
       utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
       utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-      const voices = window.speechSynthesis.getVoices();
       const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
       if (preferredVoice) utterance.voice = preferredVoice;
       window.speechSynthesis.speak(utterance);

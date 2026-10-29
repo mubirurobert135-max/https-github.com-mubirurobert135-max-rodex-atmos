@@ -1,5 +1,4 @@
 import express from 'express';
-import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -11,6 +10,10 @@ import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_
 dotenv.config();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Shared Express app: Vercel's catch-all API function awaits route registration and invokes this app.
+export const app = express();
+const isVercelRuntime = process.env.VERCEL === '1';
 
 interface ProviderConfig {
   name: string;
@@ -145,7 +148,6 @@ function isProviderHealthy(providerName: string): boolean {
 }
 
 async function startServer() {
-  const app = express();
   const PORT = process.env.PORT || 3000;
 
   app.use(express.json());
@@ -2120,19 +2122,22 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
     }
   });
 
-  // Setup Vite middleware for development
-  const vite = await createViteServer({
-    server: {
-      middlewareMode: true,
-      hmr: false
-    },
-    appType: 'spa',
-  });
+  // Vite middleware is only for local development. Vercel serves the built dist/ assets
+  // and routes /api/* through api/[...path].ts.
+  if (!isVercelRuntime) {
+    const { createServer: createViteServer } = await import('vite');
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        hmr: false
+      },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
+  }
 
-  app.use(vite.middlewares);
-
-  // Pre-warm the approved RODEX Atmos Signature greeting audio cache
-  if (ai) {
+  // Avoid remote TTS prewarming on serverless cold starts.
+  if (ai && !isVercelRuntime) {
     synthesizeSpeechInternal("Hey! I'm listening. What's on your mind?", ATMOS_SIGNATURE_STYLE)
       .then((res) => {
         if (res.audio) {
@@ -2144,9 +2149,12 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       });
   }
 
-  app.listen(Number(PORT), '0.0.0.0', () => {
-    console.log(`RODEX Atmos server running on http://localhost:${PORT}`);
-  });
+  if (!isVercelRuntime) {
+    app.listen(Number(PORT), '0.0.0.0', () => {
+      console.log(`RODEX Atmos server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
-startServer();
+// Export startup readiness for serverless functions so requests don't race route registration.
+export const serverReady = startServer();

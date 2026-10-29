@@ -19,33 +19,49 @@ export function getWeatherCondition(code: number, isDay: number = 1): { label: s
     case 48:
       return { label: 'Foggy & Misty', icon: 'CloudFog', theme: 'fog' };
     case 51:
-    case 53:
-    case 55:
-    case 56:
-    case 57:
       return { label: 'Light Drizzle', icon: 'CloudDrizzle', theme: 'rainy' };
+    case 53:
+      return { label: 'Moderate Drizzle', icon: 'CloudDrizzle', theme: 'rainy' };
+    case 55:
+      return { label: 'Dense Drizzle', icon: 'CloudDrizzle', theme: 'rainy' };
+    case 56:
+      return { label: 'Light Freezing Drizzle', icon: 'CloudDrizzle', theme: 'rainy' };
+    case 57:
+      return { label: 'Dense Freezing Drizzle', icon: 'CloudDrizzle', theme: 'rainy' };
     case 61:
+      return { label: 'Light Rain', icon: 'CloudRain', theme: 'rainy' };
     case 63:
+      return { label: 'Moderate Rain', icon: 'CloudRain', theme: 'rainy' };
     case 65:
-    case 66:
-    case 67:
-      return { label: 'Rain Showers', icon: 'CloudRain', theme: 'rainy' };
-    case 71:
-    case 73:
-    case 75:
-    case 77:
-      return { label: 'Snowfall', icon: 'CloudSnow', theme: 'snowy' };
-    case 80:
-    case 81:
-    case 82:
       return { label: 'Heavy Rain', icon: 'CloudRain', theme: 'rainy' };
+    case 66:
+      return { label: 'Light Freezing Rain', icon: 'CloudRain', theme: 'rainy' };
+    case 67:
+      return { label: 'Heavy Freezing Rain', icon: 'CloudRain', theme: 'rainy' };
+    case 71:
+      return { label: 'Light Snowfall', icon: 'CloudSnow', theme: 'snowy' };
+    case 73:
+      return { label: 'Moderate Snowfall', icon: 'CloudSnow', theme: 'snowy' };
+    case 75:
+      return { label: 'Heavy Snowfall', icon: 'CloudSnow', theme: 'snowy' };
+    case 77:
+      return { label: 'Snow Grains', icon: 'CloudSnow', theme: 'snowy' };
+    case 80:
+      return { label: 'Light Rain Showers', icon: 'CloudRain', theme: 'rainy' };
+    case 81:
+      return { label: 'Moderate Rain Showers', icon: 'CloudRain', theme: 'rainy' };
+    case 82:
+      return { label: 'Intense Rain Showers', icon: 'CloudRain', theme: 'rainy' };
     case 85:
+      return { label: 'Light Snow Showers', icon: 'CloudSnow', theme: 'snowy' };
     case 86:
-      return { label: 'Snow Showers', icon: 'CloudSnow', theme: 'snowy' };
+      return { label: 'Heavy Snow Showers', icon: 'CloudSnow', theme: 'snowy' };
     case 95:
-    case 96:
-    case 99:
       return { label: 'Thunderstorm', icon: 'CloudLightning', theme: 'thunder' };
+    case 96:
+      return { label: 'Thunderstorm with Hail', icon: 'CloudLightning', theme: 'thunder' };
+    case 99:
+      return { label: 'Severe Thunderstorm with Hail', icon: 'CloudLightning', theme: 'thunder' };
     default:
       return { label: 'Clear Skies', icon: 'Sun', theme: 'sunny' };
   }

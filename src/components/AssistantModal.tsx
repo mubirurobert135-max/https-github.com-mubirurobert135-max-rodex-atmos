@@ -171,6 +171,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
   // Reference for active audio elements (audition or custom synthesized speech)
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
+  const auditionRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
 
   // Stop any active audio element (audition or custom synthesized speech)
@@ -250,15 +251,43 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Audition the exact voice profile used in the assistant, not a stale bundled recording.
   const handleAuditionSignatureVoice = useCallback(async () => {
     if (isAuditioning) {
+      auditionRequestControllerRef.current?.abort();
+      auditionRequestControllerRef.current = null;
       stopActiveAudioElement();
       if (typeof window !== 'undefined' && window.speechSynthesis) window.speechSynthesis.cancel();
       return;
     }
 
     const auditionText = "Hey, I'm Atmos. Your day, your forecast, your vibe. Tell me what you need, and let's make today a little easier.";
+    const requestController = new AbortController();
+    auditionRequestControllerRef.current?.abort();
+    auditionRequestControllerRef.current = requestController;
+    let fallbackStarted = false;
+    let finished = false;
     const finishAudition = () => {
+      if (finished) return;
+      finished = true;
       setIsAuditioning(false);
       activeAudioElementRef.current = null;
+      if (auditionRequestControllerRef.current === requestController) {
+        auditionRequestControllerRef.current = null;
+      }
+    };
+
+    const speakBrowserFallback = async () => {
+      if (fallbackStarted || finished || requestController.signal.aborted) return;
+      fallbackStarted = true;
+      activeAudioElementRef.current = null;
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = await createAtmosBrowserUtterance(auditionText, window.speechSynthesis);
+        if (requestController.signal.aborted) return;
+        utterance.onend = finishAudition;
+        utterance.onerror = finishAudition;
+        window.speechSynthesis.speak(utterance);
+      } else {
+        finishAudition();
+      }
     };
 
     stopActiveAudioElement();
@@ -270,37 +299,29 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: auditionText, style: ATMOS_SIGNATURE_STYLE }),
-        signal: AbortSignal.timeout(7500)
+        signal: AbortSignal.any([requestController.signal, AbortSignal.timeout(7500)])
       });
       const data = res.ok ? await res.json() : null;
-
+      if (requestController.signal.aborted) return;
       if (data?.audio) {
         const audio = new Audio('data:' + (data.mimeType || 'audio/wav') + ';base64,' + data.audio);
         activeAudioElementRef.current = audio;
         audio.onended = finishAudition;
-        audio.onerror = finishAudition;
+        audio.onerror = () => {
+          console.warn('[Atmos Voice Audition] Generated audio failed; switching to browser speech.');
+          void speakBrowserFallback();
+        };
         await audio.play();
         return;
       }
     } catch (err) {
-      console.warn('[Atmos Voice Audition] Signature voice unavailable; trying the browser voice fallback.', err);
+      if (requestController.signal.aborted) return;
+      console.warn('[Atmos Voice Audition] Generated voice unavailable; trying the browser voice fallback.', err);
     }
 
-    if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(auditionText);
-      utterance.rate = ATMOS_BROWSER_SPEECH_RATE;
-      utterance.pitch = ATMOS_BROWSER_SPEECH_PITCH;
-      utterance.volume = 1;
-      const preferredVoice = await getPreferredAtmosVoice(window.speechSynthesis);
-      if (preferredVoice) utterance.voice = preferredVoice;
-      utterance.onend = finishAudition;
-      utterance.onerror = finishAudition;
-      window.speechSynthesis.speak(utterance);
-      return;
-    }
-
-    finishAudition();
+    await speakBrowserFallback();
   }, [isAuditioning, stopActiveAudioElement]);
+
   // Read any assistant message aloud with reliable cleanup and a quick feminine browser fallback.
   const handleSpeakChatMessage = useCallback(async (text: string) => {
     stopActiveAudioElement();

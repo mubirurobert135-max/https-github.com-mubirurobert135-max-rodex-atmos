@@ -44,8 +44,14 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
 
   const activeAlerts = data.alerts || [];
   const topAlert = activeAlerts.find(a => a.severity === 'extreme' || a.severity === 'severe') || activeAlerts[0];
-  const maxT = data.weather.daily?.temperature_2m_max?.[0] ?? (briefing?.highTemp ?? data.weather.current.temperature_2m + 3);
-  const minT = data.weather.daily?.temperature_2m_min?.[0] ?? (briefing?.lowTemp ?? data.weather.current.temperature_2m - 3);
+  const rawMaxT = data.weather.daily?.temperature_2m_max?.[0];
+  const rawMinT = data.weather.daily?.temperature_2m_min?.[0];
+  const maxT = typeof rawMaxT === 'number' && Number.isFinite(rawMaxT) ? rawMaxT : (briefing?.highTemp ?? null);
+  const minT = typeof rawMinT === 'number' && Number.isFinite(rawMinT) ? rawMinT : (briefing?.lowTemp ?? null);
+  const rawWind = data.weather.current?.wind_speed_10m;
+  const currentWindText = typeof rawWind === 'number' && Number.isFinite(rawWind)
+    ? 'Wind ' + Math.round(rawWind) + ' km/h'
+    : 'Wind speed unavailable';
 
   return (
     <div className="w-full bg-gradient-to-br from-slate-900/80 via-sky-950/60 to-indigo-950/80 backdrop-blur-2xl border border-sky-400/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-sky-400/45">
@@ -149,7 +155,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               {briefing?.greeting || `Hello, welcome to ${data.location.name}`}
             </h4>
             <p className="text-sm text-white/90 leading-relaxed">
-              {briefing?.summary || `Conditions in ${data.location.name} are current stable.`}
+              {briefing?.summary || `Current weather details for ${data.location.name} are unavailable. Refresh the forecast to try again.`}
             </p>
           </div>
 
@@ -160,7 +166,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               <div>
                 <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Temperature Range</span>
                 <span className="text-sm font-bold text-white tabular-nums">
-                  High: {formatTemp(maxT, unit)} / Low: {formatTemp(minT, unit)}
+                  High: {maxT == null ? '—' : formatTemp(maxT, unit)} / Low: {minT == null ? '—' : formatTemp(minT, unit)}
                 </span>
               </div>
             </div>
@@ -170,7 +176,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               <div>
                 <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Precipitation Outlook</span>
                 <span className="text-xs font-semibold text-white truncate block">
-                  {briefing?.rainLikelihood || 'Minimal rain probability.'}
+                  {briefing?.rainLikelihood || 'Rain probability unavailable.'}
                 </span>
               </div>
             </div>
@@ -180,7 +186,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               <div>
                 <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Atmospheric Wind</span>
                 <span className="text-xs font-semibold text-white truncate block">
-                  {briefing?.windCondition || `Wind ${Math.round(data.weather.current.wind_speed_10m)} km/h`}
+                  {briefing?.windCondition || currentWindText}
                 </span>
               </div>
             </div>

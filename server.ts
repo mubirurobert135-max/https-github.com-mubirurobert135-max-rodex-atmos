@@ -1794,14 +1794,15 @@ Compare current location against the selected map location directly and clearly.
 
       // Layer explanation context
       const activeLayerName = activeMapLayer || 'temperature';
-      const maxPrecipProb = hourly?.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(0, 12)) : 0;
+      const suppliedRainProbabilities = Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(0, 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)) : [];
+      const maxPrecipProb = suppliedRainProbabilities.length ? Math.max(...suppliedRainProbabilities) : null;
       const layerContext = `
 ACTIVE WEATHER MAP LAYER DATA (${activeLayerName.toUpperCase()} LAYER):
 - Active Layer Type: ${activeLayerName}
-- Temperature Layer Metrics: ${current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20}°C (Feels like ${current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : 20}°C).
-- Rain / Precipitation Layer Metrics: Current rate ${current?.precipitation ?? 0} mm/h, peak 12h rain probability ${maxPrecipProb}%.
-- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 0} km/h, direction ${current?.wind_direction_10m ?? 0}°.
-If user asks about or asks to explain the active map layer, describe this layer accurately using these metrics.`;
+- Temperature Layer Metrics: ${current?.temperature_2m != null && Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) + '°C' : 'unavailable'} (Feels like ${current?.apparent_temperature != null && Number.isFinite(current.apparent_temperature) ? Math.round(current.apparent_temperature) + '°C' : 'unavailable'}).
+- Rain / Precipitation Layer Metrics: Current reading ${current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation + ' mm' : 'unavailable'}, peak 12h rain probability ${maxPrecipProb == null ? 'unavailable' : maxPrecipProb + '%'}.
+- Wind Layer Metrics: Speed ${current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) + ' km/h' : 'unavailable'}, direction ${current?.wind_direction_10m ?? 'unavailable'}°.
+If user asks about the active map layer, use supplied provider values and acknowledge unavailable fields.`;
 
       // Calculate local time for the target city using provider timezone
       let localTime = 'N/A';
@@ -1819,29 +1820,37 @@ If user asks about or asks to explain the active map layer, describe this layer 
         localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
       }
 
-      const conditionLabel = getWeatherConditionLabel(current?.weather_code ?? 0, current?.is_day ?? 1);
-      const temp = current?.temperature_2m != null ? Math.round(current.temperature_2m) : 20;
-      const feelsLike = current?.apparent_temperature != null ? Math.round(current.apparent_temperature) : temp;
-      const humidity = current?.relative_humidity_2m ?? 50;
-      const wind = current?.wind_speed_10m != null ? Math.round(current.wind_speed_10m) : 5;
-      const precip = current?.precipitation ?? 0;
+      const conditionLabel = current?.weather_code != null && current.weather_code >= 0 ? getWeatherConditionLabel(current.weather_code, current.is_day ?? 1) : 'conditions unavailable';
+      const temp = current?.temperature_2m != null && Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : null;
+      const feelsLike = current?.apparent_temperature != null && Number.isFinite(current.apparent_temperature) ? Math.round(current.apparent_temperature) : null;
+      const humidity = current?.relative_humidity_2m != null && Number.isFinite(current.relative_humidity_2m) ? Math.round(current.relative_humidity_2m) : null;
+      const wind = current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) : null;
+      const precip = current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation : null;
 
       // Produce 12-hour hourly summary (including precipitation probability)
       const hourlySummary = hourly?.time?.slice(0, 12).map((t: string, idx: number) => {
+        const temperature = hourly?.temperature_2m?.[idx];
+        const probability = hourly?.precipitation_probability?.[idx];
         const hourStr = new Date(t).toLocaleTimeString([], { hour: 'numeric', hour12: true });
-        return `${hourStr}: ${Math.round(hourly.temperature_2m[idx])}°C (${hourly.precipitation_probability[idx]}% rain)`;
+        if (!Number.isFinite(temperature)) return hourStr + ': temperature unavailable';
+        return Number.isFinite(probability)
+          ? hourStr + ': ' + Math.round(temperature) + '°C (' + Math.round(probability) + '% rain chance)'
+          : hourStr + ': ' + Math.round(temperature) + '°C (rain probability unavailable)';
       }).join(', ') || 'N/A';
 
       // Produce 7-day outlook
       const dailySummary = daily?.time?.slice(0, 7).map((d: string, idx: number) => {
         const dayName = idx === 0 ? 'Today' : new Date(d).toLocaleDateString([], { weekday: 'short' });
-        return `${dayName}: ${Math.round(daily.temperature_2m_min[idx])}°C to ${Math.round(daily.temperature_2m_max[idx])}°C`;
+        const low = daily?.temperature_2m_min?.[idx];
+        const high = daily?.temperature_2m_max?.[idx];
+        if (!Number.isFinite(low) || !Number.isFinite(high)) return `${dayName}: forecast temperatures unavailable`;
+        return `${dayName}: ${Math.round(low)}°C to ${Math.round(high)}°C`;
       }).join('; ') || 'N/A';
 
       const activeAlerts = targetWeatherData?.alerts || [];
       const alertsContext = activeAlerts.length > 0
         ? `\nACTIVE WEATHER ALERTS FOR ${location?.name || 'Selected City'}:\n` + activeAlerts.map((a: any) => `- [${a.type.toUpperCase()} / ${a.severity.toUpperCase()}] ${a.title}: ${a.description} (Authority: ${a.issuingAuthority || 'N/A'}, Instruction: ${a.instruction || 'None'})`).join('\n')
-        : '\nACTIVE WEATHER ALERTS: None active for this location currently.';
+        : '\nWEATHER ALERTS: No alert records were returned by this provider; do not claim an official all-clear.';
 
       const systemInstruction = `You are RODEX AI, the advanced meteorological and atmospheric assistant for the RODEX Atmos web app.
 You provide helpful, concise, and friendly weather insights, wardrobe recommendations, and outdoor planning advice.
@@ -1853,7 +1862,7 @@ STRICT GROUNDING & LOCATION RULES:
 4. Explicit Location Override: If user names a specific city in their prompt (e.g. "What's the weather in Entebbe?"), prioritize that explicit city over map or device location.
 5. Ground every answer strictly in the real provider data below. Never invent figures or fake warnings.
 6. Keep replies conversational, concise (strictly 1-2 natural sentences, under 35 words), and directly answer the question.
-7. Rain Queries: Distinguish current rain (precipitation: ${precip}mm, code: ${current?.weather_code ?? 0}) from future probability. Do NOT state it is currently raining unless precipitation > 0mm.
+7. Distinguish current precipitation (${precip == null ? 'unavailable' : precip + ' mm'}) and reported condition (${current?.weather_code ?? 'unavailable'}) from future rain probability; do not treat probability alone as proof that rain is falling.
 8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
 9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
 
@@ -1861,12 +1870,12 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
 - Local Time: ${localTime}
 - Condition: ${conditionLabel}
-- Temperature: ${temp}°C (Feels like: ${feelsLike}°C)
+- Temperature: ${temp == null ? 'unavailable' : temp + '°C'} (Feels like: ${feelsLike == null ? 'unavailable' : feelsLike + '°C'}
 - Weather Code: ${current?.weather_code ?? 'N/A'}
-- Humidity: ${humidity}%
-- Wind Speed: ${wind} km/h
-- Precipitation Volume: ${precip} mm
-- Surface Pressure: ${current?.surface_pressure ?? 1013} hPa
+- Humidity: ${humidity == null ? 'unavailable' : humidity + '%'}
+- Wind Speed: ${wind == null ? 'unavailable' : wind + ' km/h'}
+- Precipitation Volume: ${precip == null ? 'unavailable' : precip + ' mm'}
+- Surface Pressure: ${current?.surface_pressure != null ? current.surface_pressure + ' hPa' : 'unavailable'}
 - Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
 - 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
 
@@ -1913,16 +1922,37 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
         }
       }
 
-      // Grounded deterministic response using provider fields
-      let fallbackReply = `In ${location?.name}${location?.country ? ', ' + location.country : ''}, the local time is ${localTime}. Current conditions are ${conditionLabel.toLowerCase()} at ${temp}°C (feels like ${feelsLike}°C) with ${humidity}% humidity and wind at ${wind} km/h.`;
+      // Deterministic fallback uses provider facts only when Gemini is unavailable.
+      const currentFacts = [
+        temp == null ? null : temp + '°C',
+        conditionLabel !== 'conditions unavailable' ? conditionLabel : null,
+        humidity == null ? null : humidity + '% humidity',
+        wind == null ? null : 'wind ' + wind + ' km/h'
+      ].filter(Boolean);
+      let fallbackReply = currentFacts.length
+        ? 'In ' + (location?.name || 'the selected location') + ', the local time is ' + localTime + '. Current data reports ' + currentFacts.join(', ') + '.'
+        : 'I can’t provide a reliable current-weather answer for ' + (location?.name || 'this location') + ' because the latest measurements are incomplete. Please refresh the forecast.';
 
       if (/\b(wear|clothes|dress|jacket|coat)\b/i.test(lastUserMsg)) {
-        if (temp < 15) fallbackReply = `In ${location?.name}, it's ${temp}°C with ${conditionLabel.toLowerCase()}. A warm jacket or sweater layers are recommended today.`;
-        else if (temp > 24) fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Breathable lightweight cottons and sunglasses are ideal today.`;
-        else fallbackReply = `In ${location?.name}, it's ${temp}°C and ${conditionLabel.toLowerCase()}. Comfortable light layers or a casual jacket will keep you feeling great.`;
+        if (temp == null) {
+          fallbackReply = 'I can’t make a temperature-based clothing recommendation for ' + (location?.name || 'this location') + ' because the current temperature is unavailable.';
+        } else if (temp < 15) {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. A warm jacket or sweater is a sensible choice.';
+        } else if (temp > 24) {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Breathable, lightweight clothing should be comfortable.';
+        } else {
+          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Comfortable light layers are a reasonable choice.';
+        }
       } else if (/\b(umbrella|rain)\b/i.test(lastUserMsg)) {
-        if (precip > 0 || (current?.weather_code ?? 0) >= 51) fallbackReply = `In ${location?.name}, rain is actively falling. You will definitely want an umbrella.`;
-        else fallbackReply = `In ${location?.name}, no rain is falling right now with ${conditionLabel.toLowerCase()} conditions.`;
+        const rainIndicated = (precip != null && precip > 0) ||
+          (current?.weather_code != null && ((current.weather_code >= 51 && current.weather_code <= 67) || (current.weather_code >= 80 && current.weather_code <= 82)));
+        if (rainIndicated) {
+          fallbackReply = 'The latest weather data indicates rain in ' + (location?.name || 'this location') + '. Carrying an umbrella is a sensible precaution.';
+        } else if (precip === 0) {
+          fallbackReply = 'The latest reading reports no measurable precipitation in ' + (location?.name || 'this location') + ' right now.';
+        } else {
+          fallbackReply = 'I can’t confirm current rainfall in ' + (location?.name || 'this location') + ' because precipitation data is unavailable.';
+        }
       }
 
       return await sendChatResponse(fallbackReply, updatedCityWeather);

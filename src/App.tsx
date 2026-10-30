@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { CurrentWeatherCard } from './components/CurrentWeatherCard';
@@ -82,6 +82,7 @@ export default function App() {
   const [isAlertsModalOpen, setIsAlertsModalOpen] = useState<boolean>(false);
   const [mapContextLocation, setMapContextLocation] = useState<WeatherData | null>(null);
   const [activeMapLayer, setActiveMapLayer] = useState<'temperature' | 'precipitation' | 'wind'>('temperature');
+  const weatherRequestIdRef = useRef(0);
 
   const handleOpenAssistant = (prompt?: string) => {
     if (prompt) setAssistantPrompt(prompt);
@@ -97,6 +98,7 @@ export default function App() {
 
   // Progressive Location Strategy on App Startup
   const initializeStartupLocation = async (forceGPS = false) => {
+    const requestId = ++weatherRequestIdRef.current;
     setIsLoading(true);
     setErrorMessage(null);
     setLocationNotice(null);
@@ -106,6 +108,7 @@ export default function App() {
       try {
         const res = await fetch('/api/weather/search?query=Kampala,Uganda');
         const data = await res.json().catch(() => null);
+        if (requestId !== weatherRequestIdRef.current) return;
         if (!res.ok) {
           setErrorMessage(data?.message || data?.error || `Weather service returned HTTP ${res.status}. Check the deployment API and try again.`);
         } else if (data?.weather?.current && data?.location?.name) {
@@ -120,10 +123,12 @@ export default function App() {
           setErrorMessage('The weather service returned an incomplete forecast. Please retry or search for a city.');
         }
       } catch (e) {
-        console.warn('Auto location disabled fallback error:', e);
-        setErrorMessage('Unable to reach the weather API. The preview may be missing its API route or the service may be temporarily unavailable.');
+        if (requestId === weatherRequestIdRef.current) {
+          console.warn('Auto location disabled fallback error:', e);
+          setErrorMessage('Unable to reach the weather API. The preview may be missing its API route or the service may be temporarily unavailable.');
+        }
       } finally {
-        setIsLoading(false);
+        if (requestId === weatherRequestIdRef.current) setIsLoading(false);
       }
       return;
     }
@@ -134,6 +139,7 @@ export default function App() {
     const tryNetworkIpLocation = async (gpsErrorReason?: string) => {
       try {
         const res = await fetch('/api/weather/ip-location');
+        if (requestId !== weatherRequestIdRef.current) return;
         if (res.ok) {
           const data: WeatherData = await res.json();
           setWeatherData(data);
@@ -153,6 +159,7 @@ export default function App() {
       try {
         const res = await fetch('/api/weather/search?query=Kampala,Uganda');
         const data = await res.json().catch(() => null);
+        if (requestId !== weatherRequestIdRef.current) return;
         if (res.ok && data?.weather?.current && data?.location?.name) {
           setWeatherData(data as WeatherData);
           setDeviceLocationData(data as WeatherData);
@@ -169,15 +176,17 @@ export default function App() {
           setErrorMessage(`Unable to load the forecast. ${serviceMessage} Check the deployment API and retry, or search for a city.`);
         }
       } catch (fallbackErr) {
-        console.error('Default weather fallback failed:', fallbackErr);
-        setErrorMessage('Unable to reach the weather API. Check the deployed backend/API routing and your network, then retry.');
+        if (requestId === weatherRequestIdRef.current) {
+          console.error('Default weather fallback failed:', fallbackErr);
+          setErrorMessage('Unable to reach the weather API. Check the deployed backend/API routing and your network, then retry.');
+        }
       }
     };
 
     // Step 1: Check Physical Geolocation API
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
       await tryNetworkIpLocation('Geolocation is not supported by your browser.');
-      setIsLoading(false);
+      if (requestId === weatherRequestIdRef.current) setIsLoading(false);
       return;
     }
 
@@ -189,6 +198,7 @@ export default function App() {
           const placePromise = resolveCurrentDevicePlace(latitude, longitude);
           const weatherPromise = fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
           const [place, res] = await Promise.all([placePromise, weatherPromise]);
+          if (requestId !== weatherRequestIdRef.current) return;
           if (res.ok) {
             const data: WeatherData = await res.json();
             if (place) {
@@ -207,9 +217,9 @@ export default function App() {
             await tryNetworkIpLocation('Unable to resolve GPS coordinates.');
           }
         } catch (err) {
-          await tryNetworkIpLocation('GPS coordinate lookup failed.');
+          if (requestId === weatherRequestIdRef.current) await tryNetworkIpLocation('GPS coordinate lookup failed.');
         } finally {
-          setIsLoading(false);
+          if (requestId === weatherRequestIdRef.current) setIsLoading(false);
         }
       },
       async (error) => {
@@ -223,8 +233,9 @@ export default function App() {
         } else if (error.code === error.TIMEOUT) {
           reason = 'GPS location request timed out.';
         }
+        if (requestId !== weatherRequestIdRef.current) return;
         await tryNetworkIpLocation(reason);
-        setIsLoading(false);
+        if (requestId === weatherRequestIdRef.current) setIsLoading(false);
       },
       { timeout: 7000, enableHighAccuracy: true, maximumAge: 300000 }
     );
@@ -236,12 +247,14 @@ export default function App() {
 
   // Fetch live weather by search query (preserves deviceLocationData!)
   const handleSearch = async (query: string) => {
+    const requestId = ++weatherRequestIdRef.current;
     setIsLoading(true);
     setErrorMessage(null);
     setSetupRequired(false);
     try {
       const res = await fetch(`/api/weather/search?query=${encodeURIComponent(query)}`);
       const data = await res.json();
+      if (requestId !== weatherRequestIdRef.current) return;
       
       if (!res.ok) {
         if (data.error === 'SETUP_REQUIRED') {
@@ -255,21 +268,25 @@ export default function App() {
       setWeatherData(data);
       setLocationMode('search');
     } catch (err: any) {
-      console.error('Search error:', err);
-      setErrorMessage(err.message || 'Could not fetch live weather for the requested city.');
+      if (requestId === weatherRequestIdRef.current) {
+        console.error('Search error:', err);
+        setErrorMessage(err.message || 'Could not fetch live weather for the requested city.');
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === weatherRequestIdRef.current) setIsLoading(false);
     }
   };
 
   // Fetch live weather by exact coordinates
   const handleSelectCoordinates = async (lat: number, lon: number, name: string) => {
+    const requestId = ++weatherRequestIdRef.current;
     setIsLoading(true);
     setErrorMessage(null);
     setSetupRequired(false);
     try {
       const res = await fetch(`/api/weather/coordinates?lat=${lat}&lon=${lon}&name=${encodeURIComponent(name)}`);
       const data = await res.json();
+      if (requestId !== weatherRequestIdRef.current) return;
       
       if (!res.ok) {
         if (data.error === 'SETUP_REQUIRED') {
@@ -283,10 +300,12 @@ export default function App() {
       setWeatherData(data);
       setLocationMode('search');
     } catch (err: any) {
-      console.error('Coordinates error:', err);
-      setErrorMessage('Failed to fetch live weather data for coordinates.');
+      if (requestId === weatherRequestIdRef.current) {
+        console.error('Coordinates error:', err);
+        setErrorMessage('Failed to fetch live weather data for coordinates.');
+      }
     } finally {
-      setIsLoading(false);
+      if (requestId === weatherRequestIdRef.current) setIsLoading(false);
     }
   };
 

@@ -64,7 +64,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
         };
       case 'rainy':
         return {
-          baseGradient: 'from-[#7549D0] via-[#8F55F7] to-[#9D91F7]',
+          baseGradient: 'from-[#924EF9] via-[#8F55F7] to-[#9D91F7]',
           ambientGlow1: 'bg-[#E8E9FE]/24',
           ambientGlow2: 'bg-[#C2BCF8]/24',
           accentGlow: 'bg-[#C2BCF8]/24',
@@ -75,7 +75,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
           baseGradient: 'from-[#924EF9] via-[#8F55F7] to-[#9D91F7]',
           ambientGlow1: 'bg-[#924EF9]/24',
           ambientGlow2: 'bg-[#C2BCF8]/30',
-          accentGlow: 'bg-amber-400/15',
+          accentGlow: 'bg-[#E8E9FE]/24',
           particles: 'electric'
         };
       case 'snowy':
@@ -104,9 +104,9 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
         };
       case 'night':
         return {
-          baseGradient: 'from-[#7549D0] via-[#9D91F7] to-[#8F55F7]',
+          baseGradient: 'from-[#924EF9] via-[#9D91F7] to-[#8F55F7]',
           ambientGlow1: 'bg-[#8F55F7]/24',
-          ambientGlow2: 'bg-sky-500/15',
+          ambientGlow2: 'bg-[#C2BCF8]/24',
           accentGlow: 'bg-[#C2BCF8]/22',
           particles: 'stars'
         };
@@ -116,7 +116,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
           baseGradient: 'from-[#8F55F7] via-[#9D91F7] to-[#C2BCF8]',
           ambientGlow1: 'bg-[#E8E9FE]/28',
           ambientGlow2: 'bg-[#C2BCF8]/32',
-          accentGlow: 'bg-teal-500/12',
+          accentGlow: 'bg-[#C2BCF8]/22',
           particles: 'cloud-drift'
         };
     }

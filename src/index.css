@@ -3713,3 +3713,238 @@ main .glass-panel-interactive:hover {
   .wx-more-weather-toggle,
   .header-account-shortcut { transition: none !important; }
 }
+
+
+/* ================================================================
+   RODEX Atmos — tactile 3D navigation tabs
+   Applies a shared raised/glass depth language to desktop rail,
+   desktop header tabs and the mobile navigation dock.
+   ================================================================ */
+.wx-reference-rail,
+nav[aria-label="Primary Navigation"],
+nav[aria-label="Mobile Navigation"] {
+  perspective: 900px;
+  transform-style: preserve-3d;
+}
+
+.wx-rail-navigation {
+  perspective: 700px;
+  transform-style: preserve-3d;
+}
+
+.wx-reference-rail-button {
+  position: relative !important;
+  isolation: isolate;
+  transform: perspective(700px) translateZ(0);
+  transform-style: preserve-3d;
+  border: 1px solid rgba(255,255,255,.08) !important;
+  box-shadow:
+    0 2px 0 rgba(66,35,139,.30),
+    0 5px 10px rgba(49,23,107,.10),
+    inset 0 1px rgba(255,255,255,.10) !important;
+  transition:
+    transform .24s cubic-bezier(.2,.8,.2,1),
+    box-shadow .24s ease,
+    background .24s ease,
+    border-color .24s ease !important;
+}
+.wx-reference-rail-button::after {
+  content: "";
+  position: absolute;
+  inset: 1px 1px auto;
+  height: 48%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 11px 11px 8px 8px;
+  background: linear-gradient(180deg, rgba(255,255,255,.12), transparent);
+  opacity: .72;
+  transition: opacity .2s ease;
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  transform: perspective(700px) translateY(-3px) rotateX(5deg) translateZ(5px) !important;
+  border-color: rgba(255,255,255,.34) !important;
+  box-shadow:
+    0 4px 0 rgba(66,35,139,.28),
+    0 11px 18px rgba(49,23,107,.19),
+    inset 0 1px rgba(255,255,255,.24) !important;
+}
+.wx-reference-rail-button:active:not(:disabled) {
+  transform: perspective(700px) translateY(1px) rotateX(-2deg) translateZ(-2px) scale(.985) !important;
+  box-shadow:
+    0 1px 0 rgba(66,35,139,.32),
+    0 2px 5px rgba(49,23,107,.12),
+    inset 0 2px 4px rgba(49,23,107,.12) !important;
+}
+.wx-reference-rail-button.is-active {
+  transform: perspective(700px) translateY(-2px) translateZ(7px) !important;
+  border-color: rgba(255,255,255,.42) !important;
+  background: linear-gradient(145deg, rgba(219,214,248,.40), rgba(200,192,246,.24)) !important;
+  box-shadow:
+    0 4px 0 rgba(66,35,139,.30),
+    0 10px 20px rgba(49,23,107,.20),
+    inset 0 1px rgba(255,255,255,.30),
+    inset 0 -1px rgba(83,48,156,.12) !important;
+}
+.wx-reference-rail-button.is-active::after {
+  opacity: 1;
+}
+
+/* Raised glass pills for any visible desktop tab strip. */
+nav[aria-label="Primary Navigation"] {
+  gap: 5px;
+  padding: 5px !important;
+  border-radius: 17px !important;
+  background: linear-gradient(145deg, rgba(219,214,248,.94), rgba(189,177,240,.88)) !important;
+  box-shadow:
+    0 5px 0 rgba(99,68,165,.18),
+    0 12px 22px rgba(68,42,128,.12),
+    inset 0 1px rgba(255,255,255,.55) !important;
+}
+nav[aria-label="Primary Navigation"] button {
+  position: relative;
+  isolation: isolate;
+  transform: perspective(650px) translateZ(0);
+  transform-style: preserve-3d;
+  border: 1px solid rgba(132,78,231,.12) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 2px 0 rgba(90,58,156,.16), inset 0 1px rgba(255,255,255,.3) !important;
+  transition: transform .23s cubic-bezier(.2,.8,.2,1), box-shadow .23s ease, background .23s ease !important;
+}
+nav[aria-label="Primary Navigation"] button:hover {
+  transform: perspective(650px) translateY(-3px) rotateX(5deg) translateZ(4px) !important;
+  box-shadow: 0 5px 0 rgba(90,58,156,.18), 0 9px 16px rgba(90,58,156,.14), inset 0 1px rgba(255,255,255,.4) !important;
+}
+nav[aria-label="Primary Navigation"] button:active {
+  transform: perspective(650px) translateY(1px) rotateX(-2deg) scale(.985) !important;
+  box-shadow: 0 1px 0 rgba(90,58,156,.2), inset 0 2px 4px rgba(90,58,156,.12) !important;
+}
+nav[aria-label="Primary Navigation"] button[aria-current="page"] {
+  transform: perspective(650px) translateY(-2px) translateZ(6px) !important;
+  background: linear-gradient(145deg, #AA9AF3 0%, #844EE7 100%) !important;
+  border-color: rgba(255,255,255,.48) !important;
+  box-shadow:
+    0 4px 0 #6940B8,
+    0 9px 18px rgba(75,43,133,.24),
+    inset 0 1px rgba(255,255,255,.48),
+    inset 0 -2px rgba(66,35,139,.16) !important;
+}
+
+/* Mobile dock: each destination is a small 3D tile, Atmos remains the hero orb. */
+nav[aria-label="Mobile Navigation"] {
+  transform-style: preserve-3d;
+  border-radius: 24px !important;
+  box-shadow:
+    0 7px 0 rgba(92,64,154,.22),
+    0 17px 34px rgba(53,31,113,.25),
+    inset 0 1px rgba(255,255,255,.48),
+    inset 0 -2px rgba(93,65,154,.10) !important;
+}
+nav[aria-label="Mobile Navigation"] > div {
+  perspective: 700px;
+  transform-style: preserve-3d;
+}
+nav[aria-label="Mobile Navigation"] > div > button {
+  position: relative;
+  isolation: isolate;
+  transform: perspective(650px) translateZ(0);
+  transform-style: preserve-3d;
+  min-height: 49px;
+  border: 1px solid transparent !important;
+  border-radius: 14px !important;
+  box-shadow: 0 2px 0 rgba(91,65,151,.10), inset 0 1px rgba(255,255,255,.12) !important;
+  transition:
+    transform .23s cubic-bezier(.2,.8,.2,1),
+    box-shadow .23s ease,
+    background .23s ease,
+    border-color .23s ease !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button:not([aria-label="Open RODEX AI Voice and Chat Assistant"]):hover {
+  transform: perspective(650px) translateY(-4px) rotateX(7deg) translateZ(5px) !important;
+  border-color: rgba(132,78,231,.22) !important;
+  background: rgba(232,229,245,.54) !important;
+  box-shadow:
+    0 4px 0 rgba(91,65,151,.15),
+    0 9px 15px rgba(75,43,133,.14),
+    inset 0 1px rgba(255,255,255,.48) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button:not([aria-label="Open RODEX AI Voice and Chat Assistant"]):active {
+  transform: perspective(650px) translateY(1px) rotateX(-3deg) scale(.96) !important;
+  box-shadow: 0 1px 0 rgba(91,65,151,.14), inset 0 2px 4px rgba(75,43,133,.12) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] {
+  transform: perspective(650px) translateY(-3px) translateZ(7px) !important;
+  border-color: rgba(255,255,255,.68) !important;
+  background: linear-gradient(145deg, #D4CBFA 0%, #AA9AF3 100%) !important;
+  box-shadow:
+    0 4px 0 #8B73D3,
+    0 10px 17px rgba(75,43,133,.17),
+    inset 0 1px rgba(255,255,255,.66),
+    inset 0 -2px rgba(83,48,156,.10) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] svg {
+  filter: drop-shadow(0 2px 2px rgba(75,43,133,.16));
+  transform: translateZ(5px);
+}
+
+/* Atmos assistant orb has a separate layered 3D lift. */
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  position: relative;
+  transform: perspective(650px) translateY(-3px) translateZ(12px) !important;
+  border-radius: 50% !important;
+  box-shadow:
+    0 5px 0 #633AB3,
+    0 13px 23px rgba(75,43,133,.32),
+    inset 0 2px rgba(255,255,255,.58),
+    inset 0 -3px rgba(66,35,139,.18) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:hover {
+  transform: perspective(650px) translateY(-6px) translateZ(16px) rotateX(7deg) scale(1.035) !important;
+  box-shadow:
+    0 7px 0 #633AB3,
+    0 17px 27px rgba(75,43,133,.35),
+    inset 0 2px rgba(255,255,255,.62),
+    inset 0 -3px rgba(66,35,139,.16) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:active {
+  transform: perspective(650px) translateY(0) translateZ(4px) scale(.96) !important;
+  box-shadow: 0 2px 0 #633AB3, 0 5px 10px rgba(75,43,133,.2), inset 0 2px 4px rgba(66,35,139,.16) !important;
+}
+
+/* The top-bar account shortcut shares the same raised control language. */
+.header-account-shortcut {
+  transform: perspective(650px) translateZ(0);
+  box-shadow:
+    0 3px 0 rgba(99,68,165,.18),
+    0 7px 13px rgba(68,42,128,.10),
+    inset 0 1px rgba(255,255,255,.52) !important;
+}
+.header-account-shortcut:hover {
+  transform: perspective(650px) translateY(-3px) rotateX(5deg) translateZ(4px) !important;
+  box-shadow:
+    0 5px 0 rgba(99,68,165,.18),
+    0 11px 17px rgba(68,42,128,.14),
+    inset 0 1px rgba(255,255,255,.6) !important;
+}
+.header-account-shortcut:active {
+  transform: perspective(650px) translateY(1px) scale(.97) !important;
+  box-shadow: 0 1px 0 rgba(99,68,165,.18), inset 0 2px 4px rgba(68,42,128,.12) !important;
+}
+
+/* Keyboard focus stays obvious; reduce depth/motion when requested. */
+.wx-reference-rail-button:focus-visible,
+nav[aria-label="Primary Navigation"] button:focus-visible,
+nav[aria-label="Mobile Navigation"] button:focus-visible,
+.header-account-shortcut:focus-visible {
+  outline: 3px solid #5B2EB5 !important;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-reference-rail-button,
+  nav[aria-label="Primary Navigation"] button,
+  nav[aria-label="Mobile Navigation"] > div > button,
+  nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"],
+  .header-account-shortcut {
+    transform: none !important;
+    transition: none !important;
+  }
+}

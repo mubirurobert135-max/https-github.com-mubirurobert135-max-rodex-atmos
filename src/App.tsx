@@ -18,11 +18,12 @@ import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
-import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map } from 'lucide-react';
+import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map, ChevronDown } from 'lucide-react';
 
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
+  const [showMoreWeather, setShowMoreWeather] = useState(false);
   const [mapDisplayMode, setMapDisplayMode] = useState<'map' | 'globe'>('map');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
@@ -486,22 +487,40 @@ export default function App() {
                   onSelectCoordinates={handleSelectCoordinates}
                 />
 
-                <div className="wx-reference-support-grid">
-                  <DailyBriefingCard
-                    data={weatherData}
-                    onOpenAssistant={handleOpenAssistant}
-                    unit={unit}
-                  />
-                  <AiInsightsCard
-                    data={weatherData}
-                    onOpenAssistant={() => handleOpenAssistant()}
-                  />
-                </div>
+                <button
+                  type="button"
+                  className="wx-more-weather-toggle"
+                  aria-expanded={showMoreWeather}
+                  aria-controls="wx-more-weather-content"
+                  onClick={() => setShowMoreWeather((open) => !open)}
+                >
+                  <span className="wx-more-weather-copy">
+                    <strong>{showMoreWeather ? 'Hide detailed weather' : 'More weather information'}</strong>
+                    <small>24-hour forecast, measurements and optional AI summaries</small>
+                  </span>
+                  <ChevronDown className={`wx-more-weather-chevron ${showMoreWeather ? 'is-open' : ''}`} aria-hidden="true" />
+                </button>
 
-                <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
-                  <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
-                  <WeatherDetailsGrid data={weatherData} unit={unit} />
-                </div>
+                {showMoreWeather && (
+                  <section id="wx-more-weather-content" className="wx-more-weather-content" aria-label="Additional weather information">
+                    <div className="wx-reference-support-grid">
+                      <DailyBriefingCard
+                        data={weatherData}
+                        onOpenAssistant={handleOpenAssistant}
+                        unit={unit}
+                      />
+                      <AiInsightsCard
+                        data={weatherData}
+                        onOpenAssistant={() => handleOpenAssistant()}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
+                      <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                      <WeatherDetailsGrid data={weatherData} unit={unit} />
+                    </div>
+                  </section>
+                )}
               </div>
             )}
           </>

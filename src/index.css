@@ -3948,3 +3948,219 @@ nav[aria-label="Mobile Navigation"] button:focus-visible,
     transition: none !important;
   }
 }
+
+
+/* ================================================================
+   RODEX Atmos — professional navigation refinement
+   Replace exaggerated tilt with restrained, polished depth and clear
+   selected states. Keep the violet/lavender identity consistent.
+   ================================================================ */
+
+/* Desktop left navigation: precise alignment, quiet surface, clear active pill. */
+.wx-reference-rail {
+  gap: 15px !important;
+}
+.wx-rail-navigation {
+  gap: 5px !important;
+}
+.wx-reference-rail-button {
+  min-height: 41px !important;
+  padding: 0 11px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: .005em;
+  transform: translateY(0) !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transition:
+    background .18s ease,
+    color .18s ease,
+    border-color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease !important;
+}
+.wx-reference-rail-button::after {
+  display: none !important;
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  transform: translateX(2px) !important;
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.10) !important;
+}
+.wx-reference-rail-button.is-active {
+  transform: translateX(0) !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(105deg, rgba(255,255,255,.24), rgba(255,255,255,.12)) !important;
+  border-color: rgba(255,255,255,.24) !important;
+  box-shadow:
+    0 4px 12px rgba(49,23,107,.13),
+    inset 3px 0 0 #E8E5F5,
+    inset 0 1px rgba(255,255,255,.18) !important;
+  animation: wxNavSelect .2s ease both !important;
+}
+.wx-reference-rail-button.is-active svg {
+  color: #FFFFFF !important;
+  filter: drop-shadow(0 1px 1px rgba(45,22,91,.16));
+}
+.wx-reference-rail-button:active:not(:disabled) {
+  transform: scale(.985) !important;
+  box-shadow: inset 0 2px 4px rgba(49,23,107,.14) !important;
+}
+
+/* Desktop tab strip: refined segmented control. */
+nav[aria-label="Primary Navigation"] {
+  display: flex;
+  align-items: center;
+  gap: 3px !important;
+  padding: 4px !important;
+  border: 1px solid rgba(132,78,231,.18) !important;
+  border-radius: 14px !important;
+  background: rgba(200,192,246,.60) !important;
+  box-shadow:
+    0 3px 10px rgba(68,42,128,.08),
+    inset 0 1px rgba(255,255,255,.48) !important;
+}
+nav[aria-label="Primary Navigation"] button {
+  min-height: 34px;
+  padding: 0 12px !important;
+  gap: 7px !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  color: #5F4A7D !important;
+  background: transparent !important;
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  transition:
+    background .18s ease,
+    color .18s ease,
+    border-color .18s ease,
+    box-shadow .18s ease,
+    transform .18s ease !important;
+}
+nav[aria-label="Primary Navigation"] button:hover {
+  transform: translateY(-1px) !important;
+  color: #32164D !important;
+  background: rgba(255,255,255,.36) !important;
+  box-shadow: 0 2px 7px rgba(75,43,133,.08) !important;
+}
+nav[aria-label="Primary Navigation"] button[aria-current="page"] {
+  transform: translateY(0) !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #987FF3, #844EE7) !important;
+  border-color: rgba(255,255,255,.38) !important;
+  box-shadow:
+    0 3px 8px rgba(75,43,133,.19),
+    inset 0 1px rgba(255,255,255,.32) !important;
+}
+nav[aria-label="Primary Navigation"] button:active {
+  transform: scale(.98) !important;
+}
+nav[aria-label="Primary Navigation"] button:focus-visible {
+  outline: 2px solid #5B2EB5 !important;
+  outline-offset: 2px !important;
+}
+
+/* Mobile dock: one coherent floating bar, not five competing 3D buttons. */
+nav[aria-label="Mobile Navigation"] {
+  padding: 6px 8px max(8px, env(safe-area-inset-bottom)) !important;
+  border-radius: 20px !important;
+  background: rgba(219,214,248,.94) !important;
+  border: 1px solid rgba(132,78,231,.22) !important;
+  box-shadow:
+    0 10px 28px rgba(53,31,113,.17),
+    inset 0 1px rgba(255,255,255,.60) !important;
+  backdrop-filter: blur(22px) saturate(1.14) !important;
+}
+nav[aria-label="Mobile Navigation"] > div {
+  gap: 3px;
+}
+nav[aria-label="Mobile Navigation"] > div > button:not([aria-label="Open RODEX AI Voice and Chat Assistant"]) {
+  min-height: 48px !important;
+  padding: 5px 3px !important;
+  border: 1px solid transparent !important;
+  border-radius: 12px !important;
+  color: #65527F !important;
+  background: transparent !important;
+  transform: translateY(0) !important;
+  box-shadow: none !important;
+  transition:
+    background .18s ease,
+    color .18s ease,
+    border-color .18s ease,
+    transform .18s ease,
+    box-shadow .18s ease !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button:not([aria-label="Open RODEX AI Voice and Chat Assistant"]):hover {
+  transform: translateY(-1px) !important;
+  color: #32164D !important;
+  background: rgba(255,255,255,.36) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] {
+  transform: translateY(-1px) !important;
+  color: #32164D !important;
+  background: linear-gradient(145deg, rgba(232,229,245,.92), rgba(200,192,246,.90)) !important;
+  border-color: rgba(132,78,231,.19) !important;
+  box-shadow:
+    0 3px 8px rgba(75,43,133,.11),
+    inset 0 1px rgba(255,255,255,.72) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] svg {
+  color: #7549D0 !important;
+  filter: none !important;
+  transform: none !important;
+}
+nav[aria-label="Mobile Navigation"] > div > button:not([aria-label="Open RODEX AI Voice and Chat Assistant"]):active {
+  transform: scale(.96) !important;
+  box-shadow: inset 0 1px 3px rgba(75,43,133,.10) !important;
+}
+
+/* Keep Atmos visually distinctive, but cleaner and less oversized. */
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  width: 50px !important;
+  height: 50px !important;
+  min-height: 50px !important;
+  margin-top: -10px !important;
+  transform: translateY(-1px) !important;
+  border: 2px solid rgba(255,255,255,.72) !important;
+  background: linear-gradient(145deg, #A99AF3, #844EE7) !important;
+  box-shadow:
+    0 4px 10px rgba(75,43,133,.22),
+    inset 0 1px rgba(255,255,255,.48) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:hover {
+  transform: translateY(-3px) !important;
+  box-shadow:
+    0 7px 14px rgba(75,43,133,.25),
+    inset 0 1px rgba(255,255,255,.55) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:active {
+  transform: translateY(0) scale(.96) !important;
+  box-shadow: 0 2px 6px rgba(75,43,133,.18), inset 0 2px 4px rgba(66,35,139,.12) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > div > span {
+  color: #7549D0 !important;
+  font-size: 9px !important;
+  letter-spacing: .08em !important;
+  font-weight: 800 !important;
+}
+
+/* Motion remains quick and restrained. */
+@keyframes wxNavSelect {
+  from { opacity: .84; }
+  to { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-reference-rail-button,
+  nav[aria-label="Primary Navigation"] button,
+  nav[aria-label="Mobile Navigation"] button {
+    transition: none !important;
+    animation: none !important;
+    transform: none !important;
+  }
+}

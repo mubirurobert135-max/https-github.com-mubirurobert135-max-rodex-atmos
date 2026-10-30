@@ -74,7 +74,6 @@ export default defineConfig(() => {
                 },
               },
             },
-            },
             {
               urlPattern: /\/api\/weather.*/i,
               handler: 'NetworkFirst',

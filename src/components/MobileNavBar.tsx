@@ -27,7 +27,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   onOpenAuth,
   activeAlertsCount
 }) => {
-  const { user, isVerified } = useAuth();
+  const { user, userProfile, isVerified } = useAuth();
 
   return (
     <nav
@@ -121,7 +121,16 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           aria-label={user ? 'Account and Privacy' : 'Sign In'}
         >
           <div className="relative">
-            <User className="w-5 h-5" />
+            {(user?.photoURL || userProfile?.photoURL) ? (
+              <img
+                src={(user?.photoURL || userProfile?.photoURL)!}
+                alt={user?.displayName || userProfile?.displayName || 'Account profile'}
+                referrerPolicy="no-referrer"
+                className="w-5 h-5 rounded-full object-cover ring-1 ring-white/50"
+              />
+            ) : (
+              <User className="w-5 h-5" />
+            )}
             {user && (
               <span
                 className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-slate-950 ${

@@ -8,13 +8,14 @@ import {
 import { WeatherData, LocationMode } from '../types';
 import { formatTemp, formatWind, getWeatherCondition, findNextHourlyIndex, findCurrentHourlyIndex, formatForecastLocalHour, formatForecastClock, normalizeForecastLocalTime } from '../utils/weatherUtils';
 
-interface WeatherReferenceDashboardProps {
 // Track the pointer inside a navigation control so its highlight follows the cursor.
 const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
   const bounds = event.currentTarget.getBoundingClientRect();
   event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
   event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
 };
+
+interface WeatherReferenceDashboardProps {
 
   data: WeatherData;
   unit: 'C' | 'F';

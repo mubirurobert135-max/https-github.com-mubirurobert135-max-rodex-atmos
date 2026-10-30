@@ -170,7 +170,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
     setInspectedLocation({ lat, lon, isLoading: true });
     try {
       const params = new URLSearchParams({
-        lat: String(lat), lon: String(lon), name: placeName?.trim() || 'Current Location'
+        lat: String(lat), lon: String(lon), name: placeName?.trim() || 'Selected map point'
       });
       const response = await fetch('/api/weather/coordinates?' + params.toString(), { signal: controller.signal });
       if (!response.ok) throw new Error('Weather lookup failed (' + response.status + ')');

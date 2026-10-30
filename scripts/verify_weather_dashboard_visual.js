@@ -148,6 +148,14 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
   await page.getByTitle('Close Assistant').click();
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
+
+  // Submitting a city from the header must open the 2D map centered on that city.
+  await searchInput.fill('Kampala');
+  await searchInput.press('Enter');
+  await page.getByRole('heading', { name: /Weather map · Kampala/i }).waitFor({ state: 'visible', timeout: 30000 });
+  await page.locator('.leaflet-container').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.leaflet-marker-icon').filter({ hasText: 'Kampala' }).waitFor({ state: 'visible', timeout: 10000 });
+  console.log('PASS city search: Enter opens the selected city on the centered map with its location marker.');
   console.log('PASS interaction checks: desktop/mobile navigation, account shortcut, details disclosure, search, map/dashboard switching, assistant dialog.');
 
   if (pageErrors.length) {

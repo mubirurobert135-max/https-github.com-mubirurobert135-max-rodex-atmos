@@ -5002,3 +5002,50 @@ footer > div:last-child span { min-width: 0; }
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Map popup cards inherit the refreshed high-contrast type system. */
+.leaflet-popup-content [class~="text-white"],
+.leaflet-popup-content [class~="text-white/90"],
+.leaflet-popup-content [class~="text-white/80"],
+.leaflet-popup-content [class~="text-slate-300"],
+.leaflet-popup-content [class~="text-sky-200"] {
+  color: #32164D !important;
+}
+.leaflet-popup-content [class~="text-sky-300"],
+.leaflet-popup-content [class~="text-sky-100"],
+.leaflet-popup-content [class~="text-indigo-300"],
+.leaflet-popup-content [class~="text-amber-300"],
+.leaflet-popup-content [class~="text-emerald-300"] {
+  color: #6330B8 !important;
+}
+.leaflet-popup-content [class*="border-white/"] {
+  border-color: rgba(84,37,143,.18) !important;
+}
+.leaflet-popup-content button[class*="bg-sky-500"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg,#8050D8,#5420AE) !important;
+}
+.leaflet-popup-content button[class*="bg-amber-500"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg,#9563D4,#6330B8) !important;
+}
+.leaflet-popup-content button[class*="bg-emerald-500"] {
+  color: #FFFFFF !important;
+  background: #266F65 !important;
+}
+
+/* Install action stays available, but the mobile header uses icon-only presentation. */
+@media (max-width: 680px) {
+  #root > div > header.sticky button[title^="Install RODEX Atmos"] {
+    min-width: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+  #root > div > header.sticky button[title^="Install RODEX Atmos"] span {
+    display: none !important;
+  }
+}

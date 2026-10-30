@@ -3472,3 +3472,244 @@ main .glass-panel-interactive:hover {
     transform: none !important;
   }
 }
+
+
+/* Account shortcut beside location search. */
+.header-account-shortcut {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 39px;
+  margin-left: 2px;
+  padding: 0 12px 0 9px;
+  border: 1px solid rgba(132,78,231,.26);
+  border-radius: 13px;
+  color: #32164D;
+  background: linear-gradient(145deg, rgba(219,214,248,.94), rgba(200,192,246,.92));
+  box-shadow: 0 5px 14px rgba(75,43,133,.10), inset 0 1px rgba(255,255,255,.32);
+  font-size: 11px;
+  font-weight: 800;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.header-account-shortcut:hover {
+  transform: translateY(-1px);
+  border-color: rgba(132,78,231,.42);
+  background: linear-gradient(145deg, #E8E5F5, #C8C0F6);
+  box-shadow: 0 8px 18px rgba(75,43,133,.16), inset 0 1px rgba(255,255,255,.4);
+}
+.header-account-shortcut:active {
+  transform: scale(.97);
+}
+.header-account-icon {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  border-radius: 9px;
+  color: #FFFFFF;
+  background: linear-gradient(145deg, #987FF3, #844EE7);
+}
+.header-account-label {
+  color: #32164D;
+}
+.header-account-status {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-left: 1px;
+}
+.header-account-status.is-verified { background: #16A37A; }
+.header-account-status.is-pending { background: #D98A32; }
+
+/* Keep the first screen focused. Secondary information is available on demand. */
+.wx-more-weather-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  min-height: 64px;
+  margin: 14px 0 22px;
+  padding: 12px 17px;
+  text-align: left;
+  border: 1px solid rgba(132,78,231,.22);
+  border-radius: 17px;
+  color: #32164D;
+  background: linear-gradient(140deg, rgba(219,214,248,.90), rgba(200,192,246,.82));
+  box-shadow: 0 8px 22px rgba(65,39,130,.08), inset 0 1px rgba(255,255,255,.26);
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.wx-more-weather-toggle:hover {
+  border-color: rgba(132,78,231,.38);
+  box-shadow: 0 11px 26px rgba(65,39,130,.12), inset 0 1px rgba(255,255,255,.30);
+  transform: translateY(-1px);
+}
+.wx-more-weather-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 4px;
+}
+.wx-more-weather-copy strong {
+  color: #32164D;
+  font-size: 12px;
+  font-weight: 850;
+}
+.wx-more-weather-copy small {
+  color: #65527F;
+  font-size: 10px;
+}
+.wx-more-weather-chevron {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  color: #7549D0;
+  transition: transform .2s ease;
+}
+.wx-more-weather-chevron.is-open {
+  transform: rotate(180deg);
+}
+.wx-more-weather-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: -8px 0 24px;
+  animation: wxMoreWeatherReveal .24s ease both;
+}
+@keyframes wxMoreWeatherReveal {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Neutral AI summary: one concise interpretation, not unsolicited life advice. */
+.wx-ai-neutral-summary {
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid rgba(132,78,231,.20);
+  border-radius: 19px;
+  color: #32164D;
+  background: linear-gradient(145deg, rgba(219,214,248,.94), rgba(200,192,246,.86));
+  box-shadow: 0 12px 28px rgba(65,39,130,.10), inset 0 1px rgba(255,255,255,.27);
+}
+.wx-ai-neutral-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.wx-ai-neutral-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  color: #FFFFFF;
+  border-radius: 11px;
+  background: linear-gradient(145deg, #987FF3, #844EE7);
+}
+.wx-ai-neutral-heading h3 {
+  margin: 0;
+  color: #32164D;
+  font-size: 13px;
+  font-weight: 850;
+}
+.wx-ai-neutral-heading p {
+  margin: 3px 0 0;
+  color: #65527F;
+  font-size: 10px;
+}
+.wx-ai-neutral-label {
+  margin-left: auto;
+  padding: 5px 8px;
+  color: #6541A7;
+  border: 1px solid rgba(132,78,231,.17);
+  border-radius: 999px;
+  background: rgba(152,127,243,.15);
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.wx-ai-neutral-copy {
+  margin: 15px 0;
+  color: #493365;
+  font-size: 13px;
+  line-height: 1.7;
+}
+.wx-ai-neutral-loading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 55px;
+  color: #65527F;
+  font-size: 11px;
+}
+.wx-ai-neutral-loading svg {
+  color: #844EE7;
+}
+.wx-ai-neutral-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(75,43,133,.13);
+}
+.wx-ai-neutral-footer > p {
+  max-width: 620px;
+  margin: 0;
+  color: #76648E;
+  font-size: 9px;
+  line-height: 1.5;
+}
+.wx-ai-neutral-action,
+.wx-ai-neutral-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 33px;
+  padding: 0 10px;
+  border: 1px solid rgba(132,78,231,.22);
+  border-radius: 10px;
+  color: #FFFFFF;
+  background: linear-gradient(135deg, #987FF3, #844EE7);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.wx-ai-neutral-refresh {
+  width: 34px;
+  padding: 0;
+  color: #7549D0;
+  background: rgba(152,127,243,.14);
+}
+.wx-ai-neutral-action:hover,
+.wx-ai-neutral-refresh:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(75,43,133,.14);
+}
+@media (max-width: 520px) {
+  .header-account-shortcut {
+    min-width: 39px;
+    width: 39px;
+    padding: 0;
+    margin-left: 0;
+  }
+  .header-account-label { display: none; }
+  .wx-more-weather-toggle {
+    min-height: 58px;
+    margin-top: 11px;
+    padding: 11px 13px;
+  }
+  .wx-ai-neutral-summary { padding: 15px; }
+  .wx-ai-neutral-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-more-weather-content { animation: none !important; }
+  .wx-more-weather-toggle,
+  .header-account-shortcut { transition: none !important; }
+}

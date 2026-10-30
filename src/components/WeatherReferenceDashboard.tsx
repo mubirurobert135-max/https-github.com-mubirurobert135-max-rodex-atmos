@@ -6,7 +6,7 @@ import {
   Thermometer, UserRound, Wind, ChevronRight
 } from 'lucide-react';
 import { WeatherData, LocationMode } from '../types';
-import { formatTemp, formatWind, getWeatherCondition, findNextHourlyIndex, formatForecastLocalHour, formatForecastClock, normalizeForecastLocalTime } from '../utils/weatherUtils';
+import { formatTemp, formatWind, getWeatherCondition, findNextHourlyIndex, findCurrentHourlyIndex, formatForecastLocalHour, formatForecastClock, normalizeForecastLocalTime } from '../utils/weatherUtils';
 
 interface WeatherReferenceDashboardProps {
   data: WeatherData;
@@ -77,7 +77,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const todaySunrise = daily.sunrise?.[0];
   const todaySunset = daily.sunset?.[0];
   const todayUv = daily.uv_index_max?.[0];
-  const firstCurrentHourIndex = findNextHourlyIndex(hourly.time, current.time);
+  const firstCurrentHourIndex = findCurrentHourlyIndex(hourly.time, current.time);
   const currentLocalTime = normalizeForecastLocalTime(current.time);
   const nextFutureIndex = (hourly.time || []).findIndex((time) =>
     normalizeForecastLocalTime(time) > currentLocalTime

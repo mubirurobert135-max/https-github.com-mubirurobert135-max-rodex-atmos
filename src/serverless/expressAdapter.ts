@@ -11,7 +11,7 @@ export async function handleExpressRequest(
   res: ServerResponse
 ): Promise<void> {
   try {
-    const { app, serverReady } = await import('../../server');
+    const { app, serverReady } = await import('../../server.ts');
     await serverReady;
     app(req as any, res as any);
   } catch (error) {

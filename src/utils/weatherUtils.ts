@@ -240,6 +240,20 @@ export function formatForecastLocalHour(value: string, hour12 = true): string {
   }).format(date);
 }
 
+/** Format the calendar day in the forecast location's local clock. */
+export function formatForecastLocalDate(value?: string): string {
+  const local = normalizeForecastLocalTime(value);
+  const datePart = local ? local.slice(0, 10) : '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return 'Forecast date unavailable';
+  const date = new Date(datePart + 'T12:00:00Z');
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC'
+  }).format(date);
+}
+
 /** Sunrise/sunset values may be local-clock strings or full provider timestamps. */
 export function formatForecastClock(value?: string): string {
   if (!value) return '—';

@@ -493,9 +493,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 <div className="h-14 w-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800 shadow-lg">
-                  {(user.photoURL || userProfile?.photoURL) ? (
+                  {(user.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user.photoURL) ? (
                     <img
-                      src={(user.photoURL || userProfile?.photoURL)!}
+                      src={(user.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user.photoURL)!}
                       alt={user.displayName ? user.displayName + ' Google profile photo' : 'Account profile photo'}
                       referrerPolicy="no-referrer"
                       className="h-full w-full object-cover"

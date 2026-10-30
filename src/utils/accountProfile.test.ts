@@ -17,17 +17,20 @@ test('uses the Google account name and exact provider photo when signed in with 
   assert.equal(identity.photoURL, 'https://lh3.googleusercontent.com/a/alex-profile-photo');
 });
 
-test('uses the current Firebase display name while retaining the linked Google avatar', () => {
+test('prioritizes the linked Google account name, email and exact avatar over stale Firebase fields', () => {
   const identity = resolveAuthProfileIdentity({
     displayName: 'Alex RODEX',
+    email: 'alex@rodex.example',
     providerData: [{
       providerId: 'google.com',
       displayName: 'Alex Johnson',
+      email: 'alex.johnson@gmail.com',
       photoURL: 'https://lh3.googleusercontent.com/a/alex-profile-photo'
     }]
   });
 
-  assert.equal(identity.displayName, 'Alex RODEX');
+  assert.equal(identity.displayName, 'Alex Johnson');
+  assert.equal(identity.email, 'alex.johnson@gmail.com');
   assert.equal(identity.photoURL, 'https://lh3.googleusercontent.com/a/alex-profile-photo');
 });
 

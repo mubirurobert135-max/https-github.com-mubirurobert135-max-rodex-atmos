@@ -8,7 +8,8 @@
     "build": "vite build && esbuild server.ts --bundle --platform=node --target=node20 --format=esm --outfile=server.js --external:@vitejs/devtools/config --external:vite",
     "start": "node server.js",
     "clean": "rm -rf dist server.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "deploy:firestore-rules": "firebase deploy --only firestore"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -5112,3 +5112,208 @@ nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] span {
   .rodex-pointer-spotlight::after { transition: none; }
   .wx-reference-rail-button.rodex-pointer-spotlight:hover:not(:disabled) { transform: none; }
 }
+
+/* RODEX Atmos — tablet and phone layout refinement.
+   Desktop proportions remain unchanged above 1100px. */
+.rodex-header-layout > * { min-width: 0; }
+
+@media (max-width: 1100px) {
+  .rodex-header-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "brand shortcuts controls"
+      "search search search"
+      "primary primary primary";
+    align-items: center;
+    gap: 9px 10px !important;
+    width: 100%;
+  }
+  .rodex-header-brand { grid-area: brand; }
+  .rodex-header-shortcuts {
+    grid-area: shortcuts;
+    display: inline-flex;
+    align-items: center;
+    justify-self: end;
+    gap: 6px;
+    min-width: 0;
+  }
+  .rodex-header-controls {
+    grid-area: controls;
+    justify-self: end;
+    gap: 6px !important;
+    min-width: 0;
+  }
+  .rodex-header-search {
+    grid-area: search;
+    width: 100%;
+    max-width: none !important;
+    min-width: 0;
+  }
+  .rodex-header-primary-nav {
+    grid-area: primary;
+    justify-self: start;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .rodex-header-search input { min-height: 42px; font-size: 14px !important; }
+
+  .wx-reference-shell {
+    grid-template-columns: minmax(0, 1fr) !important;
+    min-height: 0 !important;
+    width: 100%;
+    max-width: 100%;
+  }
+  .wx-reference-rail { display: none !important; }
+  .wx-reference-content {
+    min-width: 0;
+    padding: clamp(15px, 2.2vw, 23px) !important;
+  }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0, 1fr) minmax(120px, .48fr);
+    gap: 12px;
+    padding: clamp(16px, 2.2vw, 23px);
+  }
+  .wx-hero-metrics {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 12px 0 0;
+    border-top: 1px solid rgba(255,255,255,.22);
+    border-left: 0;
+  }
+  .wx-dashboard-forecast-grid {
+    grid-template-columns: minmax(0, 1.1fr) minmax(260px, .9fr);
+    gap: 12px;
+  }
+  .wx-dashboard-panel { min-width: 0; }
+  .wx-dashboard-hourly-list { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  .wx-reference-support-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 14px !important;
+  }
+  .wx-reference-support-grid > div { min-width: 0; }
+  .wx-map-toolbar { flex-wrap: wrap; }
+  .wx-map-layer-controls { min-width: 0; max-width: 100%; overflow-x: auto; }
+  .wx-map-search-controls { min-width: 0; }
+  .wx-map-canvas-wrap, .wx-map-canvas { min-height: clamp(340px, 48vh, 520px); }
+}
+
+/* Landscape and portrait tablets: give forecast cards room instead of forcing a narrow split. */
+@media (min-width: 681px) and (max-width: 900px) {
+  .wx-dashboard-forecast-grid { grid-template-columns: minmax(0, 1fr); }
+  .wx-dashboard-panel { padding: 16px; }
+  .wx-dashboard-day {
+    grid-template-columns: 58px 25px minmax(0, 1fr) auto auto;
+    gap: 9px;
+    min-height: 38px;
+  }
+  .wx-reference-support-grid { gap: 12px !important; }
+  .wx-map-toolbar { align-items: flex-start !important; }
+  .wx-map-search-controls {
+    display: flex;
+    flex: 1 1 100%;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+}
+
+/* The 1024–1100px tablet landscape range also needs reachable bottom navigation. */
+@media (min-width: 1024px) and (max-width: 1100px) {
+  nav[aria-label="Mobile Navigation"] {
+    display: flex !important;
+    width: min(480px, calc(100% - 32px));
+    max-width: 480px;
+  }
+  #root > div { padding-bottom: 92px; }
+}
+
+/* Phone layout: predictable rows, larger touch targets and no compressed columns. */
+@media (max-width: 680px) {
+  #root > div > header.sticky { padding-top: 9px !important; padding-bottom: 10px !important; }
+  .rodex-header-layout { grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px 7px !important; }
+  .rodex-header-brand { gap: 8px !important; }
+  .rodex-header-shortcuts { gap: 5px; }
+  .rodex-header-controls { gap: 5px !important; }
+  .rodex-header-search input { min-height: 44px; border-radius: 15px !important; }
+  .rodex-header-controls > button, .rodex-header-shortcuts > button { min-width: 39px; min-height: 39px; }
+
+  .wx-reference-shell { border-radius: 18px !important; overflow: visible; }
+  .wx-reference-content { padding: 13px !important; }
+  .wx-reference-heading { align-items: flex-start !important; flex-direction: column !important; gap: 10px !important; }
+  .wx-reference-heading-right { width: 100%; justify-content: flex-start !important; flex-wrap: wrap; gap: 7px; }
+  .wx-live-status { max-width: 100%; min-width: 0; white-space: normal; line-height: 1.4; }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0, 1fr) 76px !important;
+    gap: 8px;
+    padding: 15px !important;
+    border-radius: 18px !important;
+  }
+  .wx-dashboard-hero .wx-storm-title { font-size: clamp(43px, 12vw, 60px) !important; line-height: 1 !important; }
+  .wx-hero-location { align-items: flex-start; overflow-wrap: anywhere; line-height: 1.35; }
+  .wx-hero-weather-art { min-width: 0; width: 76px; }
+  .wx-hero-weather-icon { width: 64px !important; height: 64px !important; max-width: 100%; }
+  .wx-hero-weather-caption { max-width: 100%; text-align: center; }
+  .wx-hero-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 7px !important; }
+  .wx-hero-metric { min-width: 0; padding: 8px !important; }
+  .wx-hero-metric-copy { min-width: 0; }
+  .wx-hero-metric-copy strong { overflow-wrap: anywhere; font-size: 11px; }
+
+  .wx-dashboard-forecast-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 11px; }
+  .wx-dashboard-panel { padding: 13px 11px !important; border-radius: 16px !important; }
+  .wx-dashboard-panel-heading { align-items: flex-start; gap: 8px; }
+  .wx-dashboard-hourly-list { grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 6px; }
+  .wx-dashboard-hour { min-height: 104px; padding: 9px 3px; }
+  .wx-dashboard-hour small { white-space: normal !important; line-height: 1.25; text-align: center; }
+  .wx-dashboard-day {
+    grid-template-columns: minmax(0, 1fr) 23px auto auto !important;
+    gap: 6px !important;
+    min-height: 38px;
+    padding: 6px 5px;
+  }
+  .wx-dashboard-day-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .wx-dashboard-day-condition { display: none; }
+  .wx-regional-cities { grid-template-columns: minmax(0, 1fr) !important; }
+  .wx-reference-support-grid { grid-template-columns: minmax(0, 1fr) !important; gap: 12px !important; }
+
+  .wx-map-toolbar { align-items: stretch !important; flex-direction: column !important; gap: 9px !important; padding: 10px !important; }
+  .wx-map-layer-controls { width: 100%; max-width: 100%; overflow-x: auto; padding-bottom: 3px; }
+  .wx-map-search-controls { display: grid !important; width: 100%; grid-template-columns: minmax(0, 1fr) repeat(3, 40px); gap: 6px !important; }
+  .wx-map-search, .wx-map-search-input { min-width: 0 !important; }
+  .wx-map-search-input { min-height: 42px !important; }
+  .wx-map-search-controls > button { width: 40px !important; min-width: 40px !important; min-height: 40px !important; padding: 0 !important; }
+  .wx-map-canvas-wrap, .wx-map-canvas { min-height: clamp(320px, 54dvh, 470px) !important; }
+  .wx-map-footer { align-items: flex-start !important; flex-direction: column; text-align: left; gap: 7px !important; }
+}
+
+/* Compact phones and 320px screens: prioritize legibility over decorative spacing. */
+@media (max-width: 390px) {
+  .rodex-header-layout { gap: 7px 5px !important; }
+  .rodex-header-brand > div:first-child { width: 36px !important; height: 36px !important; }
+  .rodex-header-shortcuts { gap: 4px; }
+  .rodex-header-controls { gap: 4px !important; }
+  .wx-reference-content { padding: 10px !important; }
+  .wx-dashboard-hero { grid-template-columns: minmax(0, 1fr) 66px !important; padding: 12px !important; }
+  .wx-hero-weather-art { width: 66px; }
+  .wx-hero-weather-icon { width: 58px !important; height: 58px !important; }
+  .wx-dashboard-panel { padding: 11px 9px !important; }
+  .wx-dashboard-hourly-list { gap: 4px; }
+  .wx-dashboard-hour { min-height: 98px; padding: 7px 2px; }
+  .wx-dashboard-day { grid-template-columns: minmax(0, 1fr) 20px auto auto !important; gap: 4px !important; }
+  .wx-dashboard-day-icon { width: 18px; height: 18px; }
+  .wx-dashboard-day strong, .wx-dashboard-day small { font-size: 9px; }
+  .wx-map-canvas-wrap, .wx-map-canvas { min-height: 310px !important; }
+}
+
+/* Keep the floating dock clear of browser home indicators and device safe areas. */
+@media (max-width: 680px) {
+  nav[aria-label="Mobile Navigation"] {
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+    padding-bottom: max(9px, env(safe-area-inset-bottom)) !important;
+    max-width: 460px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-dashboard-hero, .wx-dashboard-panel, .wx-map-card { scroll-behavior: auto; }
+}

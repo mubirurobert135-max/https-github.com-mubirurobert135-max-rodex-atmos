@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Sun, CloudRain, Wind, AlertTriangle, Sparkles, RefreshCw, ShieldAlert } from 'lucide-react';
 import { WeatherData, DailyBriefing } from '../types';
-import { formatTemp } from '../utils/weatherUtils';
+import { formatTemp, findCurrentHourlyIndex } from '../utils/weatherUtils';
 
 interface DailyBriefingCardProps {
   data: WeatherData;
@@ -52,7 +52,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
   const currentWindText = typeof rawWind === 'number' && Number.isFinite(rawWind)
     ? 'Wind ' + Math.round(rawWind) + ' km/h'
     : 'Wind speed unavailable';
+  const rainStartIndex = findCurrentHourlyIndex(data.weather.hourly?.time, data.weather.current?.time);
   const rainProbabilities = (data.weather.hourly?.precipitation_probability || [])
+    .slice(rainStartIndex, rainStartIndex + 24)
     .filter((value) => typeof value === 'number' && Number.isFinite(value));
   const peakRainProbability = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
 
@@ -176,7 +178,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
               <CloudRain className="w-5 h-5 text-sky-400 shrink-0" />
               <div>
-                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Peak hourly rain probability</span>
+                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Peak rain probability · next 24 hours</span>
                 <span className="text-xs font-semibold text-white truncate block">
                   {peakRainProbability == null ? 'Unavailable' : peakRainProbability + '%'}
                 </span>

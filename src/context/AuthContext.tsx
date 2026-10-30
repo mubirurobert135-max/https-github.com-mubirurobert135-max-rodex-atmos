@@ -19,6 +19,7 @@ import {
 import { auth, db, handleFirestoreError, OperationType, testFirestoreConnection } from '../lib/firebase';
 
 import { NotificationPreferences } from '../types';
+import { resolveAuthProfileIdentity } from '../utils/accountProfile';
 
 export interface UserPrivacyPreferences {
   autoLocationEnabled: boolean;
@@ -123,9 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     try {
       const snap = await getDoc(userDocRef);
-      const googleProfile = firebaseUser.providerData.find((provider) => provider.providerId === 'google.com');
-      const providerDisplayName = googleProfile?.displayName || firebaseUser.displayName || '';
-      const providerPhotoURL = googleProfile?.photoURL || firebaseUser.photoURL || undefined;
+      const { displayName: providerDisplayName, photoURL: providerPhotoURL } = resolveAuthProfileIdentity(firebaseUser);
 
       if (snap.exists()) {
         const profile = snap.data() as UserProfileData;
@@ -181,8 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('[RODEX Auth Profile Warning]', err);
       setUserProfile({
         uid: firebaseUser.uid,
-        displayName: firebaseUser.providerData.find((provider) => provider.providerId === 'google.com')?.displayName || firebaseUser.displayName || '',
-        photoURL: firebaseUser.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || firebaseUser.photoURL || undefined,
+        ...resolveAuthProfileIdentity(firebaseUser),
         email: firebaseUser.email || undefined,
         phoneNumber: firebaseUser.phoneNumber || undefined,
         emailVerified: firebaseUser.emailVerified,
@@ -200,11 +198,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
     try {
-      const googleProfile = auth.currentUser.providerData.find((provider) => provider.providerId === 'google.com');
       const updatedProfileRaw: Record<string, any> = {
         uid,
-        displayName: auth.currentUser.displayName || googleProfile?.displayName || '',
-        photoURL: googleProfile?.photoURL || auth.currentUser.photoURL || undefined,
+        ...resolveAuthProfileIdentity(auth.currentUser),
         emailVerified: auth.currentUser.emailVerified,
         phoneVerified: !!auth.currentUser.phoneNumber,
         updatedAt: new Date().toISOString(),

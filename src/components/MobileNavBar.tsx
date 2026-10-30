@@ -121,9 +121,9 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           aria-label={user ? 'Account and Privacy' : 'Sign In'}
         >
           <div className="relative">
-            {(user?.photoURL || userProfile?.photoURL) ? (
+            {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
               <img
-                src={(user?.photoURL || userProfile?.photoURL)!}
+                src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
                 alt={user?.displayName || userProfile?.displayName || 'Account profile'}
                 referrerPolicy="no-referrer"
                 className="w-5 h-5 rounded-full object-cover ring-1 ring-white/50"

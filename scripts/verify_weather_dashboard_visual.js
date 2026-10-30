@@ -146,6 +146,12 @@ try {
 
   await page.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' }).click();
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
+  await page.getByRole('button', { name: 'Text Chat' }).click();
+  const assistantChatInput = page.getByRole('textbox', { name: 'Ask assistant message' });
+  await assistantChatInput.fill('Hey Atmos');
+  await page.getByRole('button', { name: 'Send message' }).click();
+  await page.getByText("Hey! I'm listening. What's on your mind?", { exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  console.log('PASS assistant text chat: greeting request reaches the API and returns a response.');
   await page.getByTitle('Close Assistant').click();
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
 

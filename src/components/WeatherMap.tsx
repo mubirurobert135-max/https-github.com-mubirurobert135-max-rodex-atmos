@@ -58,16 +58,6 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   onMapContextChange,
   onGetCurrentLocation
 }) => {
-  const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersGroupRef = useRef<L.LayerGroup | null>(null);
-  const inspectAbortRef = useRef<AbortController | null>(null);
-  const searchAbortRef = useRef<AbortController | null>(null);
-  const activeMetricRef = useRef<MapMetric>(activeMetric);
-  const mapContextChangeRef = useRef(onMapContextChange);
-  activeMetricRef.current = activeMetric;
-  mapContextChangeRef.current = onMapContextChange;
-
   const [activeMetric, setActiveMetric] = useState<MapMetric>('temperature');
   const [timeOffsetHours, setTimeOffsetHours] = useState<number>(0);
   const [mapSearchTerm, setMapSearchTerm] = useState<string>('');
@@ -81,6 +71,16 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
     weather?: WeatherData;
     isLoading: boolean;
   } | null>(null);
+
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersGroupRef = useRef<L.LayerGroup | null>(null);
+  const inspectAbortRef = useRef<AbortController | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const activeMetricRef = useRef<MapMetric>(activeMetric);
+  const mapContextChangeRef = useRef(onMapContextChange);
+  activeMetricRef.current = activeMetric;
+  mapContextChangeRef.current = onMapContextChange;
 
   // Initialize a familiar, labelled street map once and handle container resizes.
   useEffect(() => {

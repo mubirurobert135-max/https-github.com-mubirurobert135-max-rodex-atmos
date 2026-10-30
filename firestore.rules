@@ -26,10 +26,11 @@ service cloud.firestore {
     // User Profile Schema Validation Helper
     function isValidUser(data) {
       return data.keys().hasAll(['uid', 'createdAt']) &&
-        data.keys().hasOnly(['uid', 'displayName', 'email', 'phoneNumber', 'emailVerified', 'phoneVerified', 'createdAt', 'updatedAt', 'preferences', 'savedCities']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'photoURL', 'email', 'phoneNumber', 'emailVerified', 'phoneVerified', 'createdAt', 'updatedAt', 'preferences', 'notificationPreferences', 'savedCities']) &&
         data.uid == request.auth.uid &&
         data.uid is string && data.uid.size() <= 128 &&
         (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 100)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2048 && data.photoURL.matches('^https://.*'))) &&
         (!('email' in data) || (data.email is string && data.email.size() <= 200)) &&
         (!('phoneNumber' in data) || (data.phoneNumber is string && data.phoneNumber.size() <= 50)) &&
         (!('emailVerified' in data) || data.emailVerified is bool) &&

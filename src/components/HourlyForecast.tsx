@@ -1,19 +1,22 @@
 import React from 'react';
 import { Clock, Sun, Moon, CloudSun, CloudMoon, Cloud, CloudRain, CloudSnow, CloudLightning, Droplets, ChevronRight } from 'lucide-react';
 import { HourlyWeather } from '../types';
-import { formatTemp, getWeatherCondition } from '../utils/weatherUtils';
+import { formatTemp, getWeatherCondition, findNextHourlyIndex, normalizeForecastLocalTime, formatForecastLocalHour } from '../utils/weatherUtils';
 
 interface HourlyForecastProps {
   hourly: HourlyWeather;
   unit: 'C' | 'F';
+  currentTime?: string;
 }
 
-export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) => {
-  // Get next 24 hours starting from current time
-  const nowIndex = Math.max(
-    0,
-    hourly.time.findIndex(t => new Date(t).getTime() >= Date.now()) - 1
-  );
+export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit, currentTime }) => {
+  // Provider hourly values use the forecast location's local clock. Do not compare
+  // them with the viewer device clock, which may be in a different timezone.
+  const localNow = normalizeForecastLocalTime(currentTime);
+  const firstFutureIndex = localNow
+    ? hourly.time.findIndex((time) => normalizeForecastLocalTime(time) > localNow)
+    : findNextHourlyIndex(hourly.time, currentTime);
+  const nowIndex = firstFutureIndex >= 0 ? firstFutureIndex : Math.max(0, hourly.time.length - 1);
   const hoursToShow = 24;
   const startIndex = Math.max(0, nowIndex);
   const endIndex = Math.min(hourly.time.length, startIndex + hoursToShow);
@@ -59,9 +62,8 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit }) 
       {/* Horizontal Scroll Rail */}
       <div className="forecast-rail flex gap-3 overflow-x-auto pb-3 pt-1">
         {times.map((timeStr, idx) => {
-          const date = new Date(timeStr);
           const isNow = idx === 0;
-          const timeLabel = isNow ? 'Now' : date.toLocaleTimeString([], { hour: 'numeric', hour12: true });
+          const timeLabel = isNow ? 'Next' : formatForecastLocalHour(timeStr);
 
           return (
             <div

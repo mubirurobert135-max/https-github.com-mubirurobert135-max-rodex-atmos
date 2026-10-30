@@ -18,7 +18,7 @@ import {
   Compass, 
   CheckCircle2 
 } from 'lucide-react';
-import { getWeatherCondition, formatTemp, formatWind } from '../utils/weatherUtils';
+import { getWeatherCondition, formatTemp, formatWind, findHourlyIndexForOffset } from '../utils/weatherUtils';
 
 interface WeatherMapProps {
   currentWeatherData: WeatherData | null;
@@ -28,36 +28,25 @@ interface WeatherMapProps {
   onOpenAssistant: (prompt?: string) => void;
   locationMode: LocationMode;
   onMapContextChange?: (location: WeatherData | null, layer: 'temperature' | 'precipitation' | 'wind') => void;
+  onGetCurrentLocation?: () => void;
 }
 
 type MapMetric = 'temperature' | 'precipitation' | 'wind';
 
-interface RegionalPoint {
+interface GeocodingResult {
   name: string;
   country: string;
+  admin1?: string;
   lat: number;
   lon: number;
-  weather?: WeatherData;
-  isLoading?: boolean;
+  timezone?: string;
 }
 
-// Major strategic global/regional hub points for spatial exploration
-const DEFAULT_HUB_POINTS: { name: string; country: string; lat: number; lon: number }[] = [
-  { name: 'Kampala', country: 'Uganda', lat: 0.3163, lon: 32.5822 },
-  { name: 'Nairobi', country: 'Kenya', lat: -1.2921, lon: 36.8219 },
-  { name: 'Cairo', country: 'Egypt', lat: 30.0444, lon: 31.2357 },
-  { name: 'Johannesburg', country: 'South Africa', lat: -26.2041, lon: 28.0473 },
-  { name: 'Lagos', country: 'Nigeria', lat: 6.5244, lon: 3.3792 },
-  { name: 'London', country: 'UK', lat: 51.5074, lon: -0.1278 },
-  { name: 'Paris', country: 'France', lat: 48.8566, lon: 2.3522 },
-  { name: 'Berlin', country: 'Germany', lat: 52.5200, lon: 13.4050 },
-  { name: 'Dubai', country: 'UAE', lat: 25.2048, lon: 55.2708 },
-  { name: 'Tokyo', country: 'Japan', lat: 35.6762, lon: 139.6503 },
-  { name: 'Singapore', country: 'Singapore', lat: 1.3521, lon: 103.8198 },
-  { name: 'New York', country: 'USA', lat: 40.7128, lon: -74.0060 },
-  { name: 'Sao Paulo', country: 'Brazil', lat: -23.5505, lon: -46.6333 },
-  { name: 'Sydney', country: 'Australia', lat: -33.8688, lon: 151.2093 }
-];
+function escapeMapHtml(value: unknown): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
 
 export const WeatherMap: React.FC<WeatherMapProps> = ({
   currentWeatherData,
@@ -66,17 +55,24 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   onSelectCoordinates,
   onOpenAssistant,
   locationMode,
-  onMapContextChange
+  onMapContextChange,
+  onGetCurrentLocation
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
+  const inspectAbortRef = useRef<AbortController | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+  const activeMetricRef = useRef<MapMetric>(activeMetric);
+  const mapContextChangeRef = useRef(onMapContextChange);
+  activeMetricRef.current = activeMetric;
+  mapContextChangeRef.current = onMapContextChange;
 
   const [activeMetric, setActiveMetric] = useState<MapMetric>('temperature');
   const [timeOffsetHours, setTimeOffsetHours] = useState<number>(0);
   const [mapSearchTerm, setMapSearchTerm] = useState<string>('');
   const [isSearching, setIsSearching] = useState<boolean>(false);
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<GeocodingResult[]>([]);
   const [isFullscreen, setIsFullscreen] = useState<boolean>(false);
   const [isSliderOpen, setIsSliderOpen] = useState<boolean>(false);
   const [inspectedLocation, setInspectedLocation] = useState<{
@@ -86,125 +82,100 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
     isLoading: boolean;
   } | null>(null);
 
-  // Cached regional weather data
-  const [hubWeatherMap, setHubWeatherMap] = useState<Record<string, WeatherData>>({});
-
-  // Initialize Leaflet Map
+  // Initialize a familiar, labelled street map once and handle container resizes.
   useEffect(() => {
     if (!mapContainerRef.current) return;
+    const lat = currentWeatherData?.location.latitude ?? 0.3163;
+    const lon = currentWeatherData?.location.longitude ?? 32.5822;
+    const map = L.map(mapContainerRef.current, {
+      center: [lat, lon], zoom: currentWeatherData ? 7 : 4,
+      zoomControl: false, attributionControl: true, preferCanvas: true,
+      zoomAnimation: true, fadeAnimation: true, markerZoomAnimation: true
+    });
 
-    if (!mapInstanceRef.current) {
-      const initialLat = currentWeatherData?.location.latitude || 0.3163;
-      const initialLon = currentWeatherData?.location.longitude || 32.5822;
+    const voyagerUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+    const osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>';
+    const tiles = L.tileLayer(voyagerUrl, {
+      attribution, subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19,
+      keepBuffer: 2, updateWhenIdle: true, updateWhenZooming: false, crossOrigin: true
+    }).addTo(map);
 
-      const map = L.map(mapContainerRef.current, {
-        center: [initialLat, initialLon],
-        zoom: currentWeatherData ? 7 : 4,
-        zoomControl: false,
-        attributionControl: true
-      });
+    let tileErrors = 0;
+    let usingOsmFallback = false;
+    tiles.on('tileerror', () => {
+      tileErrors += 1;
+      if (!usingOsmFallback && tileErrors >= 3) {
+        usingOsmFallback = true;
+        console.warn('[RODEX Atmos Map] CARTO tiles unavailable; switching to OpenStreetMap tiles.');
+        tiles.setUrl(osmUrl);
+      }
+    });
 
-      // Keyless, public, zero-credential base map tiles (OpenFreeMap / OpenStreetMap)
-      const primaryTileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-      const fallbackTileUrl = 'https://tiles.openfreemap.org/planet/{z}/{x}/{y}.png';
+    L.control.zoom({ position: 'topright' }).addTo(map);
+    L.control.scale({ position: 'bottomleft', metric: true, imperial: false, maxWidth: 110 }).addTo(map);
+    markersGroupRef.current = L.layerGroup().addTo(map);
 
-      const tileLayer = L.tileLayer(primaryTileUrl, {
-        attribution: '&copy; <a href="https://openfreemap.org" target="_blank" rel="noopener noreferrer">OpenFreeMap</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
-        maxZoom: 19,
-        className: 'map-dark-tiles'
-      });
+    const handleMapClick = (event: L.LeafletMouseEvent) => {
+      void handleInspectCoordinates(event.latlng.lat, event.latlng.lng);
+    };
+    map.on('click', handleMapClick);
+    mapInstanceRef.current = map;
 
-      tileLayer.on('tileerror', () => {
-        console.warn('Map tile load warning, switching to keyless fallback tile layer.');
-        tileLayer.setUrl(fallbackTileUrl);
-      });
-
-      tileLayer.addTo(map);
-
-      // Add zoom control top right
-      L.control.zoom({ position: 'topright' }).addTo(map);
-
-      // Markers layer group
-      const markersGroup = L.layerGroup().addTo(map);
-      markersGroupRef.current = markersGroup;
-
-      // Handle map click for dynamic inspection
-      map.on('click', async (e: L.LeafletMouseEvent) => {
-        const { lat, lng } = e.latlng;
-        handleInspectCoordinates(lat, lng);
-      });
-
-      mapInstanceRef.current = map;
-    }
+    const invalidateSize = () => {
+      if (mapInstanceRef.current === map) map.invalidateSize({ pan: false, debounceMoveend: true });
+    };
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(invalidateSize) : null;
+    observer?.observe(mapContainerRef.current);
+    window.addEventListener('resize', invalidateSize, { passive: true });
+    window.requestAnimationFrame(invalidateSize);
 
     return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
+      window.removeEventListener('resize', invalidateSize);
+      observer?.disconnect();
+      map.off('click', handleMapClick);
+      inspectAbortRef.current?.abort();
+      searchAbortRef.current?.abort();
+      map.remove();
+      if (mapInstanceRef.current === map) mapInstanceRef.current = null;
+      markersGroupRef.current = null;
     };
   }, []);
-
   // Recenter map when main selected location changes
   useEffect(() => {
     if (mapInstanceRef.current && currentWeatherData) {
       const { latitude, longitude } = currentWeatherData.location;
-      mapInstanceRef.current.flyTo([latitude, longitude], 8, {
-        duration: 1.2
-      });
+      mapInstanceRef.current.flyTo([latitude, longitude], 12, { duration: 0.8 });
+      mapInstanceRef.current.invalidateSize({ pan: false });
     }
   }, [currentWeatherData?.location.latitude, currentWeatherData?.location.longitude]);
 
-  // Fetch background weather data for global/regional hub points to show real weather tags on map
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchHubData = async () => {
-      // Limit concurrent requests to avoid server spam
-      const sampleHubs = DEFAULT_HUB_POINTS.slice(0, 8);
-      
-      for (const hub of sampleHubs) {
-        const key = `${hub.lat.toFixed(2)},${hub.lon.toFixed(2)}`;
-        if (hubWeatherMap[key]) continue; // Already cached
-
-        try {
-          const res = await fetch(`/api/weather/coordinates?lat=${hub.lat}&lon=${hub.lon}&name=${encodeURIComponent(hub.name)}`);
-          if (res.ok) {
-            const data: WeatherData = await res.json();
-            if (isMounted) {
-              setHubWeatherMap(prev => ({ ...prev, [key]: data }));
-            }
-          }
-        } catch (e) {
-          console.warn('Hub weather fetch error:', e);
-        }
-      }
-    };
-
-    fetchHubData();
-    return () => { isMounted = false; };
-  }, []);
-
-  // Dynamic map click inspection helper
-  const handleInspectCoordinates = async (lat: number, lon: number) => {
+  // Cancel stale point requests so rapid map clicks never show outdated results.
+  const handleInspectCoordinates = async (lat: number, lon: number, placeName?: string) => {
+    inspectAbortRef.current?.abort();
+    const controller = new AbortController();
+    inspectAbortRef.current = controller;
     setInspectedLocation({ lat, lon, isLoading: true });
-
     try {
-      const res = await fetch(`/api/weather/coordinates?lat=${lat}&lon=${lon}&name=Map%20Point`);
-      if (res.ok) {
-        const data: WeatherData = await res.json();
-        setInspectedLocation({ lat, lon, weather: data, isLoading: false });
-        onMapContextChange?.(data, activeMetric);
-      } else {
-        setInspectedLocation(null);
-      }
-    } catch (err) {
-      console.error('Map inspect error:', err);
+      const params = new URLSearchParams({
+        lat: String(lat), lon: String(lon), name: placeName?.trim() || 'Current Location'
+      });
+      const response = await fetch('/api/weather/coordinates?' + params.toString(), { signal: controller.signal });
+      if (!response.ok) throw new Error('Weather lookup failed (' + response.status + ')');
+      const data: WeatherData = await response.json();
+      if (controller.signal.aborted) return;
+      setInspectedLocation({ lat, lon, weather: data, isLoading: false });
+      mapContextChangeRef.current?.(data, activeMetricRef.current);
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      console.warn('[RODEX Atmos Map] Point lookup failed:', error);
       setInspectedLocation(null);
+    } finally {
+      if (inspectAbortRef.current === controller) inspectAbortRef.current = null;
     }
   };
 
-  // Render HTML Markers on Map based on currentWeatherData, deviceLocationData, hubWeatherMap, inspectedLocation, timeOffsetHours, activeMetric
+  // Render the selected location, device position and the currently inspected map point
   useEffect(() => {
     if (!mapInstanceRef.current || !markersGroupRef.current) return;
 
@@ -231,7 +202,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           isDay: weather.weather.current.is_day
         };
       } else {
-        const hourlyIndex = Math.min(timeOffsetHours, weather.weather.hourly.time.length - 1);
+        const hourlyIndex = findHourlyIndexForOffset(weather.weather.hourly.time, weather.weather.current.time, timeOffsetHours);
         return {
           temp: weather.weather.hourly.temperature_2m[hourlyIndex] ?? weather.weather.current.temperature_2m,
           precipProb: weather.weather.hourly.precipitation_probability[hourlyIndex] ?? 0,
@@ -245,6 +216,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
     // 1. Render Main Active Selected Location
     if (currentWeatherData) {
       const { latitude, longitude, name, country } = currentWeatherData.location;
+      const safeName = escapeMapHtml(name);
+      const safeCountry = escapeMapHtml(country);
       const val = getWeatherValueAtOffset(currentWeatherData);
       const cond = getWeatherCondition(val.code, val.isDay);
       const tempDisplay = formatTemp(val.temp, unit);
@@ -258,7 +231,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           <div class="px-3 py-1.5 rounded-2xl bg-gradient-to-r ${getTempColor(val.temp)} border-2 shadow-2xl flex items-center gap-2 transform transition duration-300 hover:scale-110">
             <span class="w-2.5 h-2.5 rounded-full bg-sky-300 animate-ping"></span>
             <div class="flex flex-col text-left leading-tight">
-              <span class="text-[10px] uppercase font-black tracking-wider opacity-90">${name}</span>
+              <span class="text-[10px] uppercase font-black tracking-wider opacity-90">${safeName}</span>
               <span class="text-xs font-black tabular-nums">${metricBadge}</span>
             </div>
             <span class="text-sm">${cond.icon}</span>
@@ -279,8 +252,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         <div class="p-3 space-y-2 min-w-[200px]">
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <div>
-              <div class="text-sm font-black text-white">${name}</div>
-              <div class="text-[11px] text-sky-200">${country}</div>
+              <div class="text-sm font-black text-white">${safeName}</div>
+              <div class="text-[11px] text-sky-200">${safeCountry}</div>
             </div>
             <span class="text-xl">${cond.icon}</span>
           </div>
@@ -304,6 +277,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         Math.abs(deviceLocationData.location.longitude - currentWeatherData.location.longitude) > 0.05)) {
       
       const { latitude, longitude, name } = deviceLocationData.location;
+      const safeName = escapeMapHtml(name);
       const val = getWeatherValueAtOffset(deviceLocationData);
       const tempDisplay = formatTemp(val.temp, unit);
 
@@ -326,7 +300,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
       const gpsMarker = L.marker([latitude, longitude], { icon: customIcon });
       gpsMarker.bindPopup(`
         <div class="p-2 space-y-2">
-          <div class="text-xs font-bold text-emerald-300">Your Device GPS Location (${name})</div>
+          <div class="text-xs font-bold text-emerald-300">Your Device GPS Location (${safeName})</div>
           <button id="btn-select-gps" class="w-full text-center px-2 py-1 rounded bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition">
             Switch to My GPS Location
           </button>
@@ -344,87 +318,6 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
       markersGroup.addLayer(gpsMarker);
     }
-
-    // 3. Render Hub Points
-    DEFAULT_HUB_POINTS.forEach(hub => {
-      // Skip if close to currentWeatherData
-      if (currentWeatherData && 
-          Math.abs(hub.lat - currentWeatherData.location.latitude) < 0.2 && 
-          Math.abs(hub.lon - currentWeatherData.location.longitude) < 0.2) {
-        return;
-      }
-
-      const key = `${hub.lat.toFixed(2)},${hub.lon.toFixed(2)}`;
-      const hubData = hubWeatherMap[key];
-
-      let tempTag = '--';
-      let iconTag = '📍';
-      let code = 0;
-      let isDay = 1;
-      let windSpeed = 10;
-      let precipProb = 0;
-
-      if (hubData) {
-        const val = getWeatherValueAtOffset(hubData);
-        const cond = getWeatherCondition(val.code, val.isDay);
-        tempTag = formatTemp(val.temp, unit);
-        iconTag = cond.icon;
-        code = val.code;
-        isDay = val.isDay;
-        windSpeed = val.windSpeed;
-        precipProb = val.precipProb;
-      }
-
-      let metricBadge = tempTag;
-      if (activeMetric === 'precipitation') metricBadge = `${precipProb}%`;
-      if (activeMetric === 'wind') metricBadge = formatWind(windSpeed, unit);
-
-      const html = `
-        <div class="group cursor-pointer">
-          <div class="px-2 py-1 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/20 text-sky-200 shadow-md flex items-center gap-1 text-[11px] font-semibold transition transform hover:scale-110">
-            <span>${hub.name}</span>
-            <span class="font-bold text-white tabular-nums">${metricBadge}</span>
-            <span class="text-xs">${iconTag}</span>
-          </div>
-        </div>
-      `;
-
-      const hubIcon = L.divIcon({
-        className: 'custom-leaflet-marker-hub',
-        html,
-        iconSize: [100, 28],
-        iconAnchor: [50, 28]
-      });
-
-      const marker = L.marker([hub.lat, hub.lon], { icon: hubIcon });
-      marker.bindPopup(`
-        <div class="p-3 space-y-2 min-w-[180px]">
-          <div class="text-sm font-bold text-white flex items-center justify-between">
-            <span>${hub.name}</span>
-            <span class="text-xs text-sky-300 font-normal">${hub.country}</span>
-          </div>
-          <div class="text-xs text-slate-300 space-y-1 font-medium">
-            <div class="flex justify-between"><span>Temp:</span><strong class="text-white">${tempTag}</strong></div>
-            <div class="flex justify-between"><span>Rain:</span><strong class="text-white">${precipProb}%</strong></div>
-            <div class="flex justify-between"><span>Wind:</span><strong class="text-white">${formatWind(windSpeed, unit)}</strong></div>
-          </div>
-          <button id="btn-select-hub-${hub.name.replace(/\s+/g, '-')}" class="w-full mt-2 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-bold text-xs transition shadow">
-            View ${hub.name} Full Forecast
-          </button>
-        </div>
-      `);
-
-      marker.on('popupopen', () => {
-        const btn = document.getElementById(`btn-select-hub-${hub.name.replace(/\s+/g, '-')}`);
-        if (btn) {
-          btn.onclick = () => {
-            onSelectCoordinates(hub.lat, hub.lon, hub.name);
-          };
-        }
-      });
-
-      markersGroup.addLayer(marker);
-    });
 
     // 4. Render Inspected Location Marker if user clicked somewhere on map
     if (inspectedLocation) {
@@ -459,13 +352,15 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         const cond = getWeatherCondition(val.code, val.isDay);
         const name = weather.location.name;
         const country = weather.location.country;
+        const safeName = escapeMapHtml(name);
+        const safeCountry = escapeMapHtml(country);
 
         inspectMarker.bindPopup(`
           <div class="p-3 space-y-2 min-w-[200px]">
             <div class="flex items-center justify-between border-b border-white/10 pb-2">
               <div>
                 <div class="text-sm font-bold text-amber-300">Inspected Point</div>
-                <div class="text-xs font-semibold text-white">${name}${country ? ', ' + country : ''}</div>
+                <div class="text-xs font-semibold text-white">${safeName}${safeCountry ? ', ' + safeCountry : ''}</div>
               </div>
               <span class="text-xl">${cond.icon}</span>
             </div>
@@ -507,7 +402,6 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   }, [
     currentWeatherData,
     deviceLocationData,
-    hubWeatherMap,
     inspectedLocation,
     unit,
     activeMetric,
@@ -526,40 +420,54 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   const handleRecenterGPS = () => {
     if (mapInstanceRef.current && deviceLocationData) {
       const { latitude, longitude } = deviceLocationData.location;
-      mapInstanceRef.current.flyTo([latitude, longitude], 11, { duration: 1 });
+      mapInstanceRef.current.flyTo([latitude, longitude], 14, { duration: 0.8 });
+    } else {
+      onGetCurrentLocation?.();
     }
   };
 
-  // Map Search Submit
+  // Abort previous place lookups when a new search is submitted.
   const handleMapSearch = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mapSearchTerm.trim()) return;
-
+    const query = mapSearchTerm.trim();
+    if (query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+    searchAbortRef.current?.abort();
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
     setIsSearching(true);
+    setSearchResults([]);
     try {
-      const res = await fetch(`/api/weather/geocoding-search?q=${encodeURIComponent(mapSearchTerm.trim())}`);
-      const data = await res.json();
-      if (data && Array.isArray(data.results) && data.results.length > 0) {
-        setSearchResults(data.results);
-      } else {
+      const response = await fetch('/api/weather/geocoding-search?q=' + encodeURIComponent(query), {
+        signal: controller.signal
+      });
+      if (!response.ok) throw new Error('Place search failed (' + response.status + ')');
+      const data = await response.json();
+      if (!controller.signal.aborted) setSearchResults(Array.isArray(data?.results) ? data.results : []);
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        console.warn('[RODEX Atmos Map] Place search failed:', error);
         setSearchResults([]);
       }
-    } catch (e) {
-      setSearchResults([]);
     } finally {
-      setIsSearching(false);
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null;
+        setIsSearching(false);
+      }
     }
   };
 
   return (
-    <div className={`w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#050b14] p-2 sm:p-4' : 'relative my-6'}`}>
-      <div className={`w-full rounded-3xl overflow-hidden border border-white/15 bg-[#0a1324]/95 backdrop-blur-2xl shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[500px] sm:h-[620px]'}`}>
+    <div className={`wx-map-root w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#E8E5F5] p-2 sm:p-4' : 'relative my-6'}`}>
+      <div className={`wx-map-card w-full rounded-3xl overflow-hidden border border-violet-200/50 bg-[#F4F0FF] shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[500px] sm:h-[620px]'}`}>
         
         {/* Map Header Controls Toolbar */}
-        <div className="p-3 sm:p-4 bg-[#0a1426] border-b border-white/10 flex flex-wrap items-center justify-between gap-2.5 z-10">
+        <div className="wx-map-toolbar p-3 sm:p-4 border-b border-violet-200 flex flex-wrap items-center justify-between gap-2.5 z-10">
           
           {/* Left: Metric Layers Tabs */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
+          <div className="wx-map-layer-controls flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
             <span className="text-xs font-bold text-sky-200/70 mr-1 hidden sm:flex items-center gap-1 shrink-0 font-heading">
               <Layers className="w-3.5 h-3.5 text-sky-400" />
               <span>Layer:</span>
@@ -612,17 +520,17 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           </div>
 
           {/* Right: Map Quick Controls & Search */}
-          <div className="flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-end">
+          <div className="wx-map-search-controls flex items-center gap-1.5 sm:gap-2 flex-1 sm:flex-initial justify-end">
             
             {/* Inline Map Location Search */}
-            <form onSubmit={handleMapSearch} className="relative flex-1 sm:w-44 md:w-56 min-w-[120px]">
+            <form onSubmit={handleMapSearch} className="wx-map-search relative flex-1 sm:w-44 md:w-56 min-w-[120px]">
               <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-sky-300 pointer-events-none" />
               <input
                 type="text"
                 value={mapSearchTerm}
                 onChange={(e) => setMapSearchTerm(e.target.value)}
-                placeholder="Jump to city..."
-                className="w-full pl-8 pr-2 py-1.5 bg-white/8 hover:bg-white/12 focus:bg-[#070e1c] text-white text-xs rounded-xl border border-white/15 focus:border-sky-400 focus:outline-none transition min-h-[36px]"
+                placeholder="Search a place or city..." aria-label="Search a place on the map"
+                className="wx-map-search-input w-full pl-8 pr-2 py-1.5 text-[#32164D] text-xs rounded-xl border border-violet-300 focus:border-violet-600 focus:outline-none transition min-h-[40px]"
               />
               {searchResults.length > 0 && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1426] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
@@ -633,18 +541,22 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                       onClick={() => {
                         if (mapInstanceRef.current) {
                           mapInstanceRef.current.flyTo([city.lat, city.lon], 10, { duration: 1 });
-                          handleInspectCoordinates(city.lat, city.lon);
+                          void handleInspectCoordinates(city.lat, city.lon, city.name);
                         }
                         setSearchResults([]);
                         setMapSearchTerm('');
                       }}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-white/10 text-white flex justify-between items-center border-b border-white/5 last:border-0"
+                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-violet-50 text-[#32164D] flex justify-between items-center border-b border-violet-100 last:border-0"
                     >
-                      <span className="font-semibold text-sky-300">{city.name}</span>
-                      <span className="text-[10px] text-white/50">{city.country}</span>
+                      <span className="font-semibold text-violet-900">{city.name}</span>
+                      <span className="text-[10px] text-violet-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
                     </button>
                   ))}
                 </div>
+              )}
+              {isSearching && <div className="wx-map-search-state">Searching places…</div>}
+              {!isSearching && mapSearchTerm.trim().length >= 2 && searchResults.length === 0 && (
+                <div className="wx-map-search-state">No places found. Try a nearby town or city name.</div>
               )}
             </form>
 
@@ -652,7 +564,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             <button
               onClick={handleRecenterActive}
               className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-sky-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
-              title="Center Map on Selected Active City"
+              title="Center map on selected weather location"
               aria-label="Center map on selected city"
             >
               <Compass className="w-4 h-4" />
@@ -662,7 +574,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             <button
               onClick={handleRecenterGPS}
               className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-emerald-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
-              title="Center Map on My GPS Device Location"
+              title="Find and center on my device location"
               aria-label="Center map on physical GPS device location"
             >
               <Navigation className="w-4 h-4" />
@@ -682,8 +594,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         </div>
 
         {/* Map Canvas Container */}
-        <div className="relative flex-1 w-full h-full min-h-[300px]">
-          <div ref={mapContainerRef} className="w-full h-full z-0" />
+        <div className="wx-map-canvas-wrap relative flex-1 w-full h-full min-h-[300px]">
+          <div ref={mapContainerRef} className="wx-map-canvas w-full h-full z-0" aria-label="Interactive street map" />
 
           {/* Floating Time Forecast Offset Slider (Responsive: Docked on desktop, expandable on mobile) */}
           <div className="absolute bottom-3 right-3 sm:bottom-4 sm:right-4 z-20">
@@ -691,7 +603,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             <div className="sm:hidden mb-1 flex justify-end">
               <button
                 onClick={() => setIsSliderOpen(!isSliderOpen)}
-                className="px-3 py-1.5 rounded-xl bg-[#0a1426]/95 border border-white/20 text-sky-200 text-xs font-bold shadow-lg flex items-center gap-1.5 backdrop-blur-md"
+                className="wx-map-timeline-toggle px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-1.5"
               >
                 <Clock className="w-3.5 h-3.5 text-sky-400" />
                 <span>{timeOffsetHours === 0 ? 'Forecast (Now)' : `+${timeOffsetHours}h Forecast`}</span>
@@ -699,7 +611,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             </div>
 
             {/* Slider Card */}
-            <div className={`${isSliderOpen ? 'block' : 'hidden sm:block'} w-72 sm:w-80 bg-[#0a1426]/95 backdrop-blur-xl border border-white/20 rounded-2xl p-3 shadow-2xl space-y-2`}>
+            <div className={`wx-map-timeline-card ${isSliderOpen ? 'block' : 'hidden sm:block'} w-72 sm:w-80 rounded-2xl p-3 shadow-2xl space-y-2`}>
               <div className="flex items-center justify-between text-xs">
                 <span className="font-bold text-sky-200 flex items-center gap-1.5 font-heading">
                   <Clock className="w-3.5 h-3.5 text-sky-400" />
@@ -732,21 +644,21 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           </div>
 
           {/* Interactive Map Hint Banner (Desktop only) */}
-          <div className="absolute top-3 left-3 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0a1426]/85 backdrop-blur-md border border-white/15 text-xs text-sky-200 shadow-xl pointer-events-none z-10">
+          <div className="wx-map-hint absolute top-3 left-3 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs shadow-xl pointer-events-none z-10">
             <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
             <span>Tap map locations to inspect live weather</span>
           </div>
         </div>
 
         {/* Footer info bar */}
-        <div className="px-3 py-2 bg-[#060b14] border-t border-white/10 flex flex-col sm:flex-row items-center justify-between text-[11px] text-white/60 gap-1.5 z-10">
+        <div className="wx-map-footer px-3 py-2 border-t flex flex-col sm:flex-row items-center justify-between text-[11px] gap-1.5 z-10">
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-sky-400" />
-            <span>Map Tile Data: OpenFreeMap / OpenStreetMap</span>
+            <span>Street map © OpenStreetMap contributors · CARTO</span>
           </div>
           <button
             onClick={() => onOpenAssistant(`Give me an overview of weather patterns across the map near ${currentWeatherData?.location.name || 'my location'}.`)}
-            className="text-sky-300 hover:text-sky-200 font-bold flex items-center gap-1 transition"
+            className="wx-map-ai-link font-bold flex items-center gap-1 transition"
           >
             <Sparkles className="w-3 h-3 text-sky-400" />
             <span>Analyze region with RODEX AI</span>

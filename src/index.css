@@ -4164,3 +4164,841 @@ nav[aria-label="Mobile Navigation"] > div > div > span {
     transform: none !important;
   }
 }
+
+
+/* ================================================================
+   RODEX Atmos — High-contrast Violet Identity & Responsive Polish
+   Final override layer: richer color density, stronger type hierarchy,
+   legible weather surfaces, and map-specific responsive controls.
+   ================================================================ */
+:root {
+  --rodex-violet-950: #32164D;
+  --rodex-violet-900: #432064;
+  --rodex-violet-800: #54258F;
+  --rodex-violet-700: #6330B8;
+  --rodex-violet-600: #713BD0;
+  --rodex-violet-500: #844EE7;
+  --rodex-violet-400: #9875EC;
+  --rodex-lavender-500: #927DE8;
+  --rodex-lavender-400: #A998EF;
+  --rodex-lavender-300: #BDAFF2;
+  --rodex-lilac-300: #C8BDF3;
+  --rodex-panel-200: #D3CAF5;
+  --rodex-panel-100: #E5DFFA;
+  --rodex-panel-50: #F2EFFF;
+  --rodex-ink: #27133D;
+  --rodex-ink-strong: #1C102D;
+  --rodex-ink-muted: #50396D;
+  --rodex-border: rgba(84,37,143,.30);
+  --rodex-border-strong: rgba(84,37,143,.46);
+  --rodex-shadow: rgba(45,20,83,.20);
+  --font-heading: 'Manrope', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', Roboto, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html {
+  min-width: 320px;
+  background: #A998EF !important;
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-width: 320px;
+  color: var(--rodex-ink) !important;
+  background:
+    radial-gradient(ellipse at 7% 15%, rgba(113,59,208,.36), transparent 38%),
+    radial-gradient(ellipse at 92% 9%, rgba(200,189,243,.70), transparent 42%),
+    radial-gradient(ellipse at 58% 100%, rgba(132,78,231,.20), transparent 48%),
+    linear-gradient(125deg, #927DE8 0%, #A998EF 44%, #C8BDF3 82%, #A998EF 100%) !important;
+  background-attachment: fixed !important;
+  font-family: var(--font-body) !important;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-x: clip;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root,
+#root > div {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+#root > div {
+  color: var(--rodex-ink) !important;
+}
+
+h1, h2, h3, h4, h5, h6,
+.font-heading, .font-display {
+  font-family: var(--font-heading) !important;
+  font-weight: 750;
+  letter-spacing: -.035em;
+  color: var(--rodex-ink-strong);
+}
+
+button, input, select, textarea {
+  font: inherit;
+}
+button, a, input, select, textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+button:focus-visible, a:focus-visible, input:focus-visible,
+select:focus-visible, textarea:focus-visible {
+  outline: 3px solid #5325A6 !important;
+  outline-offset: 2px !important;
+}
+
+/* Header: darker text, stronger search contrast, stable widths on small screens. */
+#root > div > header.sticky {
+  width: 100%;
+  max-width: 100%;
+  color: var(--rodex-ink) !important;
+  background: linear-gradient(105deg, rgba(198,187,243,.97), rgba(213,204,247,.96) 56%, rgba(185,169,239,.97)) !important;
+  border-bottom: 1px solid rgba(84,37,143,.25) !important;
+  box-shadow: 0 5px 20px rgba(45,20,83,.11), inset 0 1px rgba(255,255,255,.35) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.08);
+  backdrop-filter: blur(20px) saturate(1.08);
+}
+#root > div > header.sticky > div {
+  width: 100%;
+  max-width: 1360px;
+  min-width: 0;
+  gap: clamp(6px, 1vw, 14px) !important;
+}
+#root > div > header.sticky .group.w-9.h-9,
+#root > div > header.sticky .group.w-10.h-10 {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #8D60E3, #5525B1) !important;
+  border: 1px solid rgba(255,255,255,.48) !important;
+  box-shadow: 0 6px 16px rgba(63,29,129,.26) !important;
+}
+#root > div > header.sticky input[aria-label="Search city or country"] {
+  min-width: 0 !important;
+  color: #241337 !important;
+  background: rgba(246,242,255,.88) !important;
+  border: 1px solid rgba(84,37,143,.36) !important;
+  box-shadow: inset 0 1px 2px rgba(47,24,83,.08) !important;
+  font-size: 13px !important;
+  font-weight: 550 !important;
+}
+#root > div > header.sticky input[aria-label="Search city or country"]::placeholder {
+  color: #5E477A !important;
+  opacity: 1;
+}
+#root > div > header.sticky input[aria-label="Search city or country"]:focus {
+  background: #FFFFFF !important;
+  border-color: #6330B8 !important;
+  box-shadow: 0 0 0 3px rgba(99,48,184,.16) !important;
+}
+#root > div > header.sticky input[aria-label="Search city or country"] ~ span {
+  color: #5C447A !important;
+  font-weight: 550;
+}
+#root > div > header.sticky button[aria-label="Submit search"] {
+  color: #6330B8 !important;
+}
+#root > div > header.sticky button[title="Toggle temperature unit"] {
+  color: #32164D !important;
+  background: rgba(243,239,255,.76) !important;
+  border-color: rgba(84,37,143,.27) !important;
+  font-weight: 800 !important;
+}
+.header-account-shortcut {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #8052DB, #5B2EAE) !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 4px 11px rgba(60,27,119,.23), inset 0 1px rgba(255,255,255,.20) !important;
+}
+.header-account-shortcut .header-account-label {
+  color: #FFFFFF !important;
+  font-size: 11px;
+  font-weight: 800;
+}
+.header-account-shortcut .header-account-icon {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,.20) !important;
+}
+.header-account-shortcut:hover {
+  background: linear-gradient(145deg, #7040C8, #4C2198) !important;
+}
+#root > div > header.sticky [class*="bg-[#0a1426]"] {
+  color: #27133D !important;
+  background: rgba(243,239,255,.98) !important;
+  border-color: rgba(84,37,143,.28) !important;
+}
+#root > div > header.sticky [class*="bg-[#0a1426]"] button {
+  color: #32164D !important;
+}
+#root > div > header.sticky [class*="bg-[#0a1426]"] button:hover {
+  background: rgba(132,78,231,.14) !important;
+}
+
+/* Dashboard shell, brand rail and all secondary surfaces. */
+.wx-reference-shell {
+  color: var(--rodex-ink) !important;
+  border: 1px solid rgba(84,37,143,.34) !important;
+  background: linear-gradient(145deg, #C7BAF1 0%, #BBADEB 55%, #CFC5F5 100%) !important;
+  box-shadow: 0 25px 66px rgba(48,24,94,.24), inset 0 1px rgba(255,255,255,.38) !important;
+}
+.wx-reference-rail {
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(189,175,246,.22), transparent 43%),
+    linear-gradient(180deg, #5622B3 0%, #6633C4 52%, #7649D4 100%) !important;
+  border-right: 1px solid rgba(255,255,255,.25) !important;
+}
+.wx-reference-mark {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #A78AF0, #6330B8) !important;
+  border-color: rgba(255,255,255,.5) !important;
+  box-shadow: 0 7px 16px rgba(35,12,80,.32), inset 0 1px rgba(255,255,255,.28) !important;
+}
+.wx-brand-copy strong,
+.wx-brand-copy strong span {
+  color: #FFFFFF !important;
+}
+.wx-brand-copy small {
+  color: rgba(255,255,255,.90) !important;
+  font-weight: 600;
+}
+.wx-reference-rail-button {
+  color: rgba(255,255,255,.94) !important;
+  font-weight: 700 !important;
+  font-size: 11px !important;
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,.17) !important;
+  border-color: rgba(255,255,255,.22) !important;
+}
+.wx-reference-rail-button.is-active {
+  color: #FFFFFF !important;
+  background: linear-gradient(105deg, rgba(255,255,255,.31), rgba(255,255,255,.16)) !important;
+  border-color: rgba(255,255,255,.40) !important;
+  box-shadow: inset 3px 0 #E8DFFF, 0 5px 14px rgba(29,12,73,.22), inset 0 1px rgba(255,255,255,.22) !important;
+}
+.wx-rail-assistant-card {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, rgba(207,190,250,.30), rgba(124,83,210,.40)) !important;
+  border-color: rgba(255,255,255,.42) !important;
+}
+.wx-rail-assistant-card strong,
+.wx-rail-assistant-card small {
+  color: #FFFFFF !important;
+}
+.wx-rail-assistant-orb {
+  background: linear-gradient(145deg, #C0A9FA, #7745D4) !important;
+  border-color: rgba(255,255,255,.72) !important;
+}
+.wx-reference-content {
+  min-width: 0 !important;
+  color: var(--rodex-ink) !important;
+  background: linear-gradient(145deg, rgba(199,186,241,.96), rgba(185,170,235,.94) 58%, rgba(207,197,245,.96)) !important;
+}
+.wx-reference-heading {
+  border-bottom-color: rgba(74,42,124,.24) !important;
+}
+.wx-welcome-line {
+  color: #4D376B !important;
+  font-size: 13px !important;
+  font-weight: 650 !important;
+}
+.wx-welcome-line strong {
+  color: #241337 !important;
+  font-weight: 850 !important;
+}
+.wx-reference-kicker {
+  color: #51396F !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+}
+.wx-live-status {
+  color: #32164D !important;
+  background: rgba(239,233,255,.83) !important;
+  border-color: rgba(84,37,143,.30) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+.wx-reference-quick-location {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #844EE7, #5726B2) !important;
+  border-color: rgba(255,255,255,.34) !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+}
+
+/* Hero gets real violet density, high contrast white type and readable details. */
+.wx-dashboard-hero {
+  color: #FFFFFF !important;
+  background:
+    radial-gradient(ellipse at 58% 0%, rgba(220,208,255,.25), transparent 43%),
+    linear-gradient(112deg, #5420AE 0%, #6731C5 48%, #8050DA 100%) !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 17px 38px rgba(53,25,112,.31), inset 0 1px rgba(255,255,255,.27) !important;
+}
+.wx-dashboard-hero .wx-storm-title,
+.wx-hero-location,
+.wx-hero-condition,
+.wx-hero-metric-copy strong {
+  color: #FFFFFF !important;
+}
+.wx-hero-eyebrow,
+.wx-hero-feels,
+.wx-hero-weather-caption,
+.wx-hero-metric-copy small,
+.wx-hero-range span {
+  color: rgba(255,255,255,.94) !important;
+  font-weight: 650;
+}
+.wx-hero-weather-icon {
+  color: #FFFFFF !important;
+  filter: drop-shadow(0 10px 15px rgba(34,12,80,.38)) !important;
+}
+.wx-hero-metric {
+  background: rgba(245,239,255,.20) !important;
+  border-color: rgba(255,255,255,.25) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.18) !important;
+}
+.wx-hero-metric-icon {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,.20) !important;
+}
+.wx-hero-metric-copy small {
+  font-size: 10px !important;
+}
+.wx-hero-metric-copy strong {
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+
+/* Forecast panels: remove washed-out label colors and increase text size. */
+.wx-dashboard-panel {
+  color: #27133D !important;
+  background: linear-gradient(145deg, #D1C6F4 0%, #C3B6F0 100%) !important;
+  border: 1px solid rgba(84,37,143,.28) !important;
+  box-shadow: 0 10px 23px rgba(53,29,111,.12), inset 0 1px rgba(255,255,255,.40) !important;
+}
+.wx-dashboard-panel-heading h2 {
+  color: #241337 !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+.wx-dashboard-panel-heading p,
+.wx-dashboard-hour-time,
+.wx-dashboard-hour small,
+.wx-dashboard-day-condition,
+.wx-dashboard-daily-foot,
+.wx-dashboard-hourly-foot {
+  color: #50396D !important;
+  font-weight: 650 !important;
+}
+.wx-panel-link {
+  color: #5225A2 !important;
+  font-weight: 850 !important;
+}
+.wx-dashboard-hour {
+  background: rgba(245,241,255,.53) !important;
+  border-color: rgba(84,37,143,.20) !important;
+}
+.wx-dashboard-hour.is-current {
+  background: linear-gradient(150deg, #AC96EB, #C1B4EF) !important;
+  border-color: rgba(84,37,143,.44) !important;
+  box-shadow: 0 4px 12px rgba(63,31,125,.17), inset 0 1px rgba(255,255,255,.45) !important;
+}
+.wx-dashboard-hour-time,
+.wx-dashboard-hour small,
+.wx-dashboard-day-name,
+.wx-dashboard-day small {
+  color: #4E376B !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+}
+.wx-dashboard-hour strong,
+.wx-dashboard-day strong {
+  color: #241337 !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+}
+.wx-dashboard-hour-icon,
+.wx-dashboard-day-icon {
+  color: #602AB8 !important;
+  stroke-width: 2.1;
+}
+.wx-dashboard-day {
+  border-color: rgba(84,37,143,.10) !important;
+}
+.wx-dashboard-day.is-today {
+  background: rgba(155,126,224,.28) !important;
+  border-color: rgba(84,37,143,.32) !important;
+}
+.wx-dashboard-day-name {
+  color: #32164D !important;
+}
+.wx-dashboard-daily-foot strong,
+.wx-dashboard-hourly-foot strong {
+  color: #5420AE !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+.wx-dashboard-hourly-foot,
+.wx-dashboard-daily-foot {
+  border-top-color: rgba(84,37,143,.20) !important;
+}
+
+.wx-regional-panel,
+.wx-nearby-panel {
+  color: #27133D !important;
+  background: linear-gradient(145deg, #C9BCEF, #D7CEF7) !important;
+  border-color: rgba(84,37,143,.30) !important;
+}
+.wx-regional-panel .wx-nearby-heading span,
+.wx-nearby-heading span {
+  color: #2E1948 !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+}
+.wx-regional-panel .wx-nearby-heading small,
+.wx-map-discovery-copy {
+  color: #50396D !important;
+  font-size: 11px !important;
+  font-weight: 600;
+}
+.wx-regional-panel .wx-nearby-map-link,
+.wx-nearby-map-link {
+  color: #5420AE !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+.wx-regional-panel .wx-nearby-map-link:hover,
+.wx-nearby-map-link:hover {
+  color: #32164D !important;
+  background: rgba(255,255,255,.32) !important;
+}
+
+/* Existing secondary cards and details: richer surfaces and legible text. */
+.wx-reference-support-grid > div,
+main .glass-panel,
+main .glass-panel-elevated {
+  color: #27133D !important;
+  background: linear-gradient(145deg, #D3C9F4, #BFB2EC 58%, #D5CCF5) !important;
+  border: 1px solid rgba(84,37,143,.31) !important;
+  box-shadow: 0 13px 30px rgba(53,29,111,.16), inset 0 1px rgba(255,255,255,.38) !important;
+}
+.wx-reference-support-grid > div h2,
+.wx-reference-support-grid > div h3,
+.wx-reference-support-grid > div h4,
+main .glass-panel h2,
+main .glass-panel h3,
+main .glass-panel-elevated h2,
+main .glass-panel-elevated h3 {
+  color: #241337 !important;
+  font-weight: 850 !important;
+}
+.wx-reference-support-grid > div p,
+main .glass-panel p,
+main .glass-panel-elevated p {
+  color: #493365 !important;
+  font-weight: 550;
+}
+main [class~="text-white/30"],
+main [class~="text-white/40"],
+main [class~="text-white/50"],
+main [class~="text-white/60"],
+main [class~="text-white/65"],
+main [class~="text-white/70"] {
+  color: #574270 !important;
+}
+
+/* Location, AI summary, panel toggles and compact metadata are readable at normal zoom. */
+.wx-more-weather-toggle {
+  color: #27133D !important;
+  background: linear-gradient(140deg, #D4C9F4, #BFB1EE) !important;
+  border-color: rgba(84,37,143,.32) !important;
+  box-shadow: 0 7px 20px rgba(53,29,111,.12), inset 0 1px rgba(255,255,255,.42) !important;
+}
+.wx-more-weather-copy strong { color: #241337 !important; font-size: 13px !important; }
+.wx-more-weather-copy small { color: #50396D !important; font-size: 11px !important; }
+.wx-more-weather-chevron { color: #5420AE !important; }
+.wx-ai-neutral-summary {
+  color: #27133D !important;
+  background: linear-gradient(145deg, #D3C9F4, #C1B5EF) !important;
+  border-color: rgba(84,37,143,.28) !important;
+}
+.wx-ai-neutral-heading h3 { color: #241337 !important; font-size: 14px !important; }
+.wx-ai-neutral-heading p,
+.wx-ai-neutral-footer > p { color: #50396D !important; font-size: 10px !important; }
+.wx-ai-neutral-copy { color: #392450 !important; font-size: 14px !important; font-weight: 550; }
+.wx-ai-neutral-label { color: #4E2699 !important; font-weight: 850 !important; }
+.wx-ai-neutral-icon { background: linear-gradient(145deg,#8C61E2,#5526B0) !important; }
+.wx-ai-neutral-action { background: linear-gradient(135deg,#8250D8,#5420AE) !important; }
+
+/* Consistent link, focus, and selection contrast. */
+a { color: #4F24A5; }
+a:hover { color: #32164D; }
+::selection { color: #FFFFFF; background: #5520B3; }
+input::placeholder, textarea::placeholder { color: #695583 !important; opacity: 1; }
+
+/* ================================================================
+   RODEX Atmos — Map experience
+   Natural CARTO Voyager/OSM map colors, readable popup cards, clear
+   place search and convenient mobile controls.
+   ================================================================ */
+.wx-map-root { min-width: 0; width: 100%; max-width: 100%; }
+.wx-map-card {
+  min-width: 0;
+  border-color: rgba(84,37,143,.30) !important;
+  background: #EEE9FC !important;
+  box-shadow: 0 18px 45px rgba(45,20,83,.19) !important;
+}
+.wx-map-toolbar {
+  background: linear-gradient(110deg,#D8CFF7,#C4B7F0 55%,#D5CBF5) !important;
+  border-bottom-color: rgba(84,37,143,.23) !important;
+}
+.wx-map-layer-controls { min-width: 0; }
+.wx-map-layer-controls > button {
+  min-height: 40px !important;
+  border-radius: 11px !important;
+  font-weight: 800 !important;
+}
+.wx-map-layer-controls > button[aria-pressed="true"],
+.wx-map-layer-controls > button[class*="bg-sky-500"],
+.wx-map-layer-controls > button[class*="bg-blue-500"],
+.wx-map-layer-controls > button[class*="bg-teal-500"] {
+  box-shadow: 0 3px 9px rgba(55,26,112,.20) !important;
+}
+.wx-map-search-controls { min-width: 0; }
+.wx-map-search {
+  min-width: 0 !important;
+  z-index: 30;
+}
+.wx-map-search-input {
+  color: #241337 !important;
+  background: #F8F5FF !important;
+  border-color: rgba(84,37,143,.32) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+.wx-map-search-input::placeholder { color: #66517F !important; }
+.wx-map-search-input:focus {
+  background: #FFFFFF !important;
+  border-color: #6330B8 !important;
+  box-shadow: 0 0 0 3px rgba(99,48,184,.14) !important;
+}
+.wx-map-search > div.absolute {
+  background: #FBF9FF !important;
+  border-color: rgba(84,37,143,.25) !important;
+  box-shadow: 0 13px 30px rgba(45,20,83,.20) !important;
+}
+.wx-map-search-state {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 60;
+  padding: 10px 12px;
+  border: 1px solid rgba(84,37,143,.22);
+  border-radius: 10px;
+  color: #50396D;
+  background: #FBF9FF;
+  box-shadow: 0 10px 24px rgba(45,20,83,.16);
+  font-size: 11px;
+  font-weight: 650;
+}
+.wx-map-canvas-wrap {
+  min-width: 0;
+  min-height: 300px;
+  background: #EDE8F7;
+}
+.wx-map-canvas {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  min-height: 300px;
+  background: #EDE8F7;
+}
+.leaflet-container,
+.map-dark-tiles {
+  background: #EDE8F7 !important;
+  filter: none !important;
+  font-family: var(--font-body) !important;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  color: #27133D !important;
+  background: #FBF9FF !important;
+  border: 1px solid rgba(84,37,143,.22) !important;
+  box-shadow: 0 12px 28px rgba(45,20,83,.23) !important;
+}
+.leaflet-popup-content-wrapper { border-radius: 15px !important; }
+.leaflet-popup-content {
+  margin: 12px 14px !important;
+  color: #27133D !important;
+  line-height: 1.55 !important;
+}
+.leaflet-popup-content strong { color: #32164D !important; }
+.leaflet-popup-content button {
+  min-height: 36px;
+  border-radius: 9px !important;
+  font-weight: 750 !important;
+}
+.leaflet-popup-close-button {
+  color: #5420AE !important;
+  font-size: 21px !important;
+}
+.leaflet-control-zoom a {
+  color: #5420AE !important;
+  background: rgba(251,249,255,.97) !important;
+  border-color: rgba(84,37,143,.20) !important;
+  box-shadow: 0 3px 10px rgba(45,20,83,.13) !important;
+  font-weight: 800 !important;
+}
+.leaflet-control-zoom a:hover {
+  color: #FFFFFF !important;
+  background: #6330B8 !important;
+}
+.leaflet-control-attribution,
+.leaflet-control-scale-line {
+  color: #4F3A69 !important;
+  background: rgba(250,248,255,.92) !important;
+  border-color: rgba(84,37,143,.18) !important;
+  font-size: 9px !important;
+  font-weight: 550;
+}
+.leaflet-control-attribution a { color: #5325A6 !important; }
+.wx-map-timeline-toggle {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg,#7443CE,#5322AD) !important;
+  border: 1px solid rgba(255,255,255,.45) !important;
+  box-shadow: 0 7px 18px rgba(45,20,83,.26) !important;
+}
+.wx-map-timeline-card {
+  color: #27133D !important;
+  background: rgba(250,248,255,.97) !important;
+  border: 1px solid rgba(84,37,143,.25) !important;
+  box-shadow: 0 12px 32px rgba(45,20,83,.20) !important;
+}
+.wx-map-timeline-card span { color: #50396D !important; }
+.wx-map-timeline-card input[type="range"] { accent-color: #6330B8 !important; }
+.wx-map-hint {
+  color: #32164D !important;
+  background: rgba(251,249,255,.94) !important;
+  border: 1px solid rgba(84,37,143,.23) !important;
+}
+.wx-map-footer {
+  color: #4F3A69 !important;
+  background: #D8CFF7 !important;
+  border-top-color: rgba(84,37,143,.22) !important;
+}
+.wx-map-footer span { color: #4F3A69 !important; }
+.wx-map-ai-link { color: #5420AE !important; }
+.wx-map-ai-link:hover { color: #32164D !important; }
+
+/* Main layout must shrink inside any viewport and never push the document sideways. */
+main,
+footer,
+main > *,
+.wx-reference-shell,
+.wx-reference-content,
+.wx-dashboard-hero,
+.wx-dashboard-forecast-grid,
+.wx-dashboard-panel,
+.wx-dashboard-hourly-list,
+.wx-dashboard-daily-list,
+.wx-reference-support-grid {
+  min-width: 0;
+  max-width: 100%;
+}
+footer {
+  flex-wrap: wrap !important;
+}
+footer > div:last-child {
+  min-width: 0;
+  max-width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
+  gap: 5px 9px;
+}
+footer > div:last-child span { min-width: 0; }
+.wx-dashboard-hour small {
+  white-space: normal !important;
+  text-align: center;
+}
+.wx-dashboard-day-condition {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.wx-live-status { min-width: 0; }
+.wx-reference-heading-right { min-width: 0; }
+.wx-reference-heading-right > * { min-width: 0; }
+#root > div > header.sticky > div > * { min-width: 0; }
+#root > div > header.sticky .relative.flex-1 {
+  flex: 1 1 0%;
+  min-width: 0;
+  max-width: initial;
+}
+#root > div > header.sticky .header-account-shortcut {
+  flex-shrink: 0;
+}
+#root > div > header.sticky .flex.items-center.gap-1\\.5.sm\\:gap-2.shrink-0 {
+  flex-shrink: 0;
+}
+
+/* Phone layout: compact search row, stacked map toolbar and safe-area controls. */
+@media (max-width: 680px) {
+  #root > div > header.sticky {
+    padding-left: max(9px, env(safe-area-inset-left)) !important;
+    padding-right: max(9px, env(safe-area-inset-right)) !important;
+  }
+  #root > div > header.sticky > div {
+    gap: 6px !important;
+  }
+  #root > div > header.sticky .header-account-shortcut {
+    width: 39px;
+    min-width: 39px;
+    height: 39px;
+  }
+  #root > div > header.sticky .header-account-label { display: none !important; }
+  #root > div > header.sticky .relative.flex-1 {
+    min-width: 0 !important;
+  }
+  #root > div > header.sticky .relative.flex-1 input {
+    padding-left: 31px !important;
+    padding-right: 31px !important;
+    font-size: 12px !important;
+  }
+  #root > div > header.sticky > div > div:first-child {
+    flex: 0 0 auto;
+  }
+  #root > div > header.sticky > div > div:last-child {
+    gap: 5px !important;
+  }
+  .wx-reference-shell {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  .wx-reference-content {
+    padding: 12px !important;
+  }
+  .wx-dashboard-hero {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: minmax(0,1fr) 72px !important;
+    overflow: hidden;
+  }
+  .wx-hero-weather-art { min-width: 0; }
+  .wx-hero-weather-icon { max-width: 68px; max-height: 68px; }
+  .wx-hero-metrics {
+    width: 100%;
+    min-width: 0;
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+  }
+  .wx-dashboard-forecast-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .wx-dashboard-hourly-list { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  .wx-dashboard-hour { min-width: 0; }
+  .wx-dashboard-day {
+    min-width: 0;
+    grid-template-columns: 42px 22px minmax(0,1fr) auto auto !important;
+    gap: 5px !important;
+  }
+  .wx-map-card {
+    border-radius: 17px !important;
+  }
+  .wx-map-toolbar {
+    align-items: stretch !important;
+    flex-direction: column !important;
+    gap: 9px !important;
+    padding: 10px !important;
+  }
+  .wx-map-layer-controls {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+  .wx-map-search-controls {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: minmax(0,1fr) repeat(3,40px);
+    gap: 6px !important;
+  }
+  .wx-map-search {
+    width: auto !important;
+    min-width: 0 !important;
+  }
+  .wx-map-search-controls > button {
+    width: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+  }
+  .wx-map-search-input { min-height: 40px !important; }
+  .wx-map-canvas-wrap,
+  .wx-map-canvas {
+    min-height: 300px !important;
+  }
+  .wx-map-timeline-card {
+    width: min(288px, calc(100vw - 36px)) !important;
+    max-width: calc(100vw - 36px) !important;
+  }
+  .wx-map-footer {
+    align-items: flex-start !important;
+    text-align: left;
+    padding: 9px 11px !important;
+    gap: 7px !important;
+  }
+  .wx-map-footer > div {
+    min-width: 0;
+    flex-wrap: wrap;
+  }
+}
+@media (max-width: 380px) {
+  #root > div > header.sticky { padding-left: 7px !important; padding-right: 7px !important; }
+  #root > div > header.sticky > div { gap: 5px !important; }
+  #root > div > header.sticky .group.w-9.h-9,
+  #root > div > header.sticky .group.w-10.h-10 {
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 11px !important;
+  }
+  #root > div > header.sticky .relative.flex-1 input {
+    font-size: 11px !important;
+    padding-left: 28px !important;
+    padding-right: 28px !important;
+  }
+  #root > div > header.sticky .header-account-shortcut {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+  .wx-reference-content { padding: 9px !important; }
+  .wx-dashboard-panel { padding: 11px 9px !important; }
+  .wx-dashboard-day-condition { display: none !important; }
+  .wx-dashboard-day { grid-template-columns: minmax(0,1fr) 22px auto auto !important; }
+  .wx-map-search-controls { grid-template-columns: minmax(0,1fr) repeat(3,36px); }
+  .wx-map-search-controls > button { width: 36px !important; min-width: 36px !important; }
+}
+
+/* Tablet: controls wrap before crowding the weather content. */
+@media (min-width: 681px) and (max-width: 1024px) {
+  .wx-reference-shell { grid-template-columns: 1fr !important; }
+  .wx-reference-rail { display: none !important; }
+  .wx-map-toolbar { align-items: flex-start !important; }
+  .wx-map-layer-controls { max-width: 100%; }
+  .wx-map-search-controls { min-width: min(100%, 340px); }
+}
+
+/* Small but deliberate motion; always respect reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}

@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Bell, Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain,
-  CloudSnow, CloudSun, Clock3, Compass, Droplets, Gauge, MapPin, MapPinned,
+  CloudSnow, CloudSun, Clock3, Compass, Droplets, MapPin, MapPinned,
   Mic, Moon, Navigation, ShieldCheck, Sparkles, Sun, Sunrise, Sunset,
   Thermometer, UserRound, Wind, ChevronRight
 } from 'lucide-react';

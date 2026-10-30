@@ -20,6 +20,48 @@ import { getWeatherCondition } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map, ChevronDown } from 'lucide-react';
 
+interface CurrentDevicePlace {
+  name: string;
+  country: string;
+  admin1: string;
+}
+
+/**
+ * BigDataCloud's free client-side endpoint is called only with fresh device GPS
+ * coordinates after the browser grants location permission. It is not used for
+ * arbitrary map clicks, searches, stored coordinates or server-side lookups.
+ */
+async function resolveCurrentDevicePlace(latitude: number, longitude: number): Promise<CurrentDevicePlace | null> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), 3500);
+  try {
+    const params = new URLSearchParams({
+      latitude: String(latitude),
+      longitude: String(longitude),
+      localityLanguage: 'en'
+    });
+    const response = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?' + params.toString(), {
+      signal: controller.signal
+    });
+    if (!response.ok) return null;
+    const data = await response.json();
+    const city = typeof data.city === 'string' ? data.city.trim() : '';
+    const locality = typeof data.locality === 'string' ? data.locality.trim() : '';
+    const principalSubdivision = typeof data.principalSubdivision === 'string' ? data.principalSubdivision.trim() : '';
+    const country = typeof data.countryName === 'string' ? data.countryName.trim() : '';
+    const name = locality && city && locality.toLowerCase() !== city.toLowerCase()
+      ? locality + ', ' + city
+      : city || locality || principalSubdivision;
+    if (!name) return null;
+    return { name, country, admin1: principalSubdivision };
+  } catch (error) {
+    console.warn('[RODEX Atmos] Device place-name lookup unavailable; keeping coordinate-based weather.', error);
+    return null;
+  } finally {
+    window.clearTimeout(timeout);
+  }
+}
+
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
@@ -143,9 +185,20 @@ export default function App() {
       async (position) => {
         const { latitude, longitude } = position.coords;
         try {
-          const res = await fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
+          // Run place-name resolution and the weather request together to avoid adding latency.
+          const placePromise = resolveCurrentDevicePlace(latitude, longitude);
+          const weatherPromise = fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
+          const [place, res] = await Promise.all([placePromise, weatherPromise]);
           if (res.ok) {
             const data: WeatherData = await res.json();
+            if (place) {
+              data.location = {
+                ...data.location,
+                name: place.name,
+                country: place.country || data.location.country,
+                admin1: place.admin1 || data.location.admin1
+              };
+            }
             setWeatherData(data);
             setDeviceLocationData(data);
             setLocationMode('gps');

@@ -296,6 +296,25 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
+        {/* Account is deliberately placed immediately after location search for quick access. */}
+        <button
+          type="button"
+          onClick={onOpenAuth}
+          className="header-account-shortcut"
+          title={user ? 'Open account settings' : 'Sign in or create an account'}
+          aria-label={user ? 'Open account' : 'Sign in or create an account'}
+        >
+          <span className="header-account-icon"><User className="w-4 h-4" /></span>
+          <span className="header-account-label">Account</span>
+          {user && (
+            <span
+              className={`header-account-status ${isVerified ? 'is-verified' : 'is-pending'}`}
+              aria-label={isVerified ? 'Verified account' : 'Account verification pending'}
+              title={isVerified ? 'Verified account' : 'Account verification pending'}
+            />
+          )}
+        </button>
+
         {/* Right-Hand Controls Cluster */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
@@ -342,29 +361,7 @@ export const Header: React.FC<HeaderProps> = ({
             <span>AI Assistant</span>
           </button>
 
-          {/* Account / Profile Button (Desktop) */}
-          <button
-            onClick={onOpenAuth}
-            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center gap-2 px-3.5 py-2 rounded-2xl text-xs font-bold transition shadow-sm border btn-hover-lift ${
-              user 
-                ? isVerified 
-                  ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-200 border-emerald-400/40' 
-                  : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-200 border-amber-400/40'
-                : 'bg-white/8 hover:bg-white/15 text-white border-white/15'
-            }`}
-            title={user ? 'Account Settings & Privacy' : 'Sign In or Create Account'}
-            aria-label={user ? 'Account Settings and Privacy' : 'Sign In'}
-          >
-            <User className="w-4 h-4" />
-            <span className="truncate max-w-[100px]">
-              {user ? (user.email ? user.email.split('@')[0] : user.phoneNumber || 'Account') : 'Account'}
-            </span>
-            {user && (
-              <span className={`text-[9px] px-1.5 py-0.2 rounded-full font-bold uppercase tracking-wider ${isVerified ? 'bg-emerald-500/30 text-emerald-300' : 'bg-amber-500/30 text-amber-300'}`}>
-                {isVerified ? 'Verified' : 'Pending'}
-              </span>
-            )}
-          </button>
+
 
         </div>
 

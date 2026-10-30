@@ -2592,3 +2592,883 @@ nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and C
     transform: none !important;
   }
 }
+
+
+/* ================================================================
+   RODEX Atmos — approved concept-board implementation
+   Desktop: branded violet rail, live-weather hero, hourly + daily
+   forecast cards. Mobile: one-column weather story + floating dock.
+   ================================================================ */
+:root {
+  --wx-violet: #844EE7;
+  --wx-violet-bright: #987FF3;
+  --wx-lavender: #9D91F7;
+  --wx-lilac: #C8C0F6;
+  --wx-panel: #DBD6F8;
+  --wx-panel-light: #E8E5F5;
+  --wx-ink: #32164D;
+  --wx-muted-ink: #65527F;
+  --wx-line: rgba(75,43,133,.16);
+}
+
+html,
+body {
+  background-color: #E8E5F5 !important;
+}
+body {
+  background-image:
+    radial-gradient(ellipse at 4% 16%, rgba(132,78,231,.25), transparent 39%),
+    radial-gradient(ellipse at 94% 10%, rgba(200,192,246,.66), transparent 42%),
+    radial-gradient(ellipse at 54% 100%, rgba(157,145,247,.28), transparent 46%),
+    linear-gradient(125deg, #E8E5F5 0%, #DBD6F8 44%, #C8C0F6 76%, #E8E5F5 100%) !important;
+  background-attachment: fixed !important;
+}
+
+/* Full desktop composition: left brand rail + spacious weather workspace. */
+.wx-reference-shell {
+  display: grid !important;
+  grid-template-columns: 184px minmax(0,1fr) !important;
+  gap: 0 !important;
+  width: 100% !important;
+  min-height: 650px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(132,78,231,.25) !important;
+  border-radius: 27px !important;
+  color: var(--wx-ink) !important;
+  background: linear-gradient(145deg, rgba(219,214,248,.96), rgba(200,192,246,.94)) !important;
+  box-shadow: 0 28px 80px rgba(64,40,127,.20), inset 0 1px rgba(255,255,255,.32) !important;
+}
+
+/* Branded sidebar based on the left navigation of the approved concept. */
+.wx-reference-rail {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 13px !important;
+  min-height: 100% !important;
+  padding: 20px 13px 15px !important;
+  color: #FFFFFF !important;
+  border: 0 !important;
+  border-right: 1px solid rgba(255,255,255,.20) !important;
+  background:
+    radial-gradient(ellipse at 10% 0%, rgba(200,192,246,.25), transparent 45%),
+    linear-gradient(180deg, #844EE7 0%, #8D69EC 45%, #987FF3 100%) !important;
+  box-shadow: inset -1px 0 rgba(255,255,255,.10) !important;
+}
+
+.wx-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 49px;
+  padding: 2px 2px 7px;
+}
+.wx-reference-mark {
+  display: grid !important;
+  flex: 0 0 39px !important;
+  place-items: center !important;
+  width: 39px !important;
+  height: 39px !important;
+  margin: 0 !important;
+  border: 1px solid rgba(255,255,255,.45) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #AA9AF3, #844EE7) !important;
+  box-shadow: 0 7px 18px rgba(48,22,107,.24), inset 0 1px rgba(255,255,255,.3) !important;
+  font-size: 18px !important;
+}
+.wx-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+.wx-brand-copy strong {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+}
+.wx-brand-copy strong span {
+  color: #E8E5F5;
+  font-weight: 600;
+}
+.wx-brand-copy small {
+  margin-top: 4px;
+  color: rgba(255,255,255,.75);
+  font-size: 9px;
+  white-space: nowrap;
+}
+.wx-reference-rail-divider {
+  width: 100% !important;
+  height: 1px !important;
+  margin: 0 !important;
+  background: rgba(255,255,255,.22) !important;
+}
+.wx-rail-navigation {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.wx-reference-rail-button {
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 11px !important;
+  width: 100% !important;
+  min-height: 42px !important;
+  padding: 0 11px !important;
+  border: 1px solid transparent !important;
+  border-radius: 13px !important;
+  color: rgba(255,255,255,.86) !important;
+  background: transparent !important;
+  text-align: left !important;
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  transition: transform .2s ease, background .2s ease, border-color .2s ease, box-shadow .2s ease !important;
+}
+.wx-reference-rail-button svg {
+  flex: 0 0 auto;
+  color: currentColor !important;
+}
+.wx-reference-rail-button span:not(.wx-rail-alert-count):not(.wx-status-dot):not(.sr-only) {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-reference-rail-button.is-active {
+  color: #FFFFFF !important;
+  border-color: rgba(255,255,255,.24) !important;
+  background: rgba(219,214,248,.28) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.16), 0 5px 15px rgba(54,28,116,.12) !important;
+  animation: wxRailActive .28s ease both;
+}
+.wx-reference-rail-button:hover:not(:disabled) {
+  color: #FFFFFF !important;
+  background: rgba(219,214,248,.20) !important;
+  border-color: rgba(255,255,255,.16) !important;
+  transform: translateX(2px);
+}
+.wx-reference-rail-button:disabled {
+  opacity: .55 !important;
+  cursor: wait !important;
+}
+.wx-rail-alert-count {
+  display: inline-grid;
+  place-items: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: auto;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: #FFFFFF;
+  background: #E65C9C;
+  font-size: 9px;
+  font-weight: 800;
+}
+.wx-rail-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: auto;
+}
+.wx-rail-assistant-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin: 4px 0 7px;
+  padding: 14px 9px 12px;
+  color: #FFFFFF;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 19px;
+  background: linear-gradient(145deg, rgba(219,214,248,.22), rgba(200,192,246,.13));
+  box-shadow: inset 0 1px rgba(255,255,255,.16), 0 8px 22px rgba(53,28,116,.12);
+  cursor: pointer;
+  transition: transform .2s ease, background .2s ease, box-shadow .2s ease;
+}
+.wx-rail-assistant-card:hover {
+  transform: translateY(-2px);
+  background: linear-gradient(145deg, rgba(219,214,248,.30), rgba(200,192,246,.20));
+  box-shadow: 0 11px 24px rgba(53,28,116,.20), inset 0 1px rgba(255,255,255,.2);
+}
+.wx-rail-assistant-orb {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  margin-bottom: 9px;
+  color: #FFFFFF;
+  border: 1.5px solid rgba(255,255,255,.68);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #B7A8FA, #844EE7);
+  box-shadow: 0 0 0 4px rgba(232,229,245,.10), 0 7px 17px rgba(48,22,107,.25);
+}
+.wx-rail-assistant-card strong {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+}
+.wx-rail-assistant-card small {
+  margin-top: 3px;
+  color: rgba(255,255,255,.76);
+  font-size: 9px;
+}
+.wx-assistant-wave {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 18px;
+  margin-top: 10px;
+  border-top: 1px solid rgba(255,255,255,.19);
+  padding-top: 8px;
+}
+.wx-assistant-wave i {
+  display: block;
+  width: 2px;
+  height: 5px;
+  border-radius: 99px;
+  background: rgba(255,255,255,.83);
+  animation: wxVoiceWave 1.15s ease-in-out infinite;
+}
+.wx-assistant-wave i:nth-child(2n) { animation-delay: .12s; }
+.wx-assistant-wave i:nth-child(3n) { animation-delay: .24s; }
+.wx-assistant-wave i:nth-child(5n) { animation-delay: .34s; }
+.wx-reference-rail-status {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 25px !important;
+  padding: 4px 9px !important;
+  color: rgba(255,255,255,.76) !important;
+  font-size: 9px !important;
+}
+
+/* Main content surface and top information line. */
+.wx-reference-content {
+  min-width: 0 !important;
+  padding: clamp(18px, 2.2vw, 28px) !important;
+  background: linear-gradient(145deg, rgba(219,214,248,.88), rgba(200,192,246,.76)) !important;
+}
+.wx-reference-heading {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+  padding-bottom: 17px !important;
+  border-bottom: 1px solid rgba(75,43,133,.16) !important;
+}
+.wx-welcome-line {
+  color: #594477 !important;
+  font-size: 12px !important;
+}
+.wx-welcome-line strong {
+  color: #32164D !important;
+  font-weight: 850 !important;
+}
+.wx-reference-kicker {
+  margin-top: 4px !important;
+  color: #65527F !important;
+  font-size: 10px !important;
+}
+.wx-reference-heading-right {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 9px !important;
+  min-width: 0;
+}
+.wx-live-status {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  max-width: 100% !important;
+  padding: 8px 11px !important;
+  color: #493365 !important;
+  border: 1px solid rgba(132,78,231,.18) !important;
+  border-radius: 999px !important;
+  background: rgba(200,192,246,.55) !important;
+  font-size: 10px !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.2) !important;
+}
+.wx-live-pulse,
+.wx-status-dot.is-live {
+  background: #844EE7 !important;
+  box-shadow: 0 0 0 3px rgba(132,78,231,.14), 0 0 10px rgba(132,78,231,.28) !important;
+}
+.wx-live-divider {
+  background: rgba(75,43,133,.2) !important;
+}
+.wx-reference-quick-location {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 9px 12px !important;
+  color: #FFFFFF !important;
+  border: 1px solid rgba(255,255,255,.28) !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #987FF3, #844EE7) !important;
+  box-shadow: 0 6px 16px rgba(75,43,133,.17) !important;
+  font-size: 10px !important;
+  font-weight: 750 !important;
+}
+.wx-reference-quick-location:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(75,43,133,.23) !important;
+}
+
+/* Hero panel is the primary focal point, as in concept 1. */
+.wx-dashboard-hero {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(175px,1fr) minmax(100px,.72fr) minmax(185px,.92fr);
+  align-items: center;
+  gap: clamp(13px, 2vw, 25px);
+  min-height: 218px;
+  margin-top: 19px;
+  padding: clamp(19px, 2.2vw, 28px);
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.34);
+  border-radius: 23px;
+  color: #FFFFFF;
+  background:
+    radial-gradient(ellipse at 60% 0%, rgba(232,229,245,.27), transparent 43%),
+    linear-gradient(112deg, #844EE7 0%, #8D6CEC 48%, #987FF3 100%);
+  box-shadow: 0 17px 38px rgba(75,43,133,.23), inset 0 1px rgba(255,255,255,.28);
+}
+.wx-dashboard-hero::before {
+  content: "";
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  right: 16%;
+  top: -180px;
+  border-radius: 50%;
+  background: rgba(232,229,245,.18);
+  filter: blur(24px);
+  pointer-events: none;
+}
+.wx-hero-copy,
+.wx-hero-weather-art,
+.wx-hero-metrics {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+.wx-hero-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255,255,255,.79);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+.wx-hero-eyebrow > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #E8E5F5;
+  box-shadow: 0 0 0 4px rgba(232,229,245,.13);
+}
+.wx-hero-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 13px;
+  color: #FFFFFF;
+  font-size: 11px;
+  font-weight: 750;
+}
+.wx-dashboard-hero .wx-storm-title {
+  margin: 4px 0 0 !important;
+  color: #FFFFFF !important;
+  font-size: clamp(50px, 5.4vw, 76px) !important;
+  line-height: .98 !important;
+  font-weight: 850 !important;
+  letter-spacing: -.075em !important;
+  text-shadow: 0 4px 18px rgba(55,29,121,.16) !important;
+}
+.wx-hero-condition {
+  margin-top: 5px;
+  color: #FFFFFF;
+  font-size: 17px;
+  font-weight: 750;
+}
+.wx-hero-feels {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 5px;
+  color: rgba(255,255,255,.79);
+  font-size: 10px;
+}
+.wx-hero-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+}
+.wx-hero-range span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: rgba(255,255,255,.9);
+  font-size: 10px;
+  font-weight: 700;
+}
+.wx-hero-range svg { color: #E8E5F5; }
+.wx-hero-weather-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 145px;
+}
+.wx-hero-weather-glow {
+  position: absolute;
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  background: rgba(219,214,248,.24);
+  filter: blur(28px);
+  animation: wxHeroGlow 5s ease-in-out infinite;
+}
+.wx-hero-weather-icon {
+  position: relative;
+  width: clamp(75px, 8vw, 108px);
+  height: clamp(75px, 8vw, 108px);
+  color: #F8F5FF;
+  filter: drop-shadow(0 10px 14px rgba(49,24,105,.22));
+  stroke-width: 1.25;
+}
+.wx-hero-weather-caption {
+  position: relative;
+  margin-top: 5px;
+  color: rgba(255,255,255,.82);
+  font-size: 10px;
+  font-weight: 650;
+}
+.wx-hero-metrics {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 8px;
+  padding-left: 15px;
+  border-left: 1px solid rgba(255,255,255,.23);
+}
+.wx-hero-metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 53px;
+  padding: 8px 9px;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 13px;
+  background: rgba(219,214,248,.16);
+  box-shadow: inset 0 1px rgba(255,255,255,.09);
+}
+.wx-hero-metric-icon {
+  display: grid;
+  flex: 0 0 27px;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  color: #FFFFFF;
+  border-radius: 9px;
+  background: rgba(232,229,245,.17);
+}
+.wx-hero-metric-icon svg {
+  width: 14px;
+  height: 14px;
+}
+.wx-hero-metric-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+.wx-hero-metric-copy small {
+  color: rgba(255,255,255,.72);
+  font-size: 8px;
+  white-space: nowrap;
+}
+.wx-hero-metric-copy strong {
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Separate hourly and daily cards mirror the reference's two-panel layout. */
+.wx-dashboard-forecast-grid {
+  display: grid;
+  grid-template-columns: minmax(0,1.12fr) minmax(260px,.88fr);
+  gap: 14px;
+  margin-top: 15px;
+}
+.wx-dashboard-panel {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid rgba(132,78,231,.18);
+  border-radius: 19px;
+  color: #32164D;
+  background: linear-gradient(145deg, rgba(219,214,248,.91), rgba(200,192,246,.84));
+  box-shadow: 0 11px 26px rgba(65,39,130,.09), inset 0 1px rgba(255,255,255,.27);
+}
+.wx-dashboard-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+.wx-dashboard-panel-heading h2 {
+  margin: 0;
+  color: #32164D;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -.025em;
+}
+.wx-dashboard-panel-heading p {
+  margin: 3px 0 0;
+  color: #6B5984;
+  font-size: 9px;
+}
+.wx-panel-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #7549D0;
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.wx-dashboard-hourly-list {
+  display: grid;
+  grid-template-columns: repeat(6,minmax(0,1fr));
+  gap: 6px;
+}
+.wx-dashboard-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 112px;
+  padding: 10px 4px;
+  border: 1px solid rgba(132,78,231,.13);
+  border-radius: 13px;
+  background: rgba(232,229,245,.42);
+  box-shadow: inset 0 1px rgba(255,255,255,.24);
+}
+.wx-dashboard-hour.is-current {
+  border-color: rgba(132,78,231,.36);
+  background: linear-gradient(150deg, rgba(170,154,243,.87), rgba(200,192,246,.91));
+  box-shadow: 0 5px 14px rgba(75,43,133,.12), inset 0 1px rgba(255,255,255,.35);
+}
+.wx-dashboard-hour-time {
+  color: #65527F;
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.wx-dashboard-hour-icon {
+  width: 23px;
+  height: 23px;
+  color: #844EE7;
+  filter: drop-shadow(0 3px 5px rgba(75,43,133,.10));
+}
+.wx-dashboard-hour strong {
+  color: #32164D;
+  font-size: 13px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.wx-dashboard-hour small {
+  color: #735F8E;
+  font-size: 8px;
+  white-space: nowrap;
+}
+.wx-dashboard-hourly-foot,
+.wx-dashboard-daily-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 11px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(75,43,133,.13);
+  color: #6B5984;
+  font-size: 9px;
+}
+.wx-dashboard-hourly-foot strong,
+.wx-dashboard-daily-foot strong {
+  color: #7549D0;
+  font-weight: 850;
+}
+.wx-dashboard-daily-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wx-dashboard-day {
+  display: grid;
+  grid-template-columns: 50px 25px minmax(0,1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 31px;
+  padding: 5px 7px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+}
+.wx-dashboard-day.is-today {
+  border-color: rgba(132,78,231,.21);
+  background: rgba(170,154,243,.32);
+}
+.wx-dashboard-day-name {
+  color: #493365;
+  font-size: 9px;
+  font-weight: 800;
+}
+.wx-dashboard-day-icon {
+  width: 19px;
+  height: 19px;
+  color: #844EE7;
+}
+.wx-dashboard-day-condition {
+  overflow: hidden;
+  color: #76648E;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wx-dashboard-day strong {
+  color: #32164D;
+  font-size: 10px;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.wx-dashboard-day small {
+  color: #806F96;
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Regional conditions remain available below the forecast cards. */
+.wx-regional-panel {
+  margin-top: 14px;
+  padding: 14px 17px !important;
+  border-radius: 18px !important;
+  color: #32164D !important;
+  background: linear-gradient(145deg, rgba(200,192,246,.83), rgba(219,214,248,.86)) !important;
+}
+.wx-regional-panel .wx-nearby-heading {
+  padding: 0 0 8px !important;
+}
+.wx-regional-cities {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+}
+.wx-regional-panel .wx-nearby-city {
+  border-top: 1px solid rgba(75,43,133,.13) !important;
+  border-radius: 9px;
+}
+
+/* The app's other detail, briefing and AI panels continue the same visual language. */
+.wx-reference-support-grid {
+  gap: 15px !important;
+}
+.wx-reference-support-grid > div,
+main .glass-panel,
+main .glass-panel-elevated {
+  color: #32164D !important;
+  border: 1px solid rgba(132,78,231,.20) !important;
+  border-radius: 20px !important;
+  background: linear-gradient(145deg, rgba(219,214,248,.94), rgba(200,192,246,.88) 58%, rgba(189,177,240,.86)) !important;
+  box-shadow: 0 13px 32px rgba(65,39,130,.11), inset 0 1px rgba(255,255,255,.26) !important;
+}
+.wx-reference-support-grid > div:hover,
+main .glass-panel-interactive:hover {
+  border-color: rgba(132,78,231,.36) !important;
+  box-shadow: 0 18px 38px rgba(65,39,130,.16), inset 0 1px rgba(255,255,255,.3) !important;
+}
+.wx-reference-support-grid > div h2,
+.wx-reference-support-grid > div h3,
+.wx-reference-support-grid > div h4 {
+  color: #32164D !important;
+}
+.wx-reference-support-grid > div p,
+.wx-reference-support-grid > div span {
+  color: #5F4A7D;
+}
+.wx-reference-support-grid > div button[class*="bg-gradient-to"],
+.wx-reference-support-grid > div button[class*="bg-sky-500"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #987FF3, #844EE7) !important;
+}
+
+/* Responsive desktop-to-tablet transition. */
+@media (max-width: 1100px) {
+  .wx-reference-shell {
+    grid-template-columns: 166px minmax(0,1fr) !important;
+  }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(145px,1fr) minmax(90px,.6fr) minmax(165px,.9fr);
+    gap: 12px;
+    padding: 18px;
+  }
+  .wx-hero-metrics {
+    padding-left: 10px;
+    gap: 6px;
+  }
+  .wx-hero-metric {
+    gap: 6px;
+    padding: 7px;
+  }
+  .wx-dashboard-panel {
+    padding: 13px;
+  }
+}
+@media (max-width: 900px) {
+  .wx-reference-shell {
+    grid-template-columns: 1fr !important;
+    min-height: 0 !important;
+  }
+  .wx-reference-rail {
+    display: none !important;
+  }
+  .wx-reference-content {
+    padding: clamp(16px, 2.5vw, 24px) !important;
+  }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) minmax(100px,.62fr);
+  }
+  .wx-hero-metrics {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid rgba(255,255,255,.22);
+  }
+  .wx-dashboard-forecast-grid {
+    grid-template-columns: minmax(0,1fr) minmax(250px,.86fr);
+  }
+}
+@media (max-width: 680px) {
+  .wx-reference-shell {
+    border-radius: 21px !important;
+  }
+  .wx-reference-content {
+    padding: 14px !important;
+  }
+  .wx-reference-heading {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .wx-reference-heading-right {
+    width: 100%;
+    justify-content: space-between !important;
+  }
+  .wx-live-status {
+    min-width: 0;
+    overflow: hidden;
+  }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) minmax(90px,.55fr);
+    gap: 9px;
+    padding: 17px;
+    border-radius: 19px;
+  }
+  .wx-dashboard-hero .wx-storm-title {
+    font-size: clamp(48px, 13vw, 66px) !important;
+  }
+  .wx-hero-weather-icon {
+    width: 78px;
+    height: 78px;
+  }
+  .wx-hero-metrics {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+  .wx-dashboard-forecast-grid {
+    grid-template-columns: 1fr;
+  }
+  .wx-dashboard-hourly-list {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+  .wx-dashboard-day {
+    grid-template-columns: 44px 23px minmax(0,1fr) auto auto;
+  }
+  .wx-regional-cities {
+    grid-template-columns: 1fr;
+  }
+  .wx-regional-panel .wx-nearby-city {
+    border-top: 1px solid rgba(75,43,133,.13) !important;
+  }
+}
+@media (max-width: 390px) {
+  .wx-reference-content {
+    padding: 11px !important;
+  }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 80px;
+    padding: 14px;
+  }
+  .wx-hero-condition { font-size: 15px; }
+  .wx-dashboard-panel {
+    padding: 12px 10px;
+  }
+  .wx-dashboard-hourly-list {
+    gap: 4px;
+  }
+  .wx-dashboard-hour {
+    min-height: 102px;
+    padding: 8px 2px;
+  }
+  .wx-dashboard-day-condition {
+    display: none;
+  }
+  .wx-dashboard-day {
+    grid-template-columns: 1fr 23px auto auto;
+  }
+  .wx-regional-panel {
+    padding: 12px !important;
+  }
+}
+
+/* Motion is subtle and optional; never animate for reduced-motion users. */
+@keyframes wxRailActive {
+  from { opacity: .75; transform: translateX(-3px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes wxVoiceWave {
+  0%,100% { height: 4px; opacity: .55; }
+  50% { height: 12px; opacity: 1; }
+}
+@keyframes wxHeroGlow {
+  0%,100% { transform: scale(.92); opacity: .65; }
+  50% { transform: scale(1.12); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-reference-rail-button.is-active,
+  .wx-assistant-wave i,
+  .wx-hero-weather-glow {
+    animation: none !important;
+  }
+  .wx-reference-rail-button:hover,
+  .wx-rail-assistant-card:hover {
+    transform: none !important;
+  }
+}

@@ -732,66 +732,6 @@ async function startServer() {
     }
   }
 
-  // Reverse geocoding is cached independently from weather and coalesces repeated point clicks.
-  // City/suburb names are stable much longer than weather conditions; this avoids repeated
-  // reverse-geocoding calls when users revisit the same map point.
-  const reverseGeoCache = new Map<string, { timestamp: number; data: { name: string; country: string; admin1: string } }>();
-  const reverseGeoInFlight = new Map<string, Promise<{ name: string; country: string; admin1: string }>>();
-  const REVERSE_GEO_TTL_MS = 24 * 60 * 60 * 1000;
-  const REVERSE_GEO_MAX_ENTRIES = 500;
-
-  async function reverseGeocodeCoordinates(lat: number, lon: number): Promise<{ name: string; country: string; admin1: string }> {
-    const key = lat.toFixed(3) + ',' + lon.toFixed(3);
-    const cached = reverseGeoCache.get(key);
-    if (cached && Date.now() - cached.timestamp < REVERSE_GEO_TTL_MS) {
-      reverseGeoCache.delete(key);
-      reverseGeoCache.set(key, cached);
-      return cached.data;
-    }
-
-    const pending = reverseGeoInFlight.get(key);
-    if (pending) return pending;
-
-    const request = (async () => {
-      let result = { name: lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°', country: '', admin1: '' };
-      try {
-        const url = 'https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json&accept-language=en';
-        const res = await fetchWithTimeout(url, {
-          headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0 (weather map reverse geocoding)' }
-        }, 4000);
-        if (res.ok) {
-          const data = await res.json();
-          const addr = data.address || {};
-          const city = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || 'Local Area';
-          const country = addr.country || '';
-          const admin1 = addr.state || addr.region || addr.province || '';
-          const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
-          const displayName = suburb && suburb !== city && city !== 'Local Area'
-            ? suburb + ', ' + city
-            : city;
-          result = { name: displayName, country, admin1 };
-        }
-      } catch (error) {
-        console.warn('[Reverse Geocode Notice] Nominatim lookup failed, using coordinate fallback:', error);
-      }
-
-      reverseGeoCache.set(key, { timestamp: Date.now(), data: result });
-      while (reverseGeoCache.size > REVERSE_GEO_MAX_ENTRIES) {
-        const oldestKey = reverseGeoCache.keys().next().value;
-        if (oldestKey === undefined) break;
-        reverseGeoCache.delete(oldestKey);
-      }
-      return result;
-    })();
-
-    reverseGeoInFlight.set(key, request);
-    try {
-      return await request;
-    } finally {
-      if (reverseGeoInFlight.get(key) === request) reverseGeoInFlight.delete(key);
-    }
-  }
-
   // Helper to fetch weather via Open-Meteo with fallback protection
   async function fetchOpenMeteo(queryOrCoords: string | { lat: number; lon: number }, cityNameHint?: string) {
     let lat: number = 0.31628;
@@ -800,7 +740,6 @@ async function startServer() {
     let country = '';
     let admin1 = '';
     let timezone = 'auto';
-    let reverseGeoPromise: Promise<{ name: string; country: string; admin1: string }> | null = null;
 
     try {
       if (typeof queryOrCoords === 'string') {
@@ -814,9 +753,10 @@ async function startServer() {
       } else {
         lat = queryOrCoords.lat;
         lon = queryOrCoords.lon;
-        if (!name || name === 'Current Location' || name === 'My Location' || name === 'Location') {
-          // Reverse geocoding is independent of the forecast request; start it now and await both together.
-          reverseGeoPromise = reverseGeocodeCoordinates(lat, lon);
+        // The weather request is exact by coordinates. Do not infer a street/city
+        // name for arbitrary map clicks without a compliant, configured geocoder.
+        if (!name || name === 'Current Location' || name === 'Location') {
+          name = 'Selected map point';
         }
       }
 
@@ -824,12 +764,6 @@ async function startServer() {
       const weatherRes = await fetchWithTimeout(weatherUrl, {}, 6000);
       if (!weatherRes.ok) throw new Error(`Open-Meteo HTTP ${weatherRes.statusText}`);
       const weatherData = await weatherRes.json();
-      if (reverseGeoPromise) {
-        const geo = await reverseGeoPromise;
-        name = geo.name;
-        country = geo.country;
-        admin1 = geo.admin1;
-      }
 
       const openMeteoLocation = {
         name,

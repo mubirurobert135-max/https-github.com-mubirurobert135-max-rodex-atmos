@@ -2178,3 +2178,6 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 
 // Export startup readiness for serverless functions so requests don't race route registration.
 export const serverReady = startServer();
+
+// Vercel's Node.js runtime can serve the Express application directly as a function.
+export default app;

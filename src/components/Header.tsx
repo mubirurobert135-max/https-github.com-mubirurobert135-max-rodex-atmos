@@ -317,9 +317,9 @@ export const Header: React.FC<HeaderProps> = ({
           aria-label={user ? 'Open account' : 'Sign in or create an account'}
         >
           <span className="header-account-icon overflow-hidden rounded-full">
-            {(user?.photoURL || userProfile?.photoURL) ? (
+            {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
               <img
-                src={(user?.photoURL || userProfile?.photoURL)!}
+                src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
                 alt={user?.displayName || userProfile?.displayName || 'Account profile'}
                 referrerPolicy="no-referrer"
                 className="h-full w-full object-cover"

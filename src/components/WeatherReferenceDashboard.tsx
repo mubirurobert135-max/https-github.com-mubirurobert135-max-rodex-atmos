@@ -167,7 +167,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
           <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
             <UserRound className="h-4 w-4" /><span>Account</span>
           </button>
-          <button className="wx-reference-rail-button is-ai rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={() => onOpenAssistant()} onPointerMove={updateNavPointer} aria-label="Open RODEX AI voice and chat assistant" title="RODEX AI">
+          <button className="wx-reference-rail-button is-ai rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={() => onOpenAssistant()} aria-label="Open RODEX AI voice and chat assistant" title="RODEX AI">
             <Sparkles className="h-4 w-4" /><span>RODEX AI</span>
           </button>
           <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">

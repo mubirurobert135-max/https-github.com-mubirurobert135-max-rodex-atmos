@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   Bell, Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain,
-  CloudSnow, CloudSun, Droplets, Gauge, MapPinned, Mic, Moon, Navigation,
-  ShieldCheck, Sun, Thermometer, UserRound, Wind
+  CloudSnow, CloudSun, Clock3, Compass, Droplets, Gauge, MapPin, MapPinned,
+  Mic, Moon, Navigation, ShieldCheck, Sparkles, Sun, Sunrise, Sunset,
+  Thermometer, UserRound, Wind, ChevronRight
 } from 'lucide-react';
 import { WeatherData, LocationMode } from '../types';
 import { formatTemp, formatWind, getWeatherCondition } from '../utils/weatherUtils';
@@ -43,6 +44,20 @@ function formatHour(value: string, timezone: string): string {
   }
 }
 
+function formatClock(value: string | undefined, timezone: string): string {
+  if (!value) return '—';
+  try {
+    return new Intl.DateTimeFormat(undefined, {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+      timeZone: timezone || 'UTC'
+    }).format(new Date(value));
+  } catch {
+    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+  }
+}
+
 function formatDay(value: string, timezone: string, index: number): string {
   if (index === 0) return 'Today';
   try {
@@ -60,7 +75,16 @@ function citiesForCountry(country: string): string[] {
   if (key === 'rwanda') return ['Kigali', 'Musanze', 'Huye'];
   if (key === 'united kingdom' || key === 'uk') return ['London', 'Manchester', 'Edinburgh'];
   if (key === 'japan') return ['Tokyo', 'Osaka', 'Sapporo'];
-  return []; // Never label unrelated global cities as nearby locations.
+  return [];
+}
+
+function getUvLabel(value: number | undefined): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'Unavailable';
+  if (value < 3) return 'Low';
+  if (value < 6) return 'Moderate';
+  if (value < 8) return 'High';
+  if (value < 11) return 'Very high';
+  return 'Extreme';
 }
 
 export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps> = ({
@@ -73,19 +97,30 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const hourly = weather.hourly;
   const condition = getWeatherCondition(current.weather_code, current.is_day);
   const timezone = weather.timezone || location.timezone || 'UTC';
-  const high = daily.temperature_2m_max?.[0] ?? current.temperature_2m;
-  const low = daily.temperature_2m_min?.[0] ?? current.temperature_2m;
+  const todayHigh = daily.temperature_2m_max?.[0] ?? current.temperature_2m;
+  const todayLow = daily.temperature_2m_min?.[0] ?? current.temperature_2m;
+  const todaySunrise = daily.sunrise?.[0];
+  const todaySunset = daily.sunset?.[0];
+  const todayUv = daily.uv_index_max?.[0];
   const nearbyNames = useMemo(() => citiesForCountry(location.country || ''), [location.country]);
   const [nearbyWeather, setNearbyWeather] = useState<WeatherData[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
+
+    if (nearbyNames.length === 0) {
+      setNearbyWeather([]);
+      setNearbyLoading(false);
+      return () => controller.abort();
+    }
+
     setNearbyLoading(true);
     Promise.all(nearbyNames.map(async (city) => {
       try {
-        const query = encodeURIComponent(`${city}, ${location.country}`);
-        const response = await fetch(`/api/weather/search?query=${query}`);
+        const query = encodeURIComponent(city + ', ' + location.country);
+        const response = await fetch('/api/weather/search?query=' + query, { signal: controller.signal });
         if (!response.ok) return null;
         const result: WeatherData = await response.json();
         return result?.weather?.current && result?.location?.name ? result : null;
@@ -97,7 +132,11 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
     }).finally(() => {
       if (!cancelled) setNearbyLoading(false);
     });
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [location.country, nearbyNames]);
 
   const nextHours = (hourly.time || []).slice(0, 6).map((time, index) => ({
@@ -107,21 +146,19 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
     code: hourly.weather_code?.[index] ?? current.weather_code,
     isDay: hourly.is_day?.[index] ?? current.is_day
   }));
-  const temps = nextHours.map((item) => item.temperature);
-  const minTemperature = temps.length ? Math.min(...temps) : current.temperature_2m;
-  const maxTemperature = temps.length ? Math.max(...temps) : current.temperature_2m;
-  const temperatureRange = maxTemperature - minTemperature || 1;
-  const points = nextHours.map((item, index) => ({
-    x: nextHours.length <= 1 ? 220 : 12 + (index * 396) / (nextHours.length - 1),
-    y: 74 - ((item.temperature - minTemperature) / temperatureRange) * 46
+
+  const nextDays = (daily.time || []).slice(0, 7).map((day, index) => ({
+    day,
+    index,
+    code: daily.weather_code?.[index] ?? current.weather_code,
+    high: daily.temperature_2m_max?.[index] ?? current.temperature_2m,
+    low: daily.temperature_2m_min?.[index] ?? current.temperature_2m
   }));
-  const linePath = points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
-  const areaPath = points.length
-    ? `M ${points[0].x} 94 ${points.map((point) => `L ${point.x} ${point.y}`).join(' ')} L ${points[points.length - 1].x} 94 Z`
-    : '';
+
   const statusLabel = locationMode === 'gps' ? 'GPS location'
     : locationMode === 'network' ? 'Approximate location'
     : locationMode === 'search' ? 'Selected location' : 'Default location';
+
   const dateLabel = (() => {
     try {
       return new Intl.DateTimeFormat(undefined, {
@@ -131,170 +168,186 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
       return new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
     }
   })();
-  const heroTitle = condition.label;
+
+  const localTime = formatHour(current.time, timezone);
   const rainChance = Math.max(0, ...nextHours.map((item) => item.probability));
-  const maxTempText = formatTemp(maxTemperature, unit);
-  const minTempText = formatTemp(minTemperature, unit);
 
   return (
     <section className="wx-reference-shell" aria-label="RODEX Atmos weather dashboard">
-      <aside className="wx-reference-rail" aria-label="Weather tools">
-        <div className="wx-reference-mark" aria-label="RODEX Atmos">R</div>
+      <aside className="wx-reference-rail" aria-label="RODEX Atmos navigation">
+        <div className="wx-brand-lockup">
+          <div className="wx-reference-mark" aria-hidden="true">R</div>
+          <div className="wx-brand-copy">
+            <strong>RODEX <span>Atmos</span></strong>
+            <small>Understand your day</small>
+          </div>
+        </div>
+
         <div className="wx-reference-rail-divider" />
-        <button className="wx-reference-rail-button is-active" type="button" aria-label="Weather dashboard" title="Weather dashboard">
-          <Sun className="h-5 w-5" />
-        </button>
-        <button className="wx-reference-rail-button" type="button" onClick={onOpenMap} aria-label="Open interactive weather map" title="Interactive weather map">
-          <MapPinned className="h-5 w-5" />
-        </button>
-        <button className="wx-reference-rail-button" type="button" onClick={() => onOpenAssistant()} aria-label="Open Atmos voice assistant" title="Ask Atmos">
-          <Mic className="h-5 w-5" />
-        </button>
-        <button className="wx-reference-rail-button" type="button" onClick={onOpenAlerts} aria-label="Weather alerts" title="Weather alerts">
-          <Bell className="h-5 w-5" />
-        </button>
-        <button className="wx-reference-rail-button" type="button" onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="My location">
-          <Navigation className={`h-5 w-5 ${isLoading ? 'animate-pulse' : ''}`} />
-        </button>
-        <div className="wx-reference-rail-spacer" />
-        <button className="wx-reference-rail-button" type="button" onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
-          <UserRound className="h-5 w-5" />
-        </button>
-        <button className="wx-reference-rail-button" type="button" onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">
-          <ShieldCheck className="h-5 w-5" />
-        </button>
-        <div className="wx-reference-rail-status" title={statusLabel}>
-          <span className={`wx-status-dot ${locationMode === 'gps' ? 'is-live' : ''}`} />
-          <span className="sr-only">{statusLabel}</span>
+        <div className="wx-rail-navigation">
+          <button className="wx-reference-rail-button is-active" type="button" aria-label="Weather dashboard" title="Weather dashboard">
+            <Compass className="h-4 w-4" /><span>Dashboard</span>
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={onOpenMap} aria-label="Open interactive weather map" title="Interactive weather map">
+            <MapPin className="h-4 w-4" /><span>Map</span>
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={() => onOpenAssistant()} aria-label="Open Atmos voice assistant" title="Ask Atmos">
+            <Sparkles className="h-4 w-4" /><span>Atmos AI</span>
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={onOpenAlerts} aria-label="Weather alerts" title="Weather alerts">
+            <Bell className="h-4 w-4" /><span>Alerts</span>
+            {data.alerts?.length ? <span className="wx-rail-alert-count">{data.alerts.length}</span> : null}
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="My location">
+            <Navigation className={'h-4 w-4 ' + (isLoading ? 'animate-pulse' : '')} /><span>My location</span>
+          </button>
+        </div>
+
+        <div className="wx-rail-bottom">
+          <button type="button" className="wx-rail-assistant-card" onClick={() => onOpenAssistant()}>
+            <span className="wx-rail-assistant-orb"><Mic className="h-5 w-5" /></span>
+            <strong>Hey Atmos</strong>
+            <small>I'm listening...</small>
+            <span className="wx-assistant-wave" aria-hidden="true">
+              <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
+            </span>
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
+            <UserRound className="h-4 w-4" /><span>Account</span>
+          </button>
+          <button className="wx-reference-rail-button" type="button" onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">
+            <ShieldCheck className="h-4 w-4" /><span>Privacy</span>
+          </button>
+          <div className="wx-reference-rail-status" title={statusLabel}>
+            <span className={'wx-status-dot ' + (locationMode === 'gps' ? 'is-live' : '')} />
+            <span>{statusLabel}</span>
+          </div>
         </div>
       </aside>
 
       <div className="wx-reference-content">
         <header className="wx-reference-heading">
           <div className="wx-reference-title-group">
-            <div className="wx-welcome-line">Welcome to <strong>RODEX Atmos</strong></div>
-            <div className="wx-reference-kicker">Weather forecast <span>·</span> {dateLabel}</div>
+            <div className="wx-welcome-line">Welcome back to <strong>RODEX Atmos</strong></div>
+            <div className="wx-reference-kicker">{dateLabel} <span>·</span> Live weather update</div>
           </div>
           <div className="wx-reference-heading-right">
             <div className="wx-live-status">
               <span className="wx-live-pulse" />
-              <span>{location.name}{location.country ? `, ${location.country}` : ''}</span>
+              <span>{location.name}{location.country ? ', ' + location.country : ''}</span>
               <span className="wx-live-divider" />
-              <span>{formatHour(current.time, timezone)} local</span>
+              <span>{localTime} local</span>
             </div>
             <button type="button" className="wx-reference-quick-location" onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="Use my current location">
-              <Navigation className={`h-3.5 w-3.5 ${isLoading ? 'animate-pulse' : ''}`} />
+              <Navigation className={'h-3.5 w-3.5 ' + (isLoading ? 'animate-pulse' : '')} />
               <span>My location</span>
             </button>
           </div>
         </header>
 
-        <div className="wx-reference-layout">
-          <div className="wx-reference-main">
-            <div className="wx-story-label">WEATHER FORECAST</div>
-            <h1 className="wx-reference-title wx-storm-title">{heroTitle}</h1>
-            <p className="wx-story-copy">
-              {condition.label} conditions in <strong>{location.name}</strong>. Current temperature is {formatTemp(current.temperature_2m, unit)}, with feels-like temperature of {formatTemp(current.apparent_temperature, unit)}. Follow the forecast and local atmospheric changes below.
-            </p>
-
-            <div className="wx-hourly-heading">
-              <span>Hourly weather forecast</span>
-              <span className="wx-hourly-heading-note">{`${maxTempText} high · ${minTempText} low`}</span>
-            </div>
-            <div className="wx-hourly-temperatures">
-              {nextHours.map((item) => (
-                <div key={item.time} className="wx-hourly-temperature">
-                  <span>{formatHour(item.time, timezone)}</span>
-                  <WeatherSymbol code={item.code} isDay={item.isDay} className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-                  <strong>{formatTemp(item.temperature, unit)}</strong>
-                  {item.probability > 0 && <small>{Math.round(item.probability)}% rain</small>}
-                </div>
-              ))}
-            </div>
-
-            <div className="wx-weather-curve-panel">
-              <div className="wx-curve-topline">
-                <span>Temperature through the day</span>
-                <span className="wx-curve-badge"><Droplets className="h-3 w-3" /> {Math.round(rainChance)}% peak rain chance</span>
-              </div>
-              <svg className="wx-trend-chart" viewBox="0 0 420 104" role="img" aria-label="Hourly temperature trend" preserveAspectRatio="none">
-                <defs>
-                  <linearGradient id="wxTrendFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#d7f8ff" stopOpacity="0.3" />
-                    <stop offset="100%" stopColor="#d7f8ff" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-                {[22, 50, 78, 94].map((y) => <line key={y} x1="7" y1={y} x2="413" y2={y} stroke="rgba(255,255,255,.18)" strokeDasharray="3 6" />)}
-                {areaPath && <path d={areaPath} fill="url(#wxTrendFill)" />}
-                {linePath && <path d={linePath} fill="none" stroke="#e5faff" strokeWidth="2.7" strokeLinecap="round" strokeLinejoin="round" />}
-                {points.map((point, index) => (
-                  <g key={index}>
-                    <circle cx={point.x} cy={point.y} r="4" fill="#eafaff" stroke="#8fd7e9" strokeWidth="2" />
-                    {nextHours[index]?.probability >= 40 && <circle cx={point.x} cy={point.y - 13} r="3" fill="#d8f4ff" opacity=".86" />}
-                  </g>
-                ))}
-              </svg>
-              <div className="wx-curve-axis">
-                {nextHours.map((item) => <span key={item.time}>{formatHour(item.time, timezone)}</span>)}
-              </div>
-            </div>
-
-            <div className="wx-weekly-strip">
-              <div className="wx-weekly-strip-title">Weekly forecast</div>
-              <div className="wx-weekly-days">
-                {(daily.time || []).slice(0, 6).map((day, index) => {
-                  const code = daily.weather_code?.[index] ?? current.weather_code;
-                  const max = daily.temperature_2m_max?.[index] ?? current.temperature_2m;
-                  const min = daily.temperature_2m_min?.[index] ?? current.temperature_2m;
-                  return (
-                    <div className={`wx-weekly-day ${index === 0 ? 'is-today' : ''}`} key={day}>
-                      <span>{formatDay(day, timezone, index)}</span>
-                      <WeatherSymbol code={code} isDay={1} className="h-4 w-4 sm:h-[18px] sm:w-[18px]" />
-                      <strong>{formatTemp(max, unit)}</strong>
-                      <small>{formatTemp(min, unit)}</small>
-                    </div>
-                  );
-                })}
-              </div>
+        <section className="wx-dashboard-hero" aria-label="Current weather">
+          <div className="wx-hero-copy">
+            <div className="wx-hero-eyebrow"><span /> CURRENT WEATHER</div>
+            <div className="wx-hero-location"><MapPin className="h-4 w-4" /> {location.name}{location.country ? ', ' + location.country : ''}</div>
+            <h1 className="wx-reference-title wx-storm-title">{formatTemp(current.temperature_2m, unit)}</h1>
+            <div className="wx-hero-condition">{condition.label}</div>
+            <div className="wx-hero-feels"><Thermometer className="h-3.5 w-3.5" /> Feels like {formatTemp(current.apparent_temperature, unit)}</div>
+            <div className="wx-hero-range">
+              <span><Sun className="h-3.5 w-3.5" /> High {formatTemp(todayHigh, unit)}</span>
+              <span><Moon className="h-3.5 w-3.5" /> Low {formatTemp(todayLow, unit)}</span>
             </div>
           </div>
 
-          <aside className="wx-reference-aside" aria-label="Current weather and nearby locations">
-            <section className="wx-live-weather-card">
-              <div className="wx-live-weather-top">
-                <div className="wx-live-weather-location"><MapPinned className="h-3.5 w-3.5" /><span>{location.name}</span></div>
-                <span className="wx-location-status">{statusLabel}</span>
-              </div>
-              <div className="wx-live-weather-temp-row">
-                <div>
-                  <div className="wx-live-weather-temp">{formatTemp(current.temperature_2m, unit)}</div>
-                  <div className="wx-live-weather-condition">{condition.label}</div>
-                  <div className="wx-live-weather-feels"><Thermometer className="h-3 w-3" /> Feels like {formatTemp(current.apparent_temperature, unit)}</div>
-                </div>
-                <div className={`wx-live-weather-symbol wx-symbol-${condition.theme}`}>
-                  <WeatherSymbol code={current.weather_code} isDay={current.is_day} className="h-12 w-12 sm:h-14 sm:w-14" />
-                </div>
-              </div>
-              <div className="wx-live-weather-metrics">
-                <div><Droplets /><span>Humidity</span><strong>{Math.round(current.relative_humidity_2m)}%</strong></div>
-                <div><Wind /><span>Wind</span><strong>{formatWind(current.wind_speed_10m, unit)}</strong></div>
-                <div><Gauge /><span>Pressure</span><strong>{Math.round(current.surface_pressure)} hPa</strong></div>
-                <div><CloudRain /><span>Rainfall</span><strong>{Number(current.precipitation || 0).toFixed(1)} mm</strong></div>
-              </div>
-            </section>
+          <div className="wx-hero-weather-art" aria-hidden="true">
+            <span className="wx-hero-weather-glow" />
+            <WeatherSymbol code={current.weather_code} isDay={current.is_day} className="wx-hero-weather-icon" />
+            <span className="wx-hero-weather-caption">{condition.label}</span>
+          </div>
 
-            <section className="wx-nearby-panel">
-              <div className="wx-nearby-heading">
-                <div><span>Regional forecast</span><small>Live conditions across selected cities</small></div>
-                <MapPinned className="h-4 w-4" />
+          <div className="wx-hero-metrics">
+            <div className="wx-hero-metric">
+              <span className="wx-hero-metric-icon"><Droplets /></span>
+              <span className="wx-hero-metric-copy"><small>Humidity</small><strong>{Math.round(current.relative_humidity_2m)}%</strong></span>
+            </div>
+            <div className="wx-hero-metric">
+              <span className="wx-hero-metric-icon"><Wind /></span>
+              <span className="wx-hero-metric-copy"><small>Wind speed</small><strong>{formatWind(current.wind_speed_10m, unit)}</strong></span>
+            </div>
+            <div className="wx-hero-metric">
+              <span className="wx-hero-metric-icon"><Sunrise /></span>
+              <span className="wx-hero-metric-copy"><small>Sunrise</small><strong>{formatClock(todaySunrise, timezone)}</strong></span>
+            </div>
+            <div className="wx-hero-metric">
+              <span className="wx-hero-metric-icon"><Sunset /></span>
+              <span className="wx-hero-metric-copy"><small>Sunset</small><strong>{formatClock(todaySunset, timezone)}</strong></span>
+            </div>
+          </div>
+        </section>
+
+        <div className="wx-dashboard-forecast-grid">
+          <section className="wx-dashboard-panel wx-dashboard-hourly" aria-label="Hourly weather forecast">
+            <div className="wx-dashboard-panel-heading">
+              <div>
+                <h2>Hourly forecast</h2>
+                <p>Conditions over the next 6 hours</p>
               </div>
-              {nearbyLoading && nearbyWeather.length === 0 ? (
-                <div className="wx-nearby-loading"><span className="wx-status-dot is-live" /> Loading nearby weather…</div>
-              ) : nearbyWeather.length > 0 ? nearbyWeather.map((item) => {
+              <span className="wx-panel-link"><Clock3 className="h-4 w-4" /> Live</span>
+            </div>
+            <div className="wx-dashboard-hourly-list">
+              {nextHours.map((item, index) => (
+                <div className={'wx-dashboard-hour ' + (index === 0 ? 'is-current' : '')} key={item.time}>
+                  <span className="wx-dashboard-hour-time">{index === 0 ? 'Now' : formatHour(item.time, timezone)}</span>
+                  <WeatherSymbol code={item.code} isDay={item.isDay} className="wx-dashboard-hour-icon" />
+                  <strong>{formatTemp(item.temperature, unit)}</strong>
+                  <small>{Math.round(item.probability)}% rain</small>
+                </div>
+              ))}
+            </div>
+            <div className="wx-dashboard-hourly-foot">
+              <span>Peak rain chance</span><strong>{Math.round(rainChance)}%</strong>
+            </div>
+          </section>
+
+          <section className="wx-dashboard-panel wx-dashboard-daily" aria-label="Seven day weather forecast">
+            <div className="wx-dashboard-panel-heading">
+              <div>
+                <h2>Daily forecast</h2>
+                <p>Next 7 days</p>
+              </div>
+              <span className="wx-panel-link">7 days <ChevronRight className="h-4 w-4" /></span>
+            </div>
+            <div className="wx-dashboard-daily-list">
+              {nextDays.map((day) => (
+                <div className={'wx-dashboard-day ' + (day.index === 0 ? 'is-today' : '')} key={day.day}>
+                  <span className="wx-dashboard-day-name">{formatDay(day.day, timezone, day.index)}</span>
+                  <WeatherSymbol code={day.code} isDay={1} className="wx-dashboard-day-icon" />
+                  <span className="wx-dashboard-day-condition">{getWeatherCondition(day.code, 1).label}</span>
+                  <strong>{formatTemp(day.high, unit)}</strong>
+                  <small>{formatTemp(day.low, unit)}</small>
+                </div>
+              ))}
+            </div>
+            <div className="wx-dashboard-daily-foot">
+              <span>UV index</span>
+              <strong>{typeof todayUv === 'number' && Number.isFinite(todayUv) ? todayUv.toFixed(0) + ' · ' + getUvLabel(todayUv) : 'Unavailable'}</strong>
+            </div>
+          </section>
+        </div>
+
+        <section className="wx-nearby-panel wx-regional-panel" aria-label="Regional weather">
+          <div className="wx-nearby-heading">
+            <div><span>Regional forecast</span><small>Live conditions across selected cities</small></div>
+            <MapPinned className="h-4 w-4" />
+          </div>
+          {nearbyLoading && nearbyWeather.length === 0 ? (
+            <div className="wx-nearby-loading"><span className="wx-status-dot is-live" /> Loading regional weather…</div>
+          ) : nearbyWeather.length > 0 ? (
+            <div className="wx-regional-cities">
+              {nearbyWeather.map((item) => {
                 const local = item.weather.current;
                 const nearbyCondition = getWeatherCondition(local.weather_code, local.is_day);
                 return (
-                  <button type="button" className="wx-nearby-city" key={`${item.location.name}-${item.location.latitude}`} onClick={() => onSelectCoordinates(item.location.latitude, item.location.longitude, item.location.name)} title={`View ${item.location.name} weather`}>
+                  <button type="button" className="wx-nearby-city" key={item.location.name + '-' + item.location.latitude} onClick={() => onSelectCoordinates(item.location.latitude, item.location.longitude, item.location.name)} title={'View ' + item.location.name + ' weather'}>
                     <div className="wx-nearby-city-left">
                       <span className="wx-nearby-city-name">{item.location.name}</span>
                       <span className="wx-nearby-city-condition">{nearbyCondition.label}</span>
@@ -303,13 +356,13 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
                     <strong>{formatTemp(local.temperature_2m, unit)}</strong>
                   </button>
                 );
-              }) : (
-                <div className="wx-nearby-empty">Nearby forecasts are temporarily unavailable.</div>
-              )}
-              <button type="button" onClick={onOpenMap} className="wx-nearby-map-link"><MapPinned className="h-3.5 w-3.5" /> Explore weather map</button>
-            </section>
-          </aside>
-        </div>
+              })}
+            </div>
+          ) : (
+            <div className="wx-nearby-empty">Regional forecasts are temporarily unavailable.</div>
+          )}
+          <button type="button" onClick={onOpenMap} className="wx-nearby-map-link"><MapPinned className="h-3.5 w-3.5" /> Explore weather map</button>
+        </section>
       </div>
     </section>
   );

@@ -5,6 +5,13 @@ import { LocationMode } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { PWAInstallButton } from './PWAInstallButton';
 
+// Track the pointer inside a navigation control so its highlight follows the cursor.
+const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
+  event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
+};
+
 interface HeaderProps {
   onSearch: (query: string) => void;
   onSelectCoordinates: (lat: number, lon: number, name: string) => void;
@@ -24,12 +31,6 @@ interface HeaderProps {
 }
 
 interface GeocodingResult {
-// Track the pointer inside a navigation control so its highlight follows the cursor.
-const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
-  const bounds = event.currentTarget.getBoundingClientRect();
-  event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
-  event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
-};
 
   name: string;
   country: string;
@@ -159,10 +160,10 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className={`w-full py-2.5 px-3 sm:px-6 lg:px-8 ${activeTab === 'dashboard' ? 'border-b-0 bg-transparent' : 'border-b border-white/10 bg-[#070e1c]/75'} backdrop-blur-xl sticky top-0 z-50 transition-all`}>
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
+      <div className="rodex-header-layout max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
         
         {/* Brand Logo & Title */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="rodex-header-brand flex items-center gap-3 shrink-0">
           <div className="group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-lg shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-400/30">
             <Compass className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-500 group-hover:rotate-12" />
           </div>
@@ -182,7 +183,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onSelectTab && (
           <nav
             aria-label="Primary Navigation"
-            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-slate-950/30 backdrop-blur-xl border border-white/10 shadow-inner`}
+            className={`rodex-header-primary-nav ${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-slate-950/30 backdrop-blur-xl border border-white/10 shadow-inner`}
           >
             <button
               aria-current={activeTab === 'dashboard' ? 'page' : undefined}
@@ -214,7 +215,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Location Search Bar */}
-        <div ref={searchRef} className="relative flex-1 min-w-0 max-w-xs sm:max-w-sm md:max-w-md">
+        <div ref={searchRef} className="rodex-header-search relative flex-1 min-w-0 max-w-xs sm:max-w-sm md:max-w-md">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <Search className="absolute left-3 w-4 h-4 text-cyan-200 pointer-events-none z-10 shrink-0" />
             
@@ -305,6 +306,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
+        <div className="rodex-header-shortcuts">
         {/* Account is deliberately placed immediately after location search for quick access. */}
         <button
           type="button"
@@ -338,8 +340,10 @@ export const Header: React.FC<HeaderProps> = ({
           <span className="hidden text-xs font-extrabold tracking-wide sm:inline">RODEX AI</span>
         </button>
 
+        </div>
+
         {/* Right-Hand Controls Cluster */}
-        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="rodex-header-controls flex items-center gap-1.5 sm:gap-2 shrink-0">
           
           {/* PWA Install Button */}
           <PWAInstallButton />

@@ -365,9 +365,12 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     <div>
                       <label className="text-xs font-semibold text-sky-200 block">Display Name</label>
                       <span className="text-sm font-bold text-white">{userProfile?.displayName || user?.displayName || 'Not specified'}</span>
+                      {user?.providerData.some((provider) => provider.providerId === 'google.com') && (
+                        <span className="block text-[10px] text-emerald-300 mt-0.5">Synced from your Google account</span>
+                      )}
                     </div>
 
-                    {!isGuest && (
+                    {!isGuest && !user?.providerData.some((provider) => provider.providerId === 'google.com') && (
                       !isEditingName ? (
                         <button
                           onClick={() => {

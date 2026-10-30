@@ -3,6 +3,13 @@ import { Compass, Globe, Sparkles, Mic, Bell, User, ShieldCheck } from 'lucide-r
 import { useAuth } from '../context/AuthContext';
 
 interface MobileNavBarProps {
+// Track the pointer inside a navigation control so its highlight follows the cursor.
+const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
+  event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
+};
+
   activeTab: 'dashboard' | 'map';
   onSelectTab: (tab: 'dashboard' | 'map') => void;
   onOpenAssistant: () => void;
@@ -31,7 +38,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         {/* 1. Dashboard Tab */}
         <button
           onClick={() => onSelectTab('dashboard')}
-          className={`flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
+          onPointerMove={updateNavPointer}
+          className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'dashboard'
               ? 'text-sky-300'
               : 'text-white/60 hover:text-white/90'
@@ -51,7 +59,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         {/* 2. Interactive Weather Map Tab */}
         <button
           onClick={() => onSelectTab('map')}
-          className={`flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
+          onPointerMove={updateNavPointer}
+          className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'map'
               ? 'text-sky-300'
               : 'text-white/60 hover:text-white/90'
@@ -72,7 +81,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         <div className="flex flex-col items-center justify-center -mt-5">
           <button
             onClick={onOpenAssistant}
-            className="w-13 h-13 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-white shadow-xl shadow-cyan-500/25 border-2 border-white/45 flex items-center justify-center transition-transform active:scale-95 group"
+            onPointerMove={updateNavPointer}
+            className="rodex-pointer-spotlight w-13 h-13 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-white shadow-xl shadow-cyan-500/25 border-2 border-white/45 flex items-center justify-center transition-transform active:scale-95 group"
             aria-label="Open RODEX AI Voice and Chat Assistant"
             title="Open RODEX AI Assistant"
           >
@@ -87,7 +97,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         {/* 4. Weather Alerts Tab */}
         <button
           onClick={onOpenAlerts}
-          className="flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all relative"
+          onPointerMove={updateNavPointer}
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all relative"
           aria-label={`Weather Alerts (${activeAlertsCount} active)`}
         >
           <div className="relative">
@@ -104,7 +115,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         {/* 5. User Account / Security Tab */}
         <button
           onClick={onOpenAuth}
-          className="flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all"
+          onPointerMove={updateNavPointer}
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all"
           aria-label={user ? 'Account and Privacy' : 'Sign In'}
         >
           <div className="relative">

@@ -1084,21 +1084,21 @@ button:disabled {
    A responsive, accessible visual layer. Keeps the live weather atmosphere,
    component behavior, API integrations and app structure unchanged. */
 :root {
-  --atmos-paper: #ffffff;
-  --atmos-paper-soft: #FFFFFF;
-  --atmos-lavender: #E8E9FE;
-  --atmos-lavender-strong: #C2BCF8;
+  --atmos-paper: #FFFFFF;
+  --atmos-paper-soft: #E8E9FE;
+  --atmos-lavender: #C2BCF8;
+  --atmos-lavender-strong: #9D91F7;
   --atmos-violet: #924EF9;
   --atmos-violet-bright: #8F55F7;
   --atmos-violet-deep: #32164D;
   --atmos-plum: #32164D;
   --atmos-ink: #32164D;
   --atmos-muted: #665174;
-  --atmos-outline: rgba(124, 58, 237, .19);
-  --atmos-glass: rgba(255, 255, 255, .88);
-  --atmos-stroke: rgba(124, 58, 237, .18);
-  --atmos-text-muted: #665174;
-  --atmos-cyan: #8F55F7;
+  --atmos-outline: rgba(146, 78, 249, .22);
+  --atmos-glass: rgba(255, 255, 255, .9);
+  --atmos-stroke: rgba(146, 78, 249, .18);
+  --atmos-text-muted: #78668D;
+  --atmos-cyan: #924EF9;
   --atmos-mint: #C2BCF8;
 }
 
@@ -1109,15 +1109,15 @@ body { accent-color: var(--atmos-violet); }
 /* Bright, premium navigation that remains readable over changing weather scenes. */
 #root > div > header.sticky {
   background: rgba(255, 255, 255, .94) !important;
-  border-bottom: 1px solid rgba(124, 58, 237, .13) !important;
+  border-bottom: 1px solid rgba(146, 78, 249, .13) !important;
   box-shadow: 0 8px 28px rgba(49, 24, 84, .075);
   -webkit-backdrop-filter: blur(24px) saturate(1.25);
   backdrop-filter: blur(24px) saturate(1.25);
   padding-top: max(.65rem, env(safe-area-inset-top, 0px));
 }
 #root > div > header.sticky .group.w-9.h-9 {
-  background: linear-gradient(140deg, #9D91F7 0%, #924EF9 52%, #32164D 100%) !important;
-  box-shadow: 0 8px 20px rgba(124, 58, 237, .24) !important;
+  background: linear-gradient(140deg, #C2BCF8 0%, #8F55F7 52%, #924EF9 100%) !important;
+  box-shadow: 0 8px 20px rgba(146, 78, 249, .24) !important;
   border: 1px solid rgba(255,255,255,.82);
 }
 #root > div > header.sticky h1 { color: var(--atmos-ink) !important; }
@@ -1195,7 +1195,7 @@ nav[aria-label="Mobile Navigation"] button[aria-current="page"] .bg-sky-400 {
   background: var(--atmos-violet) !important;
 }
 nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
-  background: linear-gradient(145deg, #9D91F7, #924EF9 57%, #32164D) !important;
+  background: linear-gradient(145deg, #C2BCF8, #8F55F7 57%, #924EF9) !important;
   border-color: rgba(255,255,255,.9) !important;
   box-shadow: 0 10px 26px rgba(146,78,249,.32), inset 0 1px rgba(255,255,255,.55) !important;
 }
@@ -1210,7 +1210,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
   border: 1px solid rgba(255,255,255,.84) !important;
   background:
     radial-gradient(ellipse at 83% 0%, rgba(194, 188, 248, .32), transparent 43%),
-    linear-gradient(132deg, rgba(255,255,255,.98), rgba(250,247,255,.97) 53%, rgba(242,235,255,.96)) !important;
+    linear-gradient(132deg, rgba(255,255,255,.98), rgba(232,233,254,.97) 53%, rgba(194,188,248,.62)) !important;
   box-shadow: 0 30px 90px rgba(27, 9, 54, .18), inset 0 1px rgba(255,255,255,.98) !important;
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
@@ -1222,7 +1222,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
 .wx-reference-mark {
   color: #fff !important;
   border: 1px solid rgba(255,255,255,.75) !important;
-  background: linear-gradient(145deg,#9D91F7,#924EF9 58%,#32164D) !important;
+  background: linear-gradient(145deg,#C2BCF8,#8F55F7 58%,#924EF9) !important;
   box-shadow: 0 8px 25px rgba(146,78,249,.24), inset 0 1px rgba(255,255,255,.36) !important;
 }
 .wx-reference-rail-button {
@@ -1271,7 +1271,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
   box-shadow: 0 5px 14px rgba(146,78,249,.16);
 }
 .wx-reference-quick-location:hover:not(:disabled) {
-  background: linear-gradient(135deg,#924EF9,#32164D) !important;
+  background: linear-gradient(135deg,#8F55F7,#924EF9) !important;
 }
 .wx-hourly-temperature {
   border: 1px solid rgba(146,78,249,.1);
@@ -1284,7 +1284,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
 .wx-hourly-temperature svg, .wx-weekly-day svg { color: #8F55F7 !important; }
 .wx-weather-curve-panel {
   border: 1px solid rgba(146,78,249,.12) !important;
-  background: linear-gradient(145deg,rgba(255,255,255,.84),rgba(246,240,255,.88)) !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.84),rgba(232,233,254,.88)) !important;
   box-shadow: inset 0 1px #fff !important;
 }
 .wx-curve-topline { color: #4b3261 !important; }
@@ -1312,7 +1312,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
 }
 .wx-live-weather-card, .wx-nearby-panel {
   background:
-    radial-gradient(ellipse at 90% 0%, rgba(191,164,255,.2), transparent 47%),
+    radial-gradient(ellipse at 90% 0%, rgba(194,188,248,.2), transparent 47%),
     linear-gradient(145deg,#fff,#FFFFFF) !important;
   border-color: rgba(146,78,249,.16) !important;
   box-shadow: 0 12px 28px rgba(50,24,77,.055), inset 0 1px #fff !important;
@@ -1355,7 +1355,7 @@ nav[aria-label="Mobile Navigation"] .uppercase {
 .glass-panel, .glass-panel-elevated {
   color: var(--atmos-ink);
   border-color: rgba(146,78,249,.16) !important;
-  background: linear-gradient(145deg,rgba(255,255,255,.97),rgba(248,244,255,.96)) !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.97),rgba(232,233,254,.96)) !important;
   box-shadow: 0 16px 38px rgba(39,16,71,.09), inset 0 1px #fff !important;
 }
 .glass-panel-interactive:hover {

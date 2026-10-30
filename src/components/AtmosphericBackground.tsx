@@ -22,7 +22,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
           'radial-gradient(ellipse at 12% 28%, rgba(132, 78, 231, .42), transparent 42%)',
           'radial-gradient(ellipse at 56% 18%, rgba(232, 229, 245, .28), transparent 38%)',
           'radial-gradient(ellipse at 88% 76%, rgba(200, 192, 246, .30), transparent 40%)',
-          'linear-gradient(118deg, #844EE7 0%, #9579EF 28%, #9D91F7 52%, #C8C0F6 77%, #9D91F7 100%)'
+          'linear-gradient(118deg, #844EE7 0%, #AA9AF3 28%, #9D91F7 52%, #C8C0F6 77%, #9D91F7 100%)'
         ].join(', '),
         backgroundSize: 'cover',
         backgroundPosition: 'center',

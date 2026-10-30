@@ -5317,3 +5317,51 @@ nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] span {
 @media (prefers-reduced-motion: reduce) {
   .wx-dashboard-hero, .wx-dashboard-panel, .wx-map-card { scroll-behavior: auto; }
 }
+
+
+/* RODEX AI — stronger brand emphasis in the desktop rail and mobile dock. */
+.wx-reference-rail-button.is-ai {
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+  border: 1px solid rgba(224, 210, 255, .92) !important;
+  background: linear-gradient(120deg, #5B21B6 0%, #7C3AED 52%, #4F46E5 100%) !important;
+  box-shadow:
+    0 7px 18px rgba(76, 29, 149, .38),
+    inset 0 1px rgba(255, 255, 255, .32),
+    inset 0 -2px rgba(35, 16, 91, .16) !important;
+}
+.wx-reference-rail-button.is-ai svg,
+.wx-reference-rail-button.is-ai span {
+  color: #FFFFFF !important;
+  font-weight: 800 !important;
+}
+.wx-reference-rail-button.is-ai:hover:not(:disabled) {
+  color: #FFFFFF !important;
+  border-color: #FFFFFF !important;
+  background: linear-gradient(120deg, #4C1D95 0%, #6D28D9 52%, #4338CA 100%) !important;
+  box-shadow:
+    0 10px 24px rgba(76, 29, 149, .48),
+    inset 0 1px rgba(255, 255, 255, .38) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  background: linear-gradient(135deg, #5B21B6 0%, #7C3AED 55%, #4F46E5 100%) !important;
+  border: 2px solid rgba(255, 255, 255, .94) !important;
+  box-shadow:
+    0 6px 0 #3B187E,
+    0 14px 25px rgba(76, 29, 149, .42),
+    inset 0 2px rgba(255, 255, 255, .58),
+    inset 0 -3px rgba(35, 16, 91, .2) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"]:hover {
+  background: linear-gradient(135deg, #4C1D95 0%, #6D28D9 55%, #4338CA 100%) !important;
+  box-shadow:
+    0 7px 0 #35136F,
+    0 18px 30px rgba(76, 29, 149, .5),
+    inset 0 2px rgba(255, 255, 255, .64),
+    inset 0 -3px rgba(35, 16, 91, .2) !important;
+}
+nav[aria-label="Mobile Navigation"] > div > div > span {
+  color: #6D28D9 !important;
+  font-weight: 900 !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .72);
+}

@@ -1497,3 +1497,571 @@ nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and C
   .wx-story-copy, .wx-hourly-temperature > span, .wx-live-weather-feels,
   .wx-live-weather-metrics span, .wx-nearby-city-condition { color: #4B3261 !important; }
 }
+
+
+
+/* ================================================================
+   RODEX Atmos — Reference Lavender / Violet Theme
+   Full-app pass: removes the previous white/navy treatment and gives
+   every screen one consistent lavender-violet visual environment.
+   Weather, location, account, map and assistant behavior are unchanged.
+   ================================================================ */
+:root {
+  color-scheme: light;
+  --atmos-reference-violet: #844EE7;
+  --atmos-reference-violet-bright: #987FF3;
+  --atmos-reference-lavender: #9D91F7;
+  --atmos-reference-lilac: #C8C0F6;
+  --atmos-reference-panel: #DBD6F8;
+  --atmos-reference-panel-soft: #E8E5F5;
+  --atmos-reference-ink: #32164D;
+  --atmos-reference-muted: #65527F;
+  --atmos-reference-border: rgba(132, 78, 231, .24);
+  --atmos-reference-glass: rgba(205, 195, 247, .78);
+}
+
+html,
+body {
+  min-height: 100%;
+  background: #9D91F7 !important;
+  color: var(--atmos-reference-ink) !important;
+}
+
+body {
+  background-image:
+    radial-gradient(ellipse at 9% 20%, rgba(132, 78, 231, .25), transparent 38%),
+    radial-gradient(ellipse at 66% 15%, rgba(232, 229, 245, .20), transparent 36%),
+    linear-gradient(118deg, #844EE7 0%, #9579EF 28%, #9D91F7 52%, #C8C0F6 77%, #9D91F7 100%) !important;
+  background-attachment: fixed !important;
+  color: var(--atmos-reference-ink) !important;
+}
+
+#root {
+  min-height: 100dvh;
+  background: transparent !important;
+}
+
+#root > div {
+  min-height: 100dvh;
+  color: var(--atmos-reference-ink) !important;
+  background: transparent !important;
+  isolation: isolate;
+}
+
+main {
+  color: var(--atmos-reference-ink);
+}
+
+::selection {
+  color: #FFFFFF;
+  background: #844EE7;
+}
+
+/* Header: tinted glass, never a solid white bar. */
+#root > div > header.sticky,
+#root > div > header.sticky[class] {
+  color: var(--atmos-reference-ink) !important;
+  background: linear-gradient(105deg, rgba(205, 192, 247, .94), rgba(220, 215, 249, .91) 58%, rgba(193, 181, 246, .93)) !important;
+  border-bottom: 1px solid rgba(132, 78, 231, .24) !important;
+  box-shadow: 0 8px 28px rgba(67, 39, 128, .15), inset 0 1px rgba(255,255,255,.28) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.18);
+  backdrop-filter: blur(24px) saturate(1.18);
+}
+
+#root > div > header.sticky h1,
+#root > div > header.sticky h1 span,
+#root > div > header.sticky p {
+  color: var(--atmos-reference-ink) !important;
+}
+
+#root > div > header.sticky .group.w-9.h-9,
+#root > div > header.sticky .group.w-10.h-10 {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #AA9AF3, #844EE7 72%) !important;
+  border: 1px solid rgba(255,255,255,.38) !important;
+  box-shadow: 0 8px 24px rgba(88, 49, 171, .28) !important;
+}
+
+#root > div > header.sticky input[aria-label="Search city or country"] {
+  color: var(--atmos-reference-ink) !important;
+  background: rgba(232, 229, 245, .76) !important;
+  border: 1px solid rgba(132, 78, 231, .24) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.28) !important;
+}
+
+#root > div > header.sticky input[aria-label="Search city or country"]::placeholder {
+  color: #71618E !important;
+}
+
+#root > div > header.sticky input[aria-label="Search city or country"]:focus {
+  background: rgba(219, 214, 248, .94) !important;
+  border-color: #844EE7 !important;
+  box-shadow: 0 0 0 4px rgba(132, 78, 231, .14) !important;
+}
+
+#root > div > header.sticky input[aria-label="Search city or country"] + span,
+#root > div > header.sticky button[aria-label="Submit search"] {
+  color: #844EE7 !important;
+}
+
+#root > div > header.sticky nav[aria-label="Primary Navigation"] {
+  color: var(--atmos-reference-ink) !important;
+  background: rgba(200, 192, 246, .78) !important;
+  border-color: rgba(132, 78, 231, .24) !important;
+}
+
+#root > div > header.sticky nav[aria-label="Primary Navigation"] button[aria-current="page"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #987FF3, #844EE7) !important;
+  border-color: rgba(255,255,255,.3) !important;
+  box-shadow: 0 6px 16px rgba(85, 49, 166, .25) !important;
+}
+
+#root > div > header.sticky nav[aria-label="Primary Navigation"] button:not([aria-current="page"]) {
+  color: #5B477B !important;
+}
+
+#root > div > header.sticky button[title="Toggle temperature unit"] {
+  color: #32164D !important;
+  background: rgba(219, 214, 248, .88) !important;
+  border: 1px solid rgba(132, 78, 231, .24) !important;
+  box-shadow: 0 4px 12px rgba(67, 39, 128, .10) !important;
+}
+
+#root > div > header.sticky .text-sky-400,
+#root > div > header.sticky .text-sky-300,
+#root > div > header.sticky .text-cyan-200 {
+  color: #844EE7 !important;
+}
+
+/* Dashboard and all weather cards: translucent lavender, not white. */
+.wx-reference-shell {
+  color: var(--atmos-reference-ink) !important;
+  border: 1px solid rgba(232, 229, 245, .48) !important;
+  background:
+    radial-gradient(ellipse at 82% 0%, rgba(232, 229, 245, .35), transparent 46%),
+    linear-gradient(128deg, rgba(189, 174, 244, .88), rgba(219, 214, 248, .88) 52%, rgba(180, 162, 241, .84)) !important;
+  box-shadow: 0 28px 76px rgba(62, 34, 124, .20), inset 0 1px rgba(255,255,255,.32) !important;
+}
+
+.wx-reference-rail {
+  background: linear-gradient(180deg, rgba(200,192,246,.9), rgba(157,145,247,.8)) !important;
+  border-right: 1px solid rgba(132, 78, 231, .20) !important;
+}
+
+.wx-reference-mark {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #AA9AF3, #844EE7) !important;
+  border-color: rgba(255,255,255,.38) !important;
+  box-shadow: 0 8px 22px rgba(88, 49, 171, .24) !important;
+}
+
+.wx-reference-rail-button {
+  color: #594477 !important;
+}
+
+.wx-reference-rail-button.is-active,
+.wx-reference-rail-button:hover:not(:disabled) {
+  color: #32164D !important;
+  background: rgba(219, 214, 248, .74) !important;
+  border-color: rgba(132,78,231,.22) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.30) !important;
+}
+
+.wx-reference-rail-button::before {
+  background: linear-gradient(180deg, #844EE7, #AA9AF3) !important;
+}
+
+.wx-reference-heading {
+  border-bottom-color: rgba(132, 78, 231, .20) !important;
+}
+
+.wx-welcome-line,
+.wx-reference-kicker,
+.wx-story-label,
+.wx-hourly-heading-note,
+.wx-location-status,
+.wx-live-weather-feels,
+.wx-hourly-temperature > span,
+.wx-hourly-temperature small,
+.wx-weekly-day > span,
+.wx-weekly-day small,
+.wx-nearby-city-condition,
+.wx-nearby-empty,
+.wx-nearby-loading {
+  color: var(--atmos-reference-muted) !important;
+}
+
+.wx-welcome-line strong,
+.wx-reference-title,
+.wx-storm-title,
+.wx-hourly-heading,
+.wx-hourly-temperature strong,
+.wx-weekly-strip-title,
+.wx-weekly-day strong,
+.wx-live-weather-temp,
+.wx-live-weather-condition,
+.wx-nearby-heading span,
+.wx-nearby-city-name,
+.wx-nearby-city > strong {
+  color: var(--atmos-reference-ink) !important;
+  text-shadow: none !important;
+}
+
+.wx-story-copy,
+.wx-story-copy strong {
+  color: #4D3B6C !important;
+}
+
+.wx-live-status,
+.wx-hourly-temperature,
+.wx-weather-curve-panel,
+.wx-weekly-day,
+.wx-live-weather-card,
+.wx-nearby-panel,
+.wx-live-weather-metrics > div {
+  color: var(--atmos-reference-ink) !important;
+  background: rgba(200, 192, 246, .62) !important;
+  border-color: rgba(132, 78, 231, .20) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.22) !important;
+}
+
+.wx-live-status {
+  background: rgba(219, 214, 248, .68) !important;
+}
+
+.wx-weekly-day.is-today {
+  background: linear-gradient(145deg, rgba(170,154,243,.82), rgba(200,192,246,.86)) !important;
+  border-color: rgba(132,78,231,.34) !important;
+  box-shadow: 0 7px 18px rgba(95, 56, 178, .14), inset 0 1px rgba(255,255,255,.28) !important;
+}
+
+.wx-weather-curve-panel {
+  background: linear-gradient(145deg, rgba(219,214,248,.78), rgba(200,192,246,.76)) !important;
+}
+
+.wx-curve-topline,
+.wx-curve-badge {
+  color: #4D3B6C !important;
+}
+
+.wx-curve-badge {
+  background: rgba(152,127,243,.20) !important;
+  border-color: rgba(132,78,231,.20) !important;
+}
+
+.wx-trend-chart line {
+  stroke: rgba(77, 59, 108, .20) !important;
+}
+.wx-trend-chart > path:not(:first-of-type) {
+  stroke: #844EE7 !important;
+}
+.wx-trend-chart circle {
+  fill: #844EE7 !important;
+  stroke: #E8E5F5 !important;
+}
+
+.wx-live-weather-symbol {
+  color: #844EE7 !important;
+  background: radial-gradient(circle, rgba(232,229,245,.72), rgba(200,192,246,.28) 72%) !important;
+  border-color: rgba(132,78,231,.22) !important;
+}
+.wx-live-weather-metrics svg,
+.wx-hourly-temperature svg,
+.wx-weekly-day svg,
+.wx-nearby-heading > svg,
+.wx-nearby-city > svg {
+  color: #844EE7 !important;
+}
+
+.wx-live-weather-metrics span {
+  color: #65527F !important;
+}
+.wx-live-weather-metrics strong {
+  color: #32164D !important;
+}
+.wx-nearby-city {
+  border-top-color: rgba(132,78,231,.18) !important;
+}
+.wx-nearby-city:hover {
+  background: rgba(152,127,243,.20) !important;
+}
+.wx-nearby-map-link {
+  color: #6539B9 !important;
+  border-top-color: rgba(132,78,231,.18) !important;
+}
+.wx-nearby-map-link:hover {
+  color: #32164D !important;
+  background: rgba(219,214,248,.58) !important;
+}
+
+/* Main-page panels, forecasts, charts, insights and utility tiles. */
+main .glass-panel,
+main .glass-panel-elevated,
+main .wx-reference-support-grid > div,
+main div[class*="bg-gradient-to-br"][class*="from-slate-900"],
+main div[class*="bg-gradient-to-r"][class*="from-indigo-950"] {
+  color: var(--atmos-reference-ink) !important;
+  background: linear-gradient(138deg, rgba(200,192,246,.92), rgba(219,214,248,.90) 58%, rgba(183,168,242,.88)) !important;
+  border-color: rgba(132,78,231,.24) !important;
+  box-shadow: 0 18px 42px rgba(66, 39, 132, .14), inset 0 1px rgba(255,255,255,.28) !important;
+}
+
+main .glass-panel-interactive:hover,
+main .wx-reference-support-grid > div:hover {
+  border-color: rgba(132,78,231,.40) !important;
+  box-shadow: 0 22px 48px rgba(66,39,132,.20), inset 0 1px rgba(255,255,255,.32) !important;
+}
+
+main [class~="bg-white/5"],
+main [class~="bg-white/10"],
+main [class~="bg-white/15"],
+main [class~="bg-white/[0.04]"],
+main [class~="bg-white/[0.03]"],
+main [class~="bg-white/[0.05]"],
+main [class~="bg-white/[0.06]"] {
+  background: rgba(152,127,243,.17) !important;
+}
+
+main [class~="border-white/5"],
+main [class~="border-white/6"],
+main [class~="border-white/8"],
+main [class~="border-white/10"],
+main [class~="border-white/15"],
+main [class~="border-white/20"] {
+  border-color: rgba(132,78,231,.19) !important;
+}
+
+main [class~="text-white"],
+main [class~="text-white/95"],
+main [class~="text-white/90"],
+main [class~="text-white/80"] {
+  color: var(--atmos-reference-ink) !important;
+}
+
+main [class~="text-white/70"],
+main [class~="text-white/65"],
+main [class~="text-white/60"],
+main [class~="text-white/50"],
+main [class~="text-white/40"],
+main [class~="text-white/30"] {
+  color: var(--atmos-reference-muted) !important;
+}
+
+main .text-sky-100,
+main .text-sky-200,
+main .text-sky-300,
+main .text-sky-400,
+main .text-cyan-200,
+main .text-cyan-300,
+main .text-indigo-200,
+main .text-indigo-300 {
+  color: #7549D0 !important;
+}
+
+main [class*="bg-sky-500/"],
+main [class*="bg-indigo-500/"],
+main [class*="bg-cyan-500/"] {
+  background-color: rgba(132,78,231,.13) !important;
+}
+main [class*="border-sky-"],
+main [class*="border-cyan-"],
+main [class*="border-indigo-"] {
+  border-color: rgba(132,78,231,.25) !important;
+}
+
+main button[class*="bg-gradient-to"],
+main button[class*="bg-sky-500"],
+main button[class*="bg-indigo-600"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(135deg, #987FF3, #844EE7) !important;
+  border-color: rgba(255,255,255,.26) !important;
+  box-shadow: 0 7px 18px rgba(91, 53, 173, .22) !important;
+}
+
+main button[class*="bg-gradient-to"] [class~="text-white"],
+main button[class*="bg-sky-500"] [class~="text-white"],
+main button[class*="bg-indigo-600"] [class~="text-white"] {
+  color: #FFFFFF !important;
+}
+
+main .wx-reference-support-grid > div .bg-gradient-to-tr,
+main .wx-reference-support-grid > div .bg-gradient-to-r {
+  color: #FFFFFF !important;
+}
+
+/* The mobile dock uses the reference's lilac glass, not a white pill. */
+nav[aria-label="Mobile Navigation"] {
+  color: var(--atmos-reference-ink) !important;
+  background: rgba(219, 214, 248, .94) !important;
+  border: 1px solid rgba(132,78,231,.26) !important;
+  box-shadow: 0 16px 42px rgba(58, 33, 119, .23), inset 0 1px rgba(255,255,255,.34) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.16);
+  backdrop-filter: blur(24px) saturate(1.16);
+}
+
+nav[aria-label="Mobile Navigation"] button {
+  color: #5F4A7D !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
+  color: #32164D !important;
+  background: rgba(170,154,243,.76) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.28) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] svg,
+nav[aria-label="Mobile Navigation"] button[aria-current="page"] span {
+  color: #32164D !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #AA9AF3, #844EE7 70%) !important;
+  border: 2px solid rgba(255,255,255,.48) !important;
+  box-shadow: 0 10px 26px rgba(91,53,173,.34), inset 0 1px rgba(255,255,255,.34) !important;
+}
+nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] svg {
+  color: #FFFFFF !important;
+}
+nav[aria-label="Mobile Navigation"] button .bg-sky-400 {
+  background: #844EE7 !important;
+}
+
+/* Dialogs and portals: recolour the existing modal shells without changing their logic. */
+[class*="bg-[#0a1426]"],
+[class*="bg-[#081224]"] {
+  color: var(--atmos-reference-ink) !important;
+  background: linear-gradient(138deg, rgba(189,174,244,.98), rgba(219,214,248,.98) 58%, rgba(200,192,246,.97)) !important;
+  border-color: rgba(132,78,231,.32) !important;
+  box-shadow: 0 28px 80px rgba(47,27,104,.32), inset 0 1px rgba(255,255,255,.30) !important;
+}
+
+[class*="bg-[#0a1426]"] [class~="text-white"],
+[class*="bg-[#0a1426]"] [class~="text-white/90"],
+[class*="bg-[#0a1426]"] [class~="text-white/80"],
+[class*="bg-[#081224]"] [class~="text-white"],
+[class*="bg-[#081224]"] [class~="text-white/90"],
+[class*="bg-[#081224]"] [class~="text-white/80"] {
+  color: var(--atmos-reference-ink) !important;
+}
+
+[class*="bg-[#0a1426]"] [class*="text-white/"],
+[class*="bg-[#081224]"] [class*="text-white/"] {
+  color: var(--atmos-reference-muted) !important;
+}
+
+[class*="bg-[#0a1426]"] [class*="bg-white/"],
+[class*="bg-[#081224]"] [class*="bg-white/"] {
+  background: rgba(152,127,243,.18) !important;
+}
+
+[class*="bg-[#0a1426]"] [class*="border-white/"],
+[class*="bg-[#081224]"] [class*="border-white/"] {
+  border-color: rgba(132,78,231,.20) !important;
+}
+
+[class*="bg-[#0a1426]"] input,
+[class*="bg-[#0a1426]"] select,
+[class*="bg-[#0a1426]"] textarea,
+[class*="bg-[#081224]"] input,
+[class*="bg-[#081224]"] select,
+[class*="bg-[#081224]"] textarea {
+  color: #32164D !important;
+  background: rgba(232,229,245,.72) !important;
+  border-color: rgba(132,78,231,.28) !important;
+}
+[class*="bg-[#0a1426]"] input::placeholder,
+[class*="bg-[#081224]"] input::placeholder,
+[class*="bg-[#0a1426]"] textarea::placeholder,
+[class*="bg-[#081224]"] textarea::placeholder {
+  color: #71618E !important;
+}
+
+[class*="bg-[#0a1426]"] button[class~="bg-white"],
+[class*="bg-[#081224]"] button[class~="bg-white"] {
+  color: #32164D !important;
+  background: rgba(232,229,245,.84) !important;
+  border-color: rgba(132,78,231,.22) !important;
+}
+
+[class*="fixed"][class*="inset-0"][class*="backdrop-blur"] {
+  background-color: rgba(62, 39, 112, .56) !important;
+}
+
+/* Status notices retain their meaning, but the neutral app chrome is violet. */
+.leaflet-container {
+  background: #9D91F7 !important;
+}
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  color: #32164D !important;
+  background: rgba(219,214,248,.97) !important;
+  border-color: rgba(132,78,231,.24) !important;
+}
+.leaflet-control-zoom a {
+  color: #844EE7 !important;
+  background: rgba(219,214,248,.96) !important;
+  border-color: rgba(132,78,231,.22) !important;
+}
+.leaflet-control-zoom a:hover {
+  color: #FFFFFF !important;
+  background: #844EE7 !important;
+}
+.leaflet-container .leaflet-control-attribution {
+  color: #5F4A7D !important;
+  background: rgba(219,214,248,.88) !important;
+}
+.leaflet-container .leaflet-control-attribution a {
+  color: #6539B9 !important;
+}
+
+/* Footer, dropdowns, focus rings and compact layouts. */
+footer {
+  color: #5F4A7D !important;
+  border-color: rgba(132,78,231,.20) !important;
+}
+footer strong,
+footer [class~="text-white"] {
+  color: #32164D !important;
+}
+header.sticky [class*="bg-[#0a1426]"] {
+  color: #32164D !important;
+  background: rgba(219,214,248,.98) !important;
+  border-color: rgba(132,78,231,.24) !important;
+}
+header.sticky [class*="bg-[#0a1426]"] button {
+  color: #32164D !important;
+}
+header.sticky [class*="bg-[#0a1426]"] button:hover {
+  background: rgba(152,127,243,.22) !important;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #844EE7 !important;
+  outline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  #root > div > header.sticky {
+    background: rgba(205,192,247,.97) !important;
+  }
+  nav[aria-label="Mobile Navigation"] {
+    background: rgba(219,214,248,.96) !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+/* Explicitly suppress old photo overlays, even when a cached image is present. */
+.atmos-reference-background,
+.atmos-reference-background::before,
+.atmos-reference-background::after {
+  background-image: none;
+}

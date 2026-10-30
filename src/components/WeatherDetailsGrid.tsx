@@ -1,7 +1,7 @@
 import React from 'react';
 import { Sunrise, Sunset, Wind, Droplets, Compass, Gauge } from 'lucide-react';
 import { WeatherData } from '../types';
-import { formatWind, getWindDirectionLabel } from '../utils/weatherUtils';
+import { formatWind, getWindDirectionLabel, formatForecastClock } from '../utils/weatherUtils';
 
 interface WeatherDetailsGridProps {
   data: WeatherData;
@@ -11,12 +11,10 @@ interface WeatherDetailsGridProps {
 export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, unit }) => {
   const { current, daily } = data.weather;
 
-  const sunriseStr = daily?.sunrise?.[0] 
-    ? new Date(daily.sunrise[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-    : '06:15 AM';
-  const sunsetStr = daily?.sunset?.[0] 
-    ? new Date(daily.sunset[0]).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-    : '06:45 PM';
+  // Provider solar times are already local to the forecast location; don't
+  // convert them using the viewing device's timezone or invent fallback times.
+  const sunriseStr = formatForecastClock(daily?.sunrise?.[0]);
+  const sunsetStr = formatForecastClock(daily?.sunset?.[0]);
 
   return (
     <section 

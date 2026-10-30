@@ -146,7 +146,7 @@ try {
 
   await page.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' }).click();
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
-  await page.getByRole('button', { name: 'Text Chat' }).click();
+  await page.getByRole('button', { name: 'Text Chat', exact: true }).click();
   const assistantChatInput = page.getByRole('textbox', { name: 'Ask assistant message' });
   await assistantChatInput.fill('Hey Atmos');
   await page.getByRole('button', { name: 'Send message' }).click();

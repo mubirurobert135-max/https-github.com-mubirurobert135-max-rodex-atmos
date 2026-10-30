@@ -989,7 +989,7 @@ async function startServer() {
     try {
       const lat = Number(req.query.lat);
       const lon = Number(req.query.lon);
-      const cityName = (req.query.name as string) || 'Current Location';
+      const cityName = (req.query.name as string) || 'Selected map point';
 
       if (req.query.lat == null || req.query.lon == null ||
           !Number.isFinite(lat) || !Number.isFinite(lon) ||

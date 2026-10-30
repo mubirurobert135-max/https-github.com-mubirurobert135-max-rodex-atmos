@@ -508,7 +508,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-bold text-white truncate">
-                    {user.displayName || 'Authenticated User'}
+                    {user.providerData.find((provider) => provider.providerId === 'google.com')?.displayName || userProfile?.displayName || user.displayName || 'Authenticated User'}
                   </div>
                   <div className="text-xs text-white/65 break-all">
                     {user.email || user.phoneNumber || 'Signed in'}

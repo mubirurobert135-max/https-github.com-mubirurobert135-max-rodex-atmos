@@ -285,9 +285,9 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
                 <div className="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3.5">
                   <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800">
-                    {(user?.photoURL || userProfile?.photoURL) ? (
+                    {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
                       <img
-                        src={(user?.photoURL || userProfile?.photoURL)!}
+                        src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
                         alt={user?.displayName || userProfile?.displayName || 'Account profile'}
                         referrerPolicy="no-referrer"
                         className="w-full h-full object-cover"
@@ -401,9 +401,9 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
                   <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/10 p-3">
                     <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-800 border border-white/15">
-                      {(user?.photoURL || userProfile?.photoURL) ? (
+                      {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
                         <img
-                          src={(user?.photoURL || userProfile?.photoURL)!}
+                          src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
                           alt="RODEX profile photo"
                           referrerPolicy="no-referrer"
                           className="w-full h-full object-cover"
@@ -414,7 +414,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-white">Profile picture</div>
-                      <div className="text-[11px] text-white/55 break-all">{user?.photoURL || userProfile?.photoURL ? 'Using the profile photo supplied by your sign-in provider.' : 'Connect Google to use your Google account profile picture in RODEX.'}</div>
+                      <div className="text-[11px] text-white/55 break-all">{user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL ? 'Using the profile photo supplied by your sign-in provider.' : 'Connect Google to use your Google account profile picture in RODEX.'}</div>
                     </div>
                   </div>
 

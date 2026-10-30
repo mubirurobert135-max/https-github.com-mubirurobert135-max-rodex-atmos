@@ -121,6 +121,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       const provider = new GoogleAuthProvider();
       provider.setCustomParameters({ prompt: 'select_account' });
       await signInWithPopup(auth, provider);
+      await refreshUser();
       setSuccessMessage('Successfully signed in with Google!');
       setTimeout(() => {
         onClose();
@@ -167,8 +168,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     try {
       const provider = new GoogleAuthProvider();
       await linkWithPopup(auth.currentUser, provider);
-      setSuccessMessage('Google account successfully linked to your current profile!');
       await refreshUser();
+      setSuccessMessage('Google account successfully linked to your current profile! Your Google photo is now your RODEX profile picture.');
     } catch (err: any) {
       console.error('Link Google error:', err);
       if (err.code === 'auth/credential-already-in-use') {
@@ -490,8 +491,32 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   {isVerified ? 'Verified Account' : 'Pending Verification'}
                 </span>
               </div>
-              <div className="text-sm font-bold text-white break-all">
-                {user.email || user.phoneNumber || 'Authenticated User'}
+              <div className="flex items-center gap-3">
+                <div className="h-14 w-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800 shadow-lg">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt={user.displayName ? user.displayName + ' Google profile photo' : 'Account profile photo'}
+                      referrerPolicy="no-referrer"
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center text-white/70">
+                      <UserCheck className="w-6 h-6" />
+                    </div>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-bold text-white truncate">
+                    {user.displayName || 'Authenticated User'}
+                  </div>
+                  <div className="text-xs text-white/65 break-all">
+                    {user.email || user.phoneNumber || 'Signed in'}
+                  </div>
+                  {user.providerData.some((provider) => provider.providerId === 'google.com') && (
+                    <div className="mt-1 text-[10px] font-semibold text-emerald-300">Google profile connected</div>
+                  )}
+                </div>
               </div>
 
               {/* Verification Status Details */}

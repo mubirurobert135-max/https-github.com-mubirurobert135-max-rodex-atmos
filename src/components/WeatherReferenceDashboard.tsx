@@ -9,6 +9,13 @@ import { WeatherData, LocationMode } from '../types';
 import { formatTemp, formatWind, getWeatherCondition, findNextHourlyIndex, findCurrentHourlyIndex, formatForecastLocalHour, formatForecastClock, normalizeForecastLocalTime } from '../utils/weatherUtils';
 
 interface WeatherReferenceDashboardProps {
+// Track the pointer inside a navigation control so its highlight follows the cursor.
+const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
+  event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
+};
+
   data: WeatherData;
   unit: 'C' | 'F';
   locationMode: LocationMode;
@@ -132,14 +139,11 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
 
         <div className="wx-reference-rail-divider" />
         <div className="wx-rail-navigation">
-          <button className="wx-reference-rail-button is-active" type="button" aria-label="Weather dashboard" title="Weather dashboard">
+          <button className="wx-reference-rail-button is-active rodex-pointer-spotlight" onPointerMove={updateNavPointer} type="button" aria-label="Weather dashboard" title="Weather dashboard">
             <Compass className="h-4 w-4" /><span>Dashboard</span>
           </button>
-          <button className="wx-reference-rail-button" type="button" onClick={onOpenMap} aria-label="Open interactive weather map" title="Interactive weather map">
+          <button className="wx-reference-rail-button rodex-pointer-spotlight" onPointerMove={updateNavPointer} type="button" onClick={onOpenMap} aria-label="Open interactive weather map" title="Interactive weather map">
             <MapPin className="h-4 w-4" /><span>Map</span>
-          </button>
-          <button className="wx-reference-rail-button" type="button" onClick={() => onOpenAssistant()} aria-label="Open Atmos voice assistant" title="Ask Atmos">
-            <Sparkles className="h-4 w-4" /><span>Atmos AI</span>
           </button>
           <button className="wx-reference-rail-button" type="button" onClick={onOpenAlerts} aria-label="Weather alerts" title="Weather alerts">
             <Bell className="h-4 w-4" /><span>Alerts</span>
@@ -161,6 +165,9 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
           </button>
           <button className="wx-reference-rail-button" type="button" onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
             <UserRound className="h-4 w-4" /><span>Account</span>
+          </button>
+          <button className="wx-reference-rail-button is-ai rodex-pointer-spotlight" type="button" onClick={() => onOpenAssistant()} onPointerMove={updateNavPointer} aria-label="Open RODEX AI voice and chat assistant" title="RODEX AI">
+            <Sparkles className="h-4 w-4" /><span>RODEX AI</span>
           </button>
           <button className="wx-reference-rail-button" type="button" onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">
             <ShieldCheck className="h-4 w-4" /><span>Privacy</span>

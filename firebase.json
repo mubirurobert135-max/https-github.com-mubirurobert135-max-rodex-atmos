@@ -1,5 +1,8 @@
 {
-  "firestore": {
-    "rules": "firestore.rules"
-  }
+  "firestore": [
+    {
+      "database": "ai-studio-rodexatmos-59c91eb6-c94a-40ae-8e38-9b632eab4d23",
+      "rules": "firestore.rules"
+    }
+  ]
 }

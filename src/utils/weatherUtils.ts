@@ -156,3 +156,83 @@ export const SAMPLE_WEATHER_DATA: WeatherData = {
   },
   source: 'live'
 };
+
+
+/**
+ * Weather providers return hourly timestamps in the forecast location's local
+ * clock (often without an offset). Compare these wall-clock values as strings
+ * instead of parsing them in the viewer's device timezone.
+ */
+export function normalizeForecastLocalTime(value?: string | null): string {
+  if (!value || typeof value !== 'string') return '';
+  const match = value.trim().replace(' ', 'T').match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/);
+  return match?.[1] || '';
+}
+
+/** First hourly slot at or after the current observation time for that location. */
+export function findNextHourlyIndex(times: string[] | undefined, currentTime?: string): number {
+  if (!Array.isArray(times) || times.length === 0) return 0;
+  const current = normalizeForecastLocalTime(currentTime);
+  if (!current) return 0;
+
+  const index = times.findIndex((time) => normalizeForecastLocalTime(time) >= current);
+  return index < 0 ? Math.max(0, times.length - 1) : index;
+}
+
+/**
+ * Select the nearest hourly forecast slot for a local-clock offset from current
+ * observation. Uses UTC arithmetic only as a timezone-neutral calendar calculator.
+ */
+export function findHourlyIndexForOffset(
+  times: string[] | undefined,
+  currentTime: string | undefined,
+  offsetHours: number
+): number {
+  if (!Array.isArray(times) || times.length === 0) return 0;
+  const current = normalizeForecastLocalTime(currentTime);
+  if (!current || !Number.isFinite(offsetHours) || offsetHours <= 0) {
+    return findNextHourlyIndex(times, currentTime);
+  }
+
+  const [datePart, timePart] = current.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const target = new Date(Date.UTC(year, month - 1, day, hour + offsetHours, minute));
+  const targetLocal = [
+    target.getUTCFullYear().toString().padStart(4, '0'),
+    (target.getUTCMonth() + 1).toString().padStart(2, '0'),
+    target.getUTCDate().toString().padStart(2, '0')
+  ].join('-') + 'T' + [
+    target.getUTCHours().toString().padStart(2, '0'),
+    target.getUTCMinutes().toString().padStart(2, '0')
+  ].join(':');
+
+  const index = times.findIndex((time) => normalizeForecastLocalTime(time) >= targetLocal);
+  return index < 0 ? Math.max(0, times.length - 1) : index;
+}
+
+/** Format a provider's location-local timestamp without applying the device timezone twice. */
+export function formatForecastLocalHour(value: string, hour12 = true): string {
+  const local = normalizeForecastLocalTime(value);
+  if (!local) return '—';
+  const [datePart, timePart] = local.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  return new Intl.DateTimeFormat(undefined, {
+    hour: 'numeric',
+    minute: minute === 0 ? undefined : '2-digit',
+    hour12,
+    timeZone: 'UTC'
+  }).format(date);
+}
+
+/** Sunrise/sunset values may be local-clock strings or full provider timestamps. */
+export function formatForecastClock(value?: string): string {
+  if (!value) return '—';
+  if (/^\d{1,2}:\d{2}(?:\s?[AP]M)?$/i.test(value.trim())) return value.trim();
+  const local = normalizeForecastLocalTime(value);
+  if (!local) return value;
+  const timePart = local.split('T')[1];
+  return formatForecastLocalHour('2000-01-01T' + timePart, true);
+}

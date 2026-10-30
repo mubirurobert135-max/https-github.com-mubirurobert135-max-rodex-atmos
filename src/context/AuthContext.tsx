@@ -124,7 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     try {
       const snap = await getDoc(userDocRef);
-      const { displayName: providerDisplayName, photoURL: providerPhotoURL } = resolveAuthProfileIdentity(firebaseUser);
+      const { displayName: providerDisplayName, photoURL: providerPhotoURL, email: providerEmail } = resolveAuthProfileIdentity(firebaseUser);
 
       if (snap.exists()) {
         const profile = snap.data() as UserProfileData;
@@ -138,8 +138,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (providerPhotoURL && profile.photoURL !== providerPhotoURL) {
           identityUpdates.photoURL = providerPhotoURL;
         }
-        if (firebaseUser.email && profile.email !== firebaseUser.email) {
-          identityUpdates.email = firebaseUser.email;
+        const identityEmail = providerEmail || firebaseUser.email;
+        if (identityEmail && profile.email !== identityEmail) {
+          identityUpdates.email = identityEmail;
         }
         if (profile.emailVerified !== firebaseUser.emailVerified) {
           identityUpdates.emailVerified = firebaseUser.emailVerified;
@@ -165,8 +166,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           preferences: DEFAULT_PREFERENCES,
           savedCities: []
         };
-        if (firebaseUser.email) {
-          newProfileRaw.email = firebaseUser.email;
+        if (providerEmail || firebaseUser.email) {
+          newProfileRaw.email = providerEmail || firebaseUser.email;
         }
         if (firebaseUser.phoneNumber) {
           newProfileRaw.phoneNumber = firebaseUser.phoneNumber;
@@ -198,16 +199,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
     try {
+      const authIdentity = resolveAuthProfileIdentity(auth.currentUser);
       const updatedProfileRaw: Record<string, any> = {
         uid,
-        ...resolveAuthProfileIdentity(auth.currentUser),
         emailVerified: auth.currentUser.emailVerified,
         phoneVerified: !!auth.currentUser.phoneNumber,
         updatedAt: new Date().toISOString(),
-        ...additionalData
+        ...additionalData,
+        // Google identity fields take precedence over app-only edits.
+        ...authIdentity
       };
       if (auth.currentUser.email) {
-        updatedProfileRaw.email = auth.currentUser.email;
+        updatedProfileRaw.email = authIdentity.email || auth.currentUser.email;
       }
       if (auth.currentUser.phoneNumber) {
         updatedProfileRaw.phoneNumber = auth.currentUser.phoneNumber;
@@ -294,7 +297,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           providerId: p.providerId,
           uid: p.uid,
           email: p.email || null,
-          displayName: p.displayName || null
+          displayName: p.displayName || null,
+          photoURL: p.photoURL || null
         })),
         createdAt: profileData.createdAt || null,
         lastSignInTime: auth.currentUser.metadata.lastSignInTime || null

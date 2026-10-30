@@ -55,7 +55,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab = 'dashboard',
   onSelectTab
 }) => {
-  const { user, isVerified } = useAuth();
+  const { user, userProfile, isVerified } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
   const [liveSearchResults, setLiveSearchResults] = useState<GeocodingResult[]>([]);
@@ -316,7 +316,18 @@ export const Header: React.FC<HeaderProps> = ({
           title={user ? 'Open account settings' : 'Sign in or create an account'}
           aria-label={user ? 'Open account' : 'Sign in or create an account'}
         >
-          <span className="header-account-icon"><User className="w-4 h-4" /></span>
+          <span className="header-account-icon overflow-hidden rounded-full">
+            {(user?.photoURL || userProfile?.photoURL) ? (
+              <img
+                src={(user?.photoURL || userProfile?.photoURL)!}
+                alt={user?.displayName || userProfile?.displayName || 'Account profile'}
+                referrerPolicy="no-referrer"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <User className="w-4 h-4" />
+            )}
+          </span>
           <span className="header-account-label">Account</span>
           {user && (
             <span

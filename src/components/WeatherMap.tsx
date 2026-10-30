@@ -93,19 +93,33 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
       zoomAnimation: true, fadeAnimation: true, markerZoomAnimation: true
     });
 
-    const voyagerUrl = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
     const osmUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-    const attribution = '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>';
-    const tiles = L.tileLayer(voyagerUrl, {
-      attribution, subdomains: 'abcd', maxZoom: 20, maxNativeZoom: 19,
-      keepBuffer: 2, updateWhenIdle: true, updateWhenZooming: false, crossOrigin: true
+    const cartoKey = import.meta.env.VITE_CARTO_API_KEY as string | undefined;
+    const hasCartoKey = Boolean(cartoKey && cartoKey.trim().length > 0);
+    const cartoUrl = hasCartoKey
+      ? 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=' + encodeURIComponent(cartoKey!.trim())
+      : '';
+    const attribution = hasCartoKey
+      ? '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'
+      : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors';
+
+    // CARTO requires a key. Default to the standard OSM street map when no key is configured.
+    const tiles = L.tileLayer(hasCartoKey ? cartoUrl : osmUrl, {
+      attribution,
+      ...(hasCartoKey ? { subdomains: 'abcd' } : {}),
+      maxZoom: 19,
+      maxNativeZoom: 19,
+      keepBuffer: 2,
+      updateWhenIdle: true,
+      updateWhenZooming: false,
+      crossOrigin: true
     }).addTo(map);
 
     let tileErrors = 0;
-    let usingOsmFallback = false;
+    let usingOsmFallback = !hasCartoKey;
     tiles.on('tileerror', () => {
       tileErrors += 1;
-      if (!usingOsmFallback && tileErrors >= 3) {
+      if (hasCartoKey && !usingOsmFallback && tileErrors >= 3) {
         usingOsmFallback = true;
         console.warn('[RODEX Atmos Map] CARTO tiles unavailable; switching to OpenStreetMap tiles.');
         tiles.setUrl(osmUrl);

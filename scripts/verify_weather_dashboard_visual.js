@@ -60,8 +60,15 @@ try {
   const searchInput = page.getByRole('textbox', { name: 'Search city or country' });
   await page.setViewportSize({ width: 1440, height: 900 });
   await searchInput.waitFor({ state: 'visible', timeout: 5000 });
+  const accountShortcut = page.locator('button.header-account-shortcut');
+  if (await accountShortcut.count() !== 1 || !(await accountShortcut.isVisible())) {
+    throw new Error('The Account shortcut must be visible directly beside the location search.');
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
+  if (!(await accountShortcut.isVisible())) {
+    throw new Error('The Account shortcut must remain visible on mobile.');
+  }
   const mobileNav = page.locator('nav[aria-label="Mobile Navigation"]');
   const selectedBeforeMap = mobileNav.locator('button[aria-current="page"]');
   if (await selectedBeforeMap.count() !== 1 || await selectedBeforeMap.getAttribute('aria-label') !== 'Weather Dashboard') {
@@ -80,6 +87,18 @@ try {
   }
   await page.getByRole('button', { name: 'Weather Dashboard' }).click();
   await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 10000 });
+
+  const moreWeather = page.locator('.wx-more-weather-toggle');
+  await moreWeather.waitFor({ state: 'visible', timeout: 5000 });
+  if (await moreWeather.getAttribute('aria-expanded') !== 'false') {
+    throw new Error('Additional weather information should be collapsed by default.');
+  }
+  await moreWeather.click();
+  await page.locator('#wx-more-weather-content').waitFor({ state: 'visible', timeout: 5000 });
+  if (await moreWeather.getAttribute('aria-expanded') !== 'true') {
+    throw new Error('The additional weather information disclosure should expose its expanded state.');
+  }
+  await moreWeather.click();
 
   await page.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' }).click();
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });

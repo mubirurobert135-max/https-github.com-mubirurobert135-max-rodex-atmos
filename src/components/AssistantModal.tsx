@@ -1845,12 +1845,16 @@ Available Function Tools:
           deviceLocationData,
           mapContextData,
           activeMapLayer
-        })
+        }),
+        signal: AbortSignal.timeout(28000)
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        throw new Error(data.message || 'Chat service encountered an error.');
+        throw new Error(data.message || data.error || `Chat service returned HTTP ${res.status}.`);
+      }
+      if (typeof data.reply !== 'string' || !data.reply.trim()) {
+        throw new Error('RODEX AI returned an empty reply. Please try again.');
       }
 
       const assistantMsg: ChatMessage = {

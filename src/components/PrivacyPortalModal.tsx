@@ -421,10 +421,13 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
                   <div className="border-t border-white/10 pt-3 space-y-2 text-xs text-white/70 leading-relaxed">
                     <p>
-                      <strong>How Location Processing Works:</strong> Coordinates (`lat`, `lon`) are passed to Open-Meteo's weather API strictly to retrieve temperature and forecast measurements.
+                      <strong>Weather lookup:</strong> When you use device location, the coordinates are sent to the configured weather provider (Open-Meteo or WeatherAPI.com) to retrieve current conditions and forecasts.
                     </p>
                     <p>
-                      RODEX Atmos <strong>does not record movement history</strong>, continuous background tracking, or location paths.
+                      <strong>Place-name lookup:</strong> After you grant device GPS permission, RODEX Atmos may send those current GPS coordinates directly from your browser to BigDataCloud's client-side reverse-geocoding endpoint to resolve the city, locality and region. BigDataCloud states that it observes the request IP alongside the coordinates and aggregates those pairings anonymously to improve its location data. This lookup is not used for manually searched places or arbitrary map points.
+                    </p>
+                    <p>
+                      You can turn off automatic location lookup here or deny browser location permission. RODEX Atmos <strong>does not record movement history</strong>, continuous background tracking, or location paths.
                     </p>
                   </div>
                 </div>

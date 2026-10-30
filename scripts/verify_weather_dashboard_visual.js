@@ -33,9 +33,8 @@ try {
   }
 
   await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 45000 });
-  // Let the real nearby-location requests settle before capturing the visual reference.
-  await page.waitForFunction(() => document.querySelectorAll('.wx-nearby-city').length > 0 || document.querySelector('.wx-nearby-empty') !== null, { timeout: 15000 }).catch(() => {});
-  await page.waitForTimeout(1000);
+  await page.waitForSelector('.wx-map-discovery', { state: 'attached', timeout: 5000 }).catch(() => {});
+  await page.waitForTimeout(350);
 
   for (const target of targets) {
     await page.setViewportSize({ width: target.width, height: target.height });
@@ -50,7 +49,27 @@ try {
       throw new Error(`Expected exactly one weather dashboard at ${target.name}; found ${layout.shellCount}`);
     }
     if (layout.documentWidth > layout.viewport + 1) {
-      throw new Error(`Horizontal overflow at ${target.name}: viewport ${layout.viewport}px, document ${layout.documentWidth}px`);
+      const overflowDetails = await page.evaluate(() => Array.from(document.querySelectorAll('body *'))
+        .map((el) => {
+          const rect = el.getBoundingClientRect();
+          const style = getComputedStyle(el);
+          return {
+            tag: el.tagName.toLowerCase(),
+            id: el.id || '',
+            className: typeof el.className === 'string' ? el.className.slice(0, 120) : '',
+            left: Math.round(rect.left),
+            right: Math.round(rect.right),
+            width: Math.round(rect.width),
+            scrollWidth: el.scrollWidth,
+            clientWidth: el.clientWidth,
+            position: style.position,
+            whiteSpace: style.whiteSpace
+          };
+        })
+        .filter((item) => item.width > 0 && (item.right > window.innerWidth + 1 || item.left < -1))
+        .sort((a, b) => b.right - a.right)
+        .slice(0, 15));
+      throw new Error(`Horizontal overflow at ${target.name}: viewport ${layout.viewport}px, document ${layout.documentWidth}px. Elements: ${JSON.stringify(overflowDetails)}`);
     }
     await page.screenshot({ path: path.join(outDir, `${target.name}.png`), fullPage: false });
     console.log(`PASS ${target.name}: ${layout.mainTitle}; document width ${layout.documentWidth}px`);
@@ -61,12 +80,12 @@ try {
   await page.setViewportSize({ width: 1440, height: 900 });
   await searchInput.waitFor({ state: 'visible', timeout: 5000 });
   const desktopActiveRail = page.locator('.wx-reference-rail-button.is-active').first();
-  const desktopDepth = await desktopActiveRail.evaluate((el) => {
+  const desktopActiveStyle = await desktopActiveRail.evaluate((el) => {
     const style = getComputedStyle(el);
-    return { transform: style.transform, transformStyle: style.transformStyle, shadow: style.boxShadow };
+    return { background: style.backgroundImage + ' ' + style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };
   });
-  if (desktopDepth.transform === 'none' || desktopDepth.transformStyle !== 'preserve-3d' || desktopDepth.shadow === 'none') {
-    throw new Error('Desktop navigation active state is missing its 3D depth treatment.');
+  if (desktopActiveStyle.background.includes('rgba(0, 0, 0, 0)') || desktopActiveStyle.weight < 600) {
+    throw new Error('Desktop navigation active tab is not visibly highlighted or legible.');
   }
 
   if (await page.getByText('PWA Ready', { exact: true }).count() !== 0) {
@@ -82,12 +101,12 @@ try {
     throw new Error('The Account shortcut must remain visible on mobile.');
   }
   const mobileNav = page.locator('nav[aria-label="Mobile Navigation"]');
-  const mobileDepth = await mobileNav.locator('button[aria-current="page"]').evaluate((el) => {
+  const mobileActiveStyle = await mobileNav.locator('button[aria-current="page"]').evaluate((el) => {
     const style = getComputedStyle(el);
-    return { transform: style.transform, transformStyle: style.transformStyle, shadow: style.boxShadow };
+    return { background: style.backgroundImage + ' ' + style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };
   });
-  if (mobileDepth.transform === 'none' || mobileDepth.transformStyle !== 'preserve-3d' || mobileDepth.shadow === 'none') {
-    throw new Error('Mobile active tab is missing its raised 3D treatment.');
+  if (mobileActiveStyle.background.includes('rgba(0, 0, 0, 0)') || mobileActiveStyle.weight < 600) {
+    throw new Error('Mobile active tab is not visibly highlighted or legible.');
   }
   const selectedBeforeMap = mobileNav.locator('button[aria-current="page"]');
   if (await selectedBeforeMap.count() !== 1 || await selectedBeforeMap.getAttribute('aria-label') !== 'Weather Dashboard') {
@@ -100,6 +119,12 @@ try {
 
   await page.getByRole('button', { name: 'Interactive Weather Map' }).click();
   await page.locator('.wx-reference-shell').waitFor({ state: 'detached', timeout: 10000 });
+  await page.locator('.leaflet-container').waitFor({ state: 'visible', timeout: 10000 });
+  await page.getByRole('textbox', { name: 'Search a place on the map' }).waitFor({ state: 'visible', timeout: 5000 });
+  const mapViewport = await page.evaluate(() => ({ viewport: window.innerWidth, width: document.documentElement.scrollWidth }));
+  if (mapViewport.width > mapViewport.viewport + 1) {
+    throw new Error(`Weather map overflows at mobile width: viewport ${mapViewport.viewport}px, document ${mapViewport.width}px`);
+  }
   const selectedMapTab = mobileNav.locator('button[aria-current="page"]');
   if (await selectedMapTab.count() !== 1 || await selectedMapTab.getAttribute('aria-label') !== 'Interactive Weather Map') {
     throw new Error('Mobile map tab does not expose a single accessible active state.');
@@ -123,7 +148,7 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
   await page.getByTitle('Close Assistant').click();
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
-  console.log('PASS interaction checks: 3D desktop/mobile tabs, account shortcut, details disclosure, search, map/dashboard switching, assistant dialog.');
+  console.log('PASS interaction checks: desktop/mobile navigation, account shortcut, details disclosure, search, map/dashboard switching, assistant dialog.');
 
   if (pageErrors.length) {
     throw new Error(`Browser runtime errors detected:\n${pageErrors.join('\n')}`);

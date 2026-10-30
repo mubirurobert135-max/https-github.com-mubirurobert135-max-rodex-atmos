@@ -194,9 +194,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
     // Helper to extract weather value at chosen time offset
     const getWeatherValueAtOffset = (weather: WeatherData) => {
       if (timeOffsetHours === 0) {
+        const currentHourIndex = findHourlyIndexForOffset(
+          weather.weather.hourly.time,
+          weather.weather.current.time,
+          0
+        );
         return {
           temp: weather.weather.current.temperature_2m,
-          precipProb: weather.weather.hourly.precipitation_probability[0] || 0,
+          precipProb: weather.weather.hourly.precipitation_probability[currentHourIndex] ?? 0,
           windSpeed: weather.weather.current.wind_speed_10m,
           code: weather.weather.current.weather_code,
           isDay: weather.weather.current.is_day
@@ -532,7 +537,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 placeholder="Search a place or city..." aria-label="Search a place on the map"
                 className="wx-map-search-input w-full pl-8 pr-2 py-1.5 text-[#32164D] text-xs rounded-xl border border-violet-300 focus:border-violet-600 focus:outline-none transition min-h-[40px]"
               />
-              {searchResults.length > 0 && (
+              {(searchResults.length > 0 || isSearching || mapSearchTerm.trim().length >= 2) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1426] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
                   {searchResults.map((city) => (
                     <button

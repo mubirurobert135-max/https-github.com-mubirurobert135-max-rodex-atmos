@@ -17,8 +17,8 @@ export default defineConfig(() => {
           name: 'RODEX Atmos — Weather & Atmospheric Intelligence',
           short_name: 'RODEX Atmos',
           description: 'Polished, responsive weather forecasting web app with atmospheric live conditions, multi-day forecasts, and AI weather insights.',
-          theme_color: '#0f172a',
-          background_color: '#0f172a',
+          theme_color: '#6330B8',
+          background_color: '#A998EF',
           display: 'standalone',
           start_url: '/',
           scope: '/',
@@ -96,7 +96,7 @@ export default defineConfig(() => {
                 networkTimeoutSeconds: 3,
                 expiration: {
                   maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 * 24 * 7, // 7 days fallback
+                  maxAgeSeconds: 60 * 60 * 3, // 3 hours: reduce stale-weather fallback risk
                 },
                 cacheableResponse: {
                   statuses: [0, 200],

@@ -283,6 +283,30 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <UserCheck className="w-4 h-4 text-sky-400" /> Account Overview
                 </h3>
 
+                <div className="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3.5">
+                  <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800">
+                    {(user?.photoURL || userProfile?.photoURL) ? (
+                      <img
+                        src={(user?.photoURL || userProfile?.photoURL)!}
+                        alt={user?.displayName || userProfile?.displayName || 'Account profile'}
+                        referrerPolicy="no-referrer"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/60">
+                        <UserCheck className="w-6 h-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-bold text-white truncate">{user?.displayName || userProfile?.displayName || 'RODEX User'}</div>
+                    <div className="text-xs text-white/60 break-all">{user?.email || user?.phoneNumber || 'Guest Session'}</div>
+                    <div className="text-[10px] text-sky-200/75 mt-0.5">
+                      {user?.providerData.some((provider) => provider.providerId === 'google.com') ? 'Synced from your Google account' : 'RODEX account profile'}
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
                     <span className="text-white/50 block font-semibold">Authenticated Identity</span>
@@ -373,6 +397,25 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                         </form>
                       )
                     )}
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/10 p-3">
+                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-800 border border-white/15">
+                      {(user?.photoURL || userProfile?.photoURL) ? (
+                        <img
+                          src={(user?.photoURL || userProfile?.photoURL)!}
+                          alt="RODEX profile photo"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/55"><UserCheck className="w-5 h-5" /></div>
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white">Profile picture</div>
+                      <div className="text-[11px] text-white/55 break-all">{user?.photoURL || userProfile?.photoURL ? 'Using the profile photo supplied by your sign-in provider.' : 'Connect Google to use your Google account profile picture in RODEX.'}</div>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">

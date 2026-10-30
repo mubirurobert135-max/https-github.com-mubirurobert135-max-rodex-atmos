@@ -71,7 +71,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-bold text-white tracking-wide font-display">
-                Daily forecast summary
+                Daily forecast overview
               </h3>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-medium">
                 {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -91,7 +91,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               title="Ask RODEX AI to explain this briefing in conversation"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              <span>Ask AI Briefing</span>
+              <span>Ask Atmos</span>
             </button>
           )}
 
@@ -154,15 +154,14 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
 
           {/* Greeting & Summary */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md">
-            <h4 className="text-lg font-bold text-sky-200 mb-1 font-display">
-              {briefing?.greeting || `Hello, welcome to ${data.location.name}`}
-            </h4>
+            <h4 className="text-sm font-bold text-sky-200 mb-1 font-display">Forecast overview</h4>
             <p className="text-sm text-white/90 leading-relaxed">
               {briefing?.summary || `Current weather details for ${data.location.name} are unavailable. Refresh the forecast to try again.`}
             </p>
+            <p className="text-[11px] text-white/55 mt-2">AI-generated summary. Check the forecast measurements and official alerts for decisions.</p>
           </div>
 
-          {/* Metric Highlights */}
+          {/* Measured forecast indicators */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
               <Sun className="w-5 h-5 text-amber-400 shrink-0" />
@@ -189,7 +188,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
               <div>
                 <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Atmospheric Wind</span>
                 <span className="text-xs font-semibold text-white truncate block">
-                  {briefing?.windCondition || currentWindText}
+                  {currentWindText}
                 </span>
               </div>
             </div>

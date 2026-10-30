@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { Sun, CloudRain, Wind, AlertTriangle, Sparkles, RefreshCw, ShieldAlert } from 'lucide-react';
 import { WeatherData, DailyBriefing } from '../types';
-import { formatTemp, findCurrentHourlyIndex } from '../utils/weatherUtils';
+import { formatTemp, findCurrentHourlyIndex, formatForecastLocalDate } from '../utils/weatherUtils';
 
 interface DailyBriefingCardProps {
   data: WeatherData;
@@ -76,7 +76,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
                 Daily forecast overview
               </h3>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-medium">
-                {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
+                {formatForecastLocalDate(data.weather.current?.time)}
               </span>
             </div>
             <p className="text-xs text-sky-200/70 font-medium">

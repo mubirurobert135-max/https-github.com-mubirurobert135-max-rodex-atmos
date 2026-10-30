@@ -18,6 +18,7 @@ import {
 import { VoiceTurnTimer, formatDiagnosticTiming } from '../utils/voicePerformance';
 import { createAtmosBrowserUtterance } from '../utils/voicePlayback';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voiceSignature';
+import { resolveVoicePrerequisites } from '../utils/voiceSession';
 
 import { LocationMode } from '../types';
 
@@ -172,6 +173,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Reference for active audio elements (audition or custom synthesized speech)
   const activeAudioElementRef = useRef<HTMLAudioElement | null>(null);
   const greetingRequestControllerRef = useRef<AbortController | null>(null);
+  const liveSetupAbortControllerRef = useRef<AbortController | null>(null);
+  const compatibilityChatAbortControllerRef = useRef<AbortController | null>(null);
+  const compatibilityTtsAbortControllerRef = useRef<AbortController | null>(null);
   const auditionRequestControllerRef = useRef<AbortController | null>(null);
   const readAloudRequestControllerRef = useRef<AbortController | null>(null);
   const [isAuditioning, setIsAuditioning] = useState(false);
@@ -533,6 +537,12 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const stopVoiceSession = useCallback((targetState: 'idle' | 'ended' | 'error' = 'ended') => {
     // Invalidate inflight callbacks and setup state
     sessionIdRef.current += 1;
+    liveSetupAbortControllerRef.current?.abort();
+    liveSetupAbortControllerRef.current = null;
+    compatibilityChatAbortControllerRef.current?.abort();
+    compatibilityChatAbortControllerRef.current = null;
+    compatibilityTtsAbortControllerRef.current?.abort();
+    compatibilityTtsAbortControllerRef.current = null;
     currentTurnIdRef.current += 1;
     isSpeechProcessingRef.current = false;
     processedResultIndicesRef.current.clear();
@@ -774,6 +784,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
             content: t.text
           }));
 
+          const chatController = new AbortController();
+          compatibilityChatAbortControllerRef.current = chatController;
           fetch('/api/ai/chat', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -788,9 +800,14 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               mapContextData,
               activeMapLayer,
               synthesizeVoice: false // Return text first; request voice audio immediately afterward so TTS cannot delay visible replies.
-            })
+            }),
+            signal: AbortSignal.any([chatController.signal, AbortSignal.timeout(28000)])
           })
-            .then((res) => res.json())
+            .then(async (res) => {
+              const payload = await res.json().catch(() => ({}));
+              if (!res.ok) throw new Error(payload.message || payload.error || `Chat service returned HTTP ${res.status}.`);
+              return payload;
+            })
             .then(async (data) => {
               // Discard response if a newer turn was initiated or session ended
               if (currentTurnIdRef.current !== currentTurnId) {
@@ -840,6 +857,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               if (!audioBase64 && currentTurnIdRef.current === currentTurnId) {
                 turnTimer.markSynthesisRequested(Date.now());
                 const ttsController = new AbortController();
+                compatibilityTtsAbortControllerRef.current = ttsController;
                 const ttsTimeout = window.setTimeout(() => ttsController.abort(), 7500);
                 try {
                   const ttsRes = await fetch('/api/ai/synthesize-speech', {
@@ -860,6 +878,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                   console.warn('[RODEX TTS Notice] Voice synthesis timed out or failed; using the browser feminine voice fallback.', ttsErr);
                 } finally {
                   window.clearTimeout(ttsTimeout);
+                  if (compatibilityTtsAbortControllerRef.current === ttsController) {
+                    compatibilityTtsAbortControllerRef.current = null;
+                  }
                 }
               }
 
@@ -919,18 +940,26 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               await startBrowserVoiceFallback();
             })
             .catch((err) => {
+              if (chatController.signal.aborted || currentTurnIdRef.current !== currentTurnId) return;
               console.warn('[Voice Compatibility Notice]', err);
+              isCompatModeRef.current = false;
               isSpeechProcessingRef.current = false;
-              setVoiceError('Voice is temporarily unavailable. Tap Retry Voice to try again.');
+              setVoiceError(err instanceof Error && err.message ? err.message : 'Voice is temporarily unavailable. Tap Retry Voice to try again.');
               setVoiceState('error');
+            })
+            .finally(() => {
+              if (compatibilityChatAbortControllerRef.current === chatController) {
+                compatibilityChatAbortControllerRef.current = null;
+              }
             });
         }
       };
 
       recognition.onerror = (event: any) => {
         console.warn('[Speech Recognition Error]', event.error);
-        if (event.error === 'no-speech') return;
+        if (event.error === 'no-speech' || event.error === 'aborted') return;
         if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+          isCompatModeRef.current = false;
           setPermissionStatus('denied');
           setVoiceError('Microphone permission was denied. Please allow microphone access in your browser settings.');
           setVoiceState('error');
@@ -939,7 +968,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       recognition.onend = () => {
         // If still listening and not in the middle of processing speech, restart recognition cleanly
-        if (isCompatModeRef.current && voiceState === 'listening' && !isSpeechProcessingRef.current) {
+        if (isCompatModeRef.current && !isSpeechProcessingRef.current) {
+          setVoiceState('listening');
           processedResultIndicesRef.current.clear();
           try { recognition.start(); } catch (e) {}
         }
@@ -955,7 +985,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       setVoiceError('Could not launch voice recognition. Tap Retry Voice to try again.');
       setVoiceState('error');
     }
-  }, [weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, voiceState, authenticatedFirstName]);
+  }, [weatherData, deviceLocationData, mapContextData, activeMapLayer, onSelectCityWeather, authenticatedFirstName]);
 
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
@@ -963,6 +993,9 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     setVoiceError(null);
     setIsAutoRecovering(false);
     sessionIdRef.current += 1;
+    liveSetupAbortControllerRef.current?.abort();
+    const liveSetupController = new AbortController();
+    liveSetupAbortControllerRef.current = liveSetupController;
     const currentSessionId = sessionIdRef.current;
     isSetupCompleteRef.current = false;
     isCompatModeRef.current = false;
@@ -1066,20 +1099,33 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       const tokenPromise = (async () => {
         const tTokenStart = performance.now();
-        const tokenRes = await fetch('/api/ai/live-token', { method: 'POST' });
+        const tokenRes = await fetch('/api/ai/live-token', {
+          method: 'POST',
+          signal: AbortSignal.any([liveSetupController.signal, AbortSignal.timeout(12000)])
+        });
+        const tokenPayload = await tokenRes.json().catch(() => ({}));
         if (!tokenRes.ok) {
-          const errJson = await tokenRes.json().catch(() => ({}));
-          throw new Error(errJson.message || 'Unable to obtain Live voice security token from server.');
+          throw new Error(tokenPayload.message || tokenPayload.error || 'Unable to obtain Live voice security token from server.');
         }
-        const { token } = await tokenRes.json();
+        const token = tokenPayload.token;
+        if (typeof token !== 'string' || token.length < 10) {
+          throw new Error('The Live voice service returned an invalid security token.');
+        }
         const tTokenDone = performance.now();
         return { token: token as string, durationMs: Math.round(tTokenDone - tTokenStart) };
       })();
 
-      // Await both operations concurrently
-      const [micResult, tokenResult] = await Promise.all([micPromise, tokenPromise]);
+      // Await both operations concurrently and release a late microphone stream if token setup fails.
+      const [micResult, tokenResult] = await resolveVoicePrerequisites(
+        micPromise,
+        tokenPromise,
+        (result) => result.stream.getTracks().forEach((track) => track.stop())
+      );
       const { stream, durationMs: micMs } = micResult;
       const { token, durationMs: tokenMs } = tokenResult;
+      if (liveSetupAbortControllerRef.current === liveSetupController) {
+        liveSetupAbortControllerRef.current = null;
+      }
 
       if (sessionIdRef.current !== currentSessionId) {
         stream.getTracks().forEach((t) => t.stop());
@@ -1615,6 +1661,10 @@ Available Function Tools:
         }
       };
     } catch (err: any) {
+      if (sessionIdRef.current !== currentSessionId || liveSetupController.signal.aborted) return;
+      if (liveSetupAbortControllerRef.current === liveSetupController) {
+        liveSetupAbortControllerRef.current = null;
+      }
       const errName = err.name || 'UnknownError';
       const errMsg = err.message || 'No detailed error message provided';
       console.warn(`[RODEX Voice Diagnostic] Name: ${errName} | Message: ${errMsg}`);

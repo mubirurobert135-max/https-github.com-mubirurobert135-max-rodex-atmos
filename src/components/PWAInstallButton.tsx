@@ -99,17 +99,7 @@ export const PWAInstallButton: React.FC = () => {
     );
   }
 
-  // Fallback indicator button if ambient install available
-  return (
-    <button
-      onClick={() => {
-        alert('To install RODEX Atmos, use your browser menu (e.g., Chrome "Install App" or "Add to Home screen").');
-      }}
-      className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/10 hover:bg-white/20 text-sky-200 border border-white/15 text-xs font-semibold transition"
-      title="PWA Offline Ready"
-    >
-      <Download className="w-3.5 h-3.5 text-sky-300" />
-      <span>PWA Ready</span>
-    </button>
-  );
+  // Do not show a status badge when the browser cannot offer installation.
+  // Keep install actions for supported Chromium and iOS Safari paths above.
+  return null;
 };

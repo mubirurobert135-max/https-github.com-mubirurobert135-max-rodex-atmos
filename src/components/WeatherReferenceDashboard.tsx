@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React from 'react';
 import {
   Bell, Cloud, CloudDrizzle, CloudFog, CloudLightning, CloudMoon, CloudRain,
   CloudSnow, CloudSun, Clock3, Compass, Droplets, MapPin, MapPinned,
@@ -19,7 +19,6 @@ interface WeatherReferenceDashboardProps {
   onOpenAccount: () => void;
   onOpenPrivacy: () => void;
   onOpenAlerts: () => void;
-  onSelectCoordinates: (lat: number, lon: number, name: string) => void;
 }
 
 const WeatherSymbol: React.FC<{ code: number; isDay: number; className?: string }> = ({
@@ -67,16 +66,6 @@ function formatDay(value: string, timezone: string, index: number): string {
   }
 }
 
-function citiesForCountry(country: string): string[] {
-  const key = country.trim().toLowerCase();
-  if (key === 'uganda') return ['Entebbe', 'Jinja', 'Mbarara'];
-  if (key === 'kenya') return ['Nairobi', 'Mombasa', 'Kisumu'];
-  if (key === 'tanzania' || key === 'united republic of tanzania') return ['Dar es Salaam', 'Arusha', 'Dodoma'];
-  if (key === 'rwanda') return ['Kigali', 'Musanze', 'Huye'];
-  if (key === 'united kingdom' || key === 'uk') return ['London', 'Manchester', 'Edinburgh'];
-  if (key === 'japan') return ['Tokyo', 'Osaka', 'Sapporo'];
-  return [];
-}
 
 function getUvLabel(value: number | undefined): string {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 'Unavailable';
@@ -89,7 +78,7 @@ function getUvLabel(value: number | undefined): string {
 
 export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps> = ({
   data, unit, locationMode, isLoading, onGetCurrentLocation, onOpenAssistant, onOpenMap,
-  onOpenAccount, onOpenPrivacy, onOpenAlerts, onSelectCoordinates
+  onOpenAccount, onOpenPrivacy, onOpenAlerts
 }) => {
   const { location, weather } = data;
   const current = weather.current;
@@ -102,43 +91,6 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const todaySunrise = daily.sunrise?.[0];
   const todaySunset = daily.sunset?.[0];
   const todayUv = daily.uv_index_max?.[0];
-  const nearbyNames = useMemo(() => citiesForCountry(location.country || ''), [location.country]);
-  const [nearbyWeather, setNearbyWeather] = useState<WeatherData[]>([]);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    const controller = new AbortController();
-
-    if (nearbyNames.length === 0) {
-      setNearbyWeather([]);
-      setNearbyLoading(false);
-      return () => controller.abort();
-    }
-
-    setNearbyLoading(true);
-    Promise.all(nearbyNames.map(async (city) => {
-      try {
-        const query = encodeURIComponent(city + ', ' + location.country);
-        const response = await fetch('/api/weather/search?query=' + query, { signal: controller.signal });
-        if (!response.ok) return null;
-        const result: WeatherData = await response.json();
-        return result?.weather?.current && result?.location?.name ? result : null;
-      } catch {
-        return null;
-      }
-    })).then((results) => {
-      if (!cancelled) setNearbyWeather(results.filter((item): item is WeatherData => item !== null));
-    }).finally(() => {
-      if (!cancelled) setNearbyLoading(false);
-    });
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [location.country, nearbyNames]);
-
   const nextHours = (hourly.time || []).slice(0, 6).map((time, index) => ({
     time,
     temperature: hourly.temperature_2m?.[index] ?? current.temperature_2m,
@@ -334,34 +286,18 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
           </section>
         </div>
 
-        <section className="wx-nearby-panel wx-regional-panel" aria-label="Regional weather">
+        <section className="wx-nearby-panel wx-regional-panel wx-map-discovery" aria-label="Explore more weather locations">
           <div className="wx-nearby-heading">
-            <div><span>Regional forecast</span><small>Live conditions across selected cities</small></div>
+            <div>
+              <span>Explore weather nearby</span>
+              <small>Search places and inspect live conditions on the map</small>
+            </div>
             <MapPinned className="h-4 w-4" />
           </div>
-          {nearbyLoading && nearbyWeather.length === 0 ? (
-            <div className="wx-nearby-loading"><span className="wx-status-dot is-live" /> Loading regional weather…</div>
-          ) : nearbyWeather.length > 0 ? (
-            <div className="wx-regional-cities">
-              {nearbyWeather.map((item) => {
-                const local = item.weather.current;
-                const nearbyCondition = getWeatherCondition(local.weather_code, local.is_day);
-                return (
-                  <button type="button" className="wx-nearby-city" key={item.location.name + '-' + item.location.latitude} onClick={() => onSelectCoordinates(item.location.latitude, item.location.longitude, item.location.name)} title={'View ' + item.location.name + ' weather'}>
-                    <div className="wx-nearby-city-left">
-                      <span className="wx-nearby-city-name">{item.location.name}</span>
-                      <span className="wx-nearby-city-condition">{nearbyCondition.label}</span>
-                    </div>
-                    <WeatherSymbol code={local.weather_code} isDay={local.is_day} className="h-5 w-5" />
-                    <strong>{formatTemp(local.temperature_2m, unit)}</strong>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="wx-nearby-empty">Regional forecasts are temporarily unavailable.</div>
-          )}
-          <button type="button" onClick={onOpenMap} className="wx-nearby-map-link"><MapPinned className="h-3.5 w-3.5" /> Explore weather map</button>
+          <p className="wx-map-discovery-copy">Open the interactive map to explore local areas, compare weather layers and select another location.</p>
+          <button type="button" onClick={onOpenMap} className="wx-nearby-map-link">
+            <MapPinned className="h-3.5 w-3.5" /> Explore weather map
+          </button>
         </section>
       </div>
     </section>

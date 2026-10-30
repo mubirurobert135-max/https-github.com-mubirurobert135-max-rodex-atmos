@@ -320,11 +320,11 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onOpenAssistant}
           className="group inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-violet-300/55 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 px-0 text-white shadow-lg shadow-violet-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-violet-500/30 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
-          title="Open RODEX AI Voice & Chat Assistant"
+          title="Open RODEX AI"
           aria-label="Open RODEX AI Voice and Chat Assistant"
         >
           <Sparkles className="h-4 w-4 shrink-0 text-white transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
-          <span className="hidden text-xs font-extrabold tracking-wide sm:inline">AI Assistant</span>
+          <span className="hidden text-xs font-extrabold tracking-wide sm:inline">RODEX AI</span>
         </button>
 
         {/* Right-Hand Controls Cluster */}

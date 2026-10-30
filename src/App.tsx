@@ -484,7 +484,6 @@ export default function App() {
                   onOpenAccount={() => setIsAuthOpen(true)}
                   onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
                   onOpenAlerts={() => setIsAlertsModalOpen(true)}
-                  onSelectCoordinates={handleSelectCoordinates}
                 />
 
                 <button

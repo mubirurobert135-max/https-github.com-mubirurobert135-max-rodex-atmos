@@ -21,6 +21,12 @@ const isVercelRuntime =
   Boolean(process.env.VERCEL_ENV) ||
   Boolean(process.env.VERCEL_URL);
 
+// Production builds must never boot Vite's development middleware or bind a
+// local HTTP port. Vercel may expose environment signals differently between
+// build and invocation, so NODE_ENV is an additional production safeguard.
+const shouldRunLocalDevServer =
+  !isVercelRuntime && process.env.NODE_ENV !== 'production';
+
 interface ProviderConfig {
   name: string;
   isEligible: boolean;
@@ -2138,7 +2144,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 
   // Vite middleware is only for local development. Vercel serves the built dist/ assets
   // and routes /api/* through api/[...path].ts.
-  if (!isVercelRuntime) {
+  if (shouldRunLocalDevServer) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: {
@@ -2163,7 +2169,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       });
   }
 
-  if (!isVercelRuntime) {
+  if (shouldRunLocalDevServer) {
     app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`RODEX Atmos server running on http://localhost:${PORT}`);
     });

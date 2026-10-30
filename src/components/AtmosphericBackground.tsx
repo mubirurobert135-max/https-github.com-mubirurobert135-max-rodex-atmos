@@ -48,74 +48,74 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
     switch (theme) {
       case 'sunny':
         return {
-          baseGradient: 'from-[#081830] via-[#0c2448] to-[#050f21]',
-          ambientGlow1: 'bg-amber-400/18',
-          ambientGlow2: 'bg-sky-400/22',
-          accentGlow: 'bg-teal-500/15',
+          baseGradient: 'from-[#924EF9] via-[#9D91F7] to-[#E8E9FE]',
+          ambientGlow1: 'bg-[#FFFFFF]/22',
+          ambientGlow2: 'bg-[#E8E9FE]/32',
+          accentGlow: 'bg-[#924EF9]/16',
           particles: 'solar'
         };
       case 'twilight':
         return {
-          baseGradient: 'from-[#1a0e28] via-[#2b1744] to-[#0a0614]',
-          ambientGlow1: 'bg-amber-300/20',
-          ambientGlow2: 'bg-rose-500/18',
-          accentGlow: 'bg-indigo-500/22',
+          baseGradient: 'from-[#8F55F7] via-[#9D91F7] to-[#C2BCF8]',
+          ambientGlow1: 'bg-[#E8E9FE]/22',
+          ambientGlow2: 'bg-[#C2BCF8]/26',
+          accentGlow: 'bg-[#C2BCF8]/26',
           particles: 'twilight'
         };
       case 'rainy':
         return {
-          baseGradient: 'from-[#040d1c] via-[#071930] to-[#020710]',
-          ambientGlow1: 'bg-cyan-500/16',
-          ambientGlow2: 'bg-sky-600/18',
-          accentGlow: 'bg-emerald-500/10',
+          baseGradient: 'from-[#7549D0] via-[#8F55F7] to-[#9D91F7]',
+          ambientGlow1: 'bg-[#E8E9FE]/24',
+          ambientGlow2: 'bg-[#C2BCF8]/24',
+          accentGlow: 'bg-[#C2BCF8]/24',
           particles: 'rain'
         };
       case 'thunder':
         return {
-          baseGradient: 'from-[#060712] via-[#100d28] to-[#03030a]',
-          ambientGlow1: 'bg-purple-600/24',
-          ambientGlow2: 'bg-indigo-500/20',
+          baseGradient: 'from-[#924EF9] via-[#8F55F7] to-[#9D91F7]',
+          ambientGlow1: 'bg-[#924EF9]/24',
+          ambientGlow2: 'bg-[#C2BCF8]/30',
           accentGlow: 'bg-amber-400/15',
           particles: 'electric'
         };
       case 'snowy':
         return {
-          baseGradient: 'from-[#051326] via-[#0b213d] to-[#030a17]',
-          ambientGlow1: 'bg-sky-300/16',
-          ambientGlow2: 'bg-cyan-400/14',
-          accentGlow: 'bg-white/10',
+          baseGradient: 'from-[#C2BCF8] via-[#E8E9FE] to-[#9D91F7]',
+          ambientGlow1: 'bg-[#FFFFFF]/28',
+          ambientGlow2: 'bg-[#E8E9FE]/28',
+          accentGlow: 'bg-white/16',
           particles: 'snow'
         };
       case 'fog':
         return {
-          baseGradient: 'from-[#0a121c] via-[#121e2a] to-[#060b12]',
-          ambientGlow1: 'bg-slate-400/14',
-          ambientGlow2: 'bg-zinc-500/14',
-          accentGlow: 'bg-sky-500/10',
+          baseGradient: 'from-[#E8E9FE] via-[#C2BCF8] to-[#9D91F7]',
+          ambientGlow1: 'bg-[#E8E9FE]/26',
+          ambientGlow2: 'bg-[#C2BCF8]/24',
+          accentGlow: 'bg-[#E8E9FE]/24',
           particles: 'mist'
         };
       case 'overcast':
         return {
-          baseGradient: 'from-[#09111c] via-[#111c2a] to-[#050910]',
-          ambientGlow1: 'bg-slate-400/15',
-          ambientGlow2: 'bg-sky-800/20',
-          accentGlow: 'bg-indigo-900/18',
+          baseGradient: 'from-[#9D91F7] via-[#C2BCF8] to-[#8F55F7]',
+          ambientGlow1: 'bg-[#E8E9FE]/24',
+          ambientGlow2: 'bg-[#9D91F7]/26',
+          accentGlow: 'bg-[#8F55F7]/20',
           particles: 'cloud-drift'
         };
       case 'night':
         return {
-          baseGradient: 'from-[#02060f] via-[#060e1d] to-[#010308]',
-          ambientGlow1: 'bg-indigo-600/18',
+          baseGradient: 'from-[#7549D0] via-[#9D91F7] to-[#8F55F7]',
+          ambientGlow1: 'bg-[#8F55F7]/24',
           ambientGlow2: 'bg-sky-500/15',
-          accentGlow: 'bg-purple-600/14',
+          accentGlow: 'bg-[#C2BCF8]/22',
           particles: 'stars'
         };
       case 'cloudy':
       default:
         return {
-          baseGradient: 'from-[#06152a] via-[#0c2240] to-[#040e1e]',
-          ambientGlow1: 'bg-sky-500/20',
-          ambientGlow2: 'bg-indigo-500/18',
+          baseGradient: 'from-[#8F55F7] via-[#9D91F7] to-[#C2BCF8]',
+          ambientGlow1: 'bg-[#E8E9FE]/28',
+          ambientGlow2: 'bg-[#C2BCF8]/32',
           accentGlow: 'bg-teal-500/12',
           particles: 'cloud-drift'
         };
@@ -133,7 +133,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
         style={
           theme === 'rainy' || theme === 'thunder' || theme === 'overcast'
             ? {
-                backgroundImage: "linear-gradient(180deg, rgba(7, 17, 23, .18), rgba(5, 11, 15, .32)), url('/atmos-storm-background.webp')",
+                backgroundImage: "linear-gradient(180deg, rgba(157, 145, 247, .14), rgba(143, 85, 247, .26)), url('/atmos-storm-background.webp')",
                 backgroundSize: 'cover',
                 backgroundPosition: 'center center',
                 backgroundRepeat: 'no-repeat',
@@ -188,7 +188,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
       </div>
 
       {/* 7. Readability Scrim Vignette: Keeps foreground text and metrics razor sharp */}
-      <div className="absolute inset-0 bg-gradient-to-t from-[#050b14]/70 via-transparent to-[#050b14]/40" />
+      <div className="absolute inset-0 bg-gradient-to-t from-[#924EF9]/10 via-transparent to-[#FFFFFF]/25" />
     </div>
   );
 };

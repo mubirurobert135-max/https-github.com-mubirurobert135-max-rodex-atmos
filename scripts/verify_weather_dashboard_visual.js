@@ -82,9 +82,9 @@ try {
   const desktopActiveRail = page.locator('.wx-reference-rail-button.is-active').first();
   const desktopActiveStyle = await desktopActiveRail.evaluate((el) => {
     const style = getComputedStyle(el);
-    return { background: style.backgroundImage + ' ' + style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };
+    return { backgroundImage: style.backgroundImage, backgroundColor: style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };
   });
-  if (desktopActiveStyle.background.includes('rgba(0, 0, 0, 0)') || desktopActiveStyle.weight < 600) {
+  if ((desktopActiveStyle.backgroundImage === 'none' && desktopActiveStyle.backgroundColor === 'rgba(0, 0, 0, 0)') || desktopActiveStyle.weight < 600) {
     throw new Error('Desktop navigation active tab is not visibly highlighted or legible.');
   }
 
@@ -105,7 +105,7 @@ try {
     const style = getComputedStyle(el);
     return { background: style.backgroundImage + ' ' + style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };
   });
-  if (mobileActiveStyle.background.includes('rgba(0, 0, 0, 0)') || mobileActiveStyle.weight < 600) {
+  if ((mobileActiveStyle.backgroundImage === 'none' && mobileActiveStyle.backgroundColor === 'rgba(0, 0, 0, 0)') || mobileActiveStyle.weight < 600) {
     throw new Error('Mobile active tab is not visibly highlighted or legible.');
   }
   const selectedBeforeMap = mobileNav.locator('button[aria-current="page"]');

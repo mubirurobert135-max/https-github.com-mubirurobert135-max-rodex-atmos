@@ -245,6 +245,13 @@ export default function App() {
     initializeStartupLocation();
   }, []);
 
+  // Move to the selected place on the street map after a successful search.
+  const openSelectedLocationOnMap = () => {
+    setActiveTab('map');
+    setMapDisplayMode('map');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Fetch live weather by search query (preserves deviceLocationData!)
   const handleSearch = async (query: string) => {
     const requestId = ++weatherRequestIdRef.current;
@@ -267,6 +274,7 @@ export default function App() {
       }
       setWeatherData(data);
       setLocationMode('search');
+      openSelectedLocationOnMap();
     } catch (err: any) {
       if (requestId === weatherRequestIdRef.current) {
         console.error('Search error:', err);
@@ -299,6 +307,7 @@ export default function App() {
       }
       setWeatherData(data);
       setLocationMode('search');
+      openSelectedLocationOnMap();
     } catch (err: any) {
       if (requestId === weatherRequestIdRef.current) {
         console.error('Coordinates error:', err);
@@ -496,8 +505,8 @@ export default function App() {
               <div className="space-y-6 animate-fade-in">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-bold text-white">Explore weather around the world</h2>
-                    <p className="text-xs text-white/65 mt-1">Switch between the interactive map and 3D weather globe.</p>
+                    <h2 className="text-lg sm:text-xl font-bold text-white break-words">Weather map · {weatherData.location.name}</h2>
+                    <p className="text-xs text-white/65 mt-1">{weatherData.location.country ? weatherData.location.country + ' · ' : ''}Centered on your selected location. Explore nearby areas or switch to the 3D globe.</p>
                   </div>
                   <div className="flex items-center gap-1 p-1 rounded-xl border border-white/20 bg-white/8 backdrop-blur-xl" role="group" aria-label="Map display mode">
                     <button type="button" onClick={() => setMapDisplayMode('map')} aria-pressed={mapDisplayMode === 'map'} className={`px-3 py-2 rounded-lg text-xs font-semibold transition ${mapDisplayMode === 'map' ? 'bg-white/20 text-white shadow' : 'text-white/65 hover:text-white'}`}>2D map</button>

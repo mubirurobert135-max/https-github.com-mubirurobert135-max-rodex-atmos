@@ -19,7 +19,11 @@ export function usePWAInstall() {
 
     // Detect iOS devices
     const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIOSDevice = /iphone|ipad|ipod/.test(userAgent) && !('MSStream' in window);
+    const isIPhoneOrIPod = /iphone|ipod/.test(userAgent);
+    // iPadOS can request a desktop user agent, so identify touch-enabled iPads too.
+    const isIPad = /ipad/.test(userAgent) ||
+      (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+    const isIOSDevice = (isIPhoneOrIPod || isIPad) && !('MSStream' in window);
     setIsIOS(isIOSDevice);
 
     const handleBeforeInstallPrompt = (e: Event) => {

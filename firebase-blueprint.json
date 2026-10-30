@@ -11,8 +11,12 @@
         },
         "displayName": {
           "type": "string",
-          "description": "User's display name or nickname",
+          "description": "User's display name, synchronized from the linked Google account when available",
           "maxLength": 100
+        },
+        "photoURL": {
+          "type": "string",
+          "description": "Profile photo URL supplied by Google or Firebase Authentication"
         },
         "email": {
           "type": "string",

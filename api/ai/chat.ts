@@ -1,1 +1,1 @@
-export { handleExpressRequest as default } from '../../src/serverless/expressAdapter';
+export { default } from '../_express.ts';

@@ -5065,3 +5065,50 @@ nav[aria-label="Mobile Navigation"] > div > button[aria-current="page"] span {
   color: #2B1745 !important;
   font-weight: 800 !important;
 }
+
+/* RODEX Atmos — cursor-aware navigation spotlight. */
+.rodex-pointer-spotlight {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  --pointer-x: 50%;
+  --pointer-y: 50%;
+}
+.rodex-pointer-spotlight::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0;
+  background: radial-gradient(145px circle at var(--pointer-x, 50%) var(--pointer-y, 50%), rgba(255,255,255,.25) 0%, rgba(112,220,238,.15) 34%, rgba(139,111,245,.08) 56%, transparent 76%);
+  transition: opacity .2s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rodex-pointer-spotlight:hover::after,
+  .rodex-pointer-spotlight:focus-visible::after { opacity: 1; }
+  .wx-reference-rail-button.rodex-pointer-spotlight:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 9px 22px rgba(3,15,29,.2), inset 0 1px rgba(255,255,255,.13);
+  }
+}
+.rodex-pointer-spotlight:focus-visible {
+  outline: 2px solid rgba(160,226,250,.88);
+  outline-offset: 3px;
+}
+.wx-reference-rail-button.is-ai {
+  color: #f2eaff;
+  border-color: rgba(190,151,255,.32);
+  background: linear-gradient(135deg, rgba(111,70,183,.28), rgba(68,88,154,.2));
+  box-shadow: inset 0 1px rgba(255,255,255,.1);
+}
+.wx-reference-rail-button.is-ai:hover:not(:disabled) {
+  color: #fff;
+  border-color: rgba(207,177,255,.55);
+  background: linear-gradient(135deg, rgba(128,79,208,.42), rgba(78,104,181,.3));
+}
+@media (prefers-reduced-motion: reduce) {
+  .rodex-pointer-spotlight::after { transition: none; }
+  .wx-reference-rail-button.rodex-pointer-spotlight:hover:not(:disabled) { transform: none; }
+}

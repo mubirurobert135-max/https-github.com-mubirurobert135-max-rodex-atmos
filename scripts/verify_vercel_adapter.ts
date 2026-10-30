@@ -4,6 +4,7 @@ import type { AddressInfo } from 'node:net';
 
 // Exercise the production-safe detection path when only Vercel's environment/URL signals exist.
 delete process.env.VERCEL;
+process.env.NODE_ENV = 'production';
 process.env.VERCEL_ENV = 'preview';
 process.env.VERCEL_URL = 'rodex-atmos-test.vercel.app';
 

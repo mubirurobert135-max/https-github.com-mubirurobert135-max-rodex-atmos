@@ -440,6 +440,7 @@ export default function App() {
                     unit={unit}
                     onSelectCoordinates={handleSelectCoordinates}
                     onOpenAssistant={handleOpenAssistant}
+                    onGetCurrentLocation={handleGetCurrentLocation}
                     locationMode={locationMode}
                     onMapContextChange={(mapLoc, layer) => {
                       if (mapLoc) setMapContextLocation(mapLoc);
@@ -515,7 +516,11 @@ export default function App() {
                     </div>
 
                     <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
-                      <HourlyForecast hourly={weatherData.weather.hourly} unit={unit} />
+                      <HourlyForecast
+                        hourly={weatherData.weather.hourly}
+                        unit={unit}
+                        currentTime={weatherData.weather.current.time}
+                      />
                       <WeatherDetailsGrid data={weatherData} unit={unit} />
                     </div>
                   </section>

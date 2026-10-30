@@ -201,7 +201,7 @@ export const Header: React.FC<HeaderProps> = ({
               aria-current={activeTab === 'map' ? 'page' : undefined}
               onPointerMove={updateNavPointer}
               onClick={() => onSelectTab('map')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
+              className={`rodex-pointer-spotlight px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
                 activeTab === 'map'
                   ? 'bg-gradient-to-r from-cyan-300/20 to-emerald-300/15 text-white shadow-md shadow-cyan-500/10 border border-cyan-100/20'
                   : 'text-white/65 hover:text-white hover:bg-white/[0.08]'

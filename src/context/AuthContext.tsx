@@ -56,6 +56,7 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 export interface UserProfileData {
   uid: string;
   displayName?: string;
+  photoURL?: string;
   email?: string;
   phoneNumber?: string;
   emailVerified?: boolean;
@@ -122,13 +123,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const userDocRef = doc(db, 'users', firebaseUser.uid);
     try {
       const snap = await getDoc(userDocRef);
+      const googleProfile = firebaseUser.providerData.find((provider) => provider.providerId === 'google.com');
+      const providerDisplayName = googleProfile?.displayName || firebaseUser.displayName || '';
+      const providerPhotoURL = googleProfile?.photoURL || firebaseUser.photoURL || undefined;
+
       if (snap.exists()) {
         const profile = snap.data() as UserProfileData;
-        setUserProfile(profile);
+        const identityUpdates: Partial<UserProfileData> = {};
+
+        // Google is the source of truth for a linked Google profile photo.
+        // Refresh existing Firestore profiles too, not only first-time accounts.
+        if (providerDisplayName && profile.displayName !== providerDisplayName) {
+          identityUpdates.displayName = providerDisplayName;
+        }
+        if (providerPhotoURL && profile.photoURL !== providerPhotoURL) {
+          identityUpdates.photoURL = providerPhotoURL;
+        }
+        if (firebaseUser.email && profile.email !== firebaseUser.email) {
+          identityUpdates.email = firebaseUser.email;
+        }
+        if (profile.emailVerified !== firebaseUser.emailVerified) {
+          identityUpdates.emailVerified = firebaseUser.emailVerified;
+        }
+        if (profile.phoneVerified !== !!firebaseUser.phoneNumber) {
+          identityUpdates.phoneVerified = !!firebaseUser.phoneNumber;
+        }
+
+        if (Object.keys(identityUpdates).length > 0) {
+          identityUpdates.updatedAt = new Date().toISOString();
+          await setDoc(userDocRef, sanitizeForFirestore(identityUpdates as Record<string, any>), { merge: true });
+        }
+        setUserProfile({ ...profile, ...identityUpdates });
       } else {
         const newProfileRaw: Record<string, any> = {
           uid: firebaseUser.uid,
-          displayName: firebaseUser.displayName || '',
+          displayName: providerDisplayName,
+          photoURL: providerPhotoURL,
           emailVerified: firebaseUser.emailVerified,
           phoneVerified: !!firebaseUser.phoneNumber,
           createdAt: new Date().toISOString(),
@@ -151,7 +181,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.warn('[RODEX Auth Profile Warning]', err);
       setUserProfile({
         uid: firebaseUser.uid,
-        displayName: firebaseUser.displayName || '',
+        displayName: firebaseUser.providerData.find((provider) => provider.providerId === 'google.com')?.displayName || firebaseUser.displayName || '',
+        photoURL: firebaseUser.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || firebaseUser.photoURL || undefined,
         email: firebaseUser.email || undefined,
         phoneNumber: firebaseUser.phoneNumber || undefined,
         emailVerified: firebaseUser.emailVerified,
@@ -169,8 +200,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const uid = auth.currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
     try {
+      const googleProfile = auth.currentUser.providerData.find((provider) => provider.providerId === 'google.com');
       const updatedProfileRaw: Record<string, any> = {
         uid,
+        displayName: auth.currentUser.displayName || googleProfile?.displayName || '',
+        photoURL: googleProfile?.photoURL || auth.currentUser.photoURL || undefined,
         emailVerified: auth.currentUser.emailVerified,
         phoneVerified: !!auth.currentUser.phoneNumber,
         updatedAt: new Date().toISOString(),
@@ -255,6 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       accountOverview: {
         uid,
         displayName: auth.currentUser.displayName || profileData.displayName || null,
+        photoURL: auth.currentUser.photoURL || profileData.photoURL || null,
         email: auth.currentUser.email || profileData.email || null,
         emailVerified: auth.currentUser.emailVerified ?? false,
         phoneNumber: auth.currentUser.phoneNumber || profileData.phoneNumber || null,

@@ -205,7 +205,7 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Location Search Bar */}
-        <div ref={searchRef} className="relative flex-1 max-w-xs sm:max-w-sm md:max-w-md">
+        <div ref={searchRef} className="relative flex-1 min-w-0 max-w-xs sm:max-w-sm md:max-w-md">
           <form onSubmit={handleSearchSubmit} className="relative flex items-center">
             <Search className="absolute left-3 w-4 h-4 text-cyan-200 pointer-events-none z-10 shrink-0" />
             
@@ -315,6 +315,18 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
+        {/* RODEX AI tab — positioned immediately after Account for one-tap access. */}
+        <button
+          type="button"
+          onClick={onOpenAssistant}
+          className="group inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-violet-300/55 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 px-0 text-white shadow-lg shadow-violet-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-violet-500/30 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
+          title="Open RODEX AI Voice & Chat Assistant"
+          aria-label="Open RODEX AI Voice and Chat Assistant"
+        >
+          <Sparkles className="h-4 w-4 shrink-0 text-white transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110" />
+          <span className="hidden text-xs font-extrabold tracking-wide sm:inline">AI Assistant</span>
+        </button>
+
         {/* Right-Hand Controls Cluster */}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           
@@ -349,18 +361,6 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </button>
           )}
-
-          {/* Compact RODEX AI Trigger (Desktop) */}
-          <button
-            onClick={onOpenAssistant}
-            className={`${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center gap-2 px-3.5 py-2 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-emerald-500 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-lg shadow-sky-500/25 border border-sky-300/40 group btn-hover-lift`}
-            title="Open RODEX AI Voice & Chat Assistant"
-            aria-label="Open RODEX AI Voice and Chat Assistant"
-          >
-            <Sparkles className="w-4 h-4 text-sky-200 group-hover:rotate-12 transition-transform" />
-            <span>AI Assistant</span>
-          </button>
-
 
 
         </div>

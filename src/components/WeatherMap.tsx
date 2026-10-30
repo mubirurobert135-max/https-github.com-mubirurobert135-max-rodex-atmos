@@ -13,10 +13,8 @@ import {
   Clock, 
   Maximize2, 
   Minimize2, 
-  RefreshCw, 
   Globe, 
   Compass, 
-  CheckCircle2 
 } from 'lucide-react';
 import { getWeatherCondition, formatTemp, formatWind, findHourlyIndexForOffset } from '../utils/weatherUtils';
 
@@ -673,7 +671,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         <div className="wx-map-footer px-3 py-2 border-t flex flex-col sm:flex-row items-center justify-between text-[11px] gap-1.5 z-10">
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-sky-400" />
-            <span>Street map © OpenStreetMap contributors · CARTO</span>
+            <span>Map data © OpenStreetMap contributors</span>
           </div>
           <button
             onClick={() => onOpenAssistant(`Give me an overview of weather patterns across the map near ${currentWeatherData?.location.name || 'my location'}.`)}

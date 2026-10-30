@@ -27,8 +27,29 @@ assert.ok(typeof signature.id === 'string' && signature.id.startsWith('voice_'),
 assert.ok(String(signature.description || '').toLowerCase().includes('upbeat'), 'Voice metadata should describe the energetic persona');
 console.log('PASS voice profile: custom Atmos voice + Laomedeia Live fallback + Flash-Lite TTS.');
 
+// Exercise the conversational chat path independently of the paid Live/TTS key.
+const greetingChat = await getJson('/api/ai/chat', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    messages: [{ role: 'user', content: 'Hey Atmos' }],
+    synthesizeVoice: false
+  })
+});
+assert.equal(greetingChat.reply, "Hey! I'm listening. What's on your mind?");
+assert.ok(Number.isFinite(greetingChat.timings?.totalMs));
+console.log('PASS assistant chat API: fast greeting path returns valid text and timing metadata.');
+
 if (!status.supported || !status.hasServerKey) {
-  console.log('SKIP live-token and generated-audio smoke tests: no GEMINI_API_KEY/API_KEY is configured for this CI run.');
+  const tokenResponse = await fetch(new URL('/api/ai/live-token', baseUrl), {
+    method: 'POST',
+    signal: AbortSignal.timeout(requestTimeoutMs)
+  });
+  const tokenError = await tokenResponse.json().catch(() => ({}));
+  assert.equal(tokenResponse.status, 503, 'Live voice should return a clear 503 when no server key is configured');
+  assert.equal(tokenError.error, 'AI_NOT_CONFIGURED');
+  console.log('PASS live voice unavailable state: missing Gemini key returns a clear configuration response.');
+  console.log('SKIP ephemeral token and generated-audio tests: no GEMINI_API_KEY/API_KEY is configured for this CI run.');
   process.exit(0);
 }
 

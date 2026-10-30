@@ -48,7 +48,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   initialTab = 'signin',
   onOpenPrivacyPortal
 }) => {
-  const { user, isGuest, isEmailVerified, isPhoneVerified, isVerified, continueAsGuest, refreshUser, logout } = useAuth();
+  const { user, userProfile, isGuest, isEmailVerified, isPhoneVerified, isVerified, continueAsGuest, refreshUser, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'signin' | 'register_email' | 'register_phone' | 'guest'>(initialTab);
 
   // Form fields
@@ -493,9 +493,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="flex items-center gap-3">
                 <div className="h-14 w-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800 shadow-lg">
-                  {user.photoURL ? (
+                  {(user.photoURL || userProfile?.photoURL) ? (
                     <img
-                      src={user.photoURL}
+                      src={(user.photoURL || userProfile?.photoURL)!}
                       alt={user.displayName ? user.displayName + ' Google profile photo' : 'Account profile photo'}
                       referrerPolicy="no-referrer"
                       className="h-full w-full object-cover"
@@ -551,9 +551,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
 
-              {/* Link Google Account Option */}
+              {/* A Gmail address used with password sign-in does not expose its Google profile image.
+                  Link the Google provider explicitly to securely sync the exact account photo. */}
               {user && !user.providerData?.some((p) => p.providerId === 'google.com') && (
-                <div className="pt-2 border-t border-white/10">
+                <div className="pt-2 border-t border-white/10 space-y-2">
+                  <p className="text-[11px] text-white/60 leading-relaxed">
+                    To use your exact Google profile picture in RODEX, connect the Google account for this email. Gmail/password sign-in alone does not share your Google profile photo.
+                  </p>
                   <button
                     type="button"
                     onClick={handleLinkGoogleAccount}

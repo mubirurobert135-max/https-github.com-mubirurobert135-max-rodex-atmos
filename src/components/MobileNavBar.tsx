@@ -2,13 +2,14 @@ import React from 'react';
 import { Compass, Globe, Sparkles, Mic, Bell, User, ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
-interface MobileNavBarProps {
 // Track the pointer inside a navigation control so its highlight follows the cursor.
 const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
   const bounds = event.currentTarget.getBoundingClientRect();
   event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
   event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
 };
+
+interface MobileNavBarProps {
 
   activeTab: 'dashboard' | 'map';
   onSelectTab: (tab: 'dashboard' | 'map') => void;

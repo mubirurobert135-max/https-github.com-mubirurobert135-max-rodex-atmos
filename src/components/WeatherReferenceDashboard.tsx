@@ -145,11 +145,11 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
           <button className="wx-reference-rail-button rodex-pointer-spotlight" onPointerMove={updateNavPointer} type="button" onClick={onOpenMap} aria-label="Open interactive weather map" title="Interactive weather map">
             <MapPin className="h-4 w-4" /><span>Map</span>
           </button>
-          <button className="wx-reference-rail-button" type="button" onClick={onOpenAlerts} aria-label="Weather alerts" title="Weather alerts">
+          <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onOpenAlerts} aria-label="Weather alerts" title="Weather alerts">
             <Bell className="h-4 w-4" /><span>Alerts</span>
             {data.alerts?.length ? <span className="wx-rail-alert-count">{data.alerts.length}</span> : null}
           </button>
-          <button className="wx-reference-rail-button" type="button" onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="My location">
+          <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onGetCurrentLocation} disabled={isLoading} aria-label="Refresh current device location" title="My location">
             <Navigation className={'h-4 w-4 ' + (isLoading ? 'animate-pulse' : '')} /><span>My location</span>
           </button>
         </div>
@@ -163,13 +163,13 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
               <i /><i /><i /><i /><i /><i /><i /><i /><i /><i /><i />
             </span>
           </button>
-          <button className="wx-reference-rail-button" type="button" onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
+          <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onOpenAccount} aria-label="Open account and sign-in" title="Account">
             <UserRound className="h-4 w-4" /><span>Account</span>
           </button>
-          <button className="wx-reference-rail-button is-ai rodex-pointer-spotlight" type="button" onClick={() => onOpenAssistant()} onPointerMove={updateNavPointer} aria-label="Open RODEX AI voice and chat assistant" title="RODEX AI">
+          <button className="wx-reference-rail-button is-ai rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={() => onOpenAssistant()} onPointerMove={updateNavPointer} aria-label="Open RODEX AI voice and chat assistant" title="RODEX AI">
             <Sparkles className="h-4 w-4" /><span>RODEX AI</span>
           </button>
-          <button className="wx-reference-rail-button" type="button" onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">
+          <button className="wx-reference-rail-button rodex-pointer-spotlight" type="button" onPointerMove={updateNavPointer} onClick={onOpenPrivacy} aria-label="Open privacy portal" title="Privacy and account controls">
             <ShieldCheck className="h-4 w-4" /><span>Privacy</span>
           </button>
           <div className="wx-reference-rail-status" title={statusLabel}>

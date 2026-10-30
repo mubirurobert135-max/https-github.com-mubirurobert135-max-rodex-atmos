@@ -1,17 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { app, serverReady } from '../../server.ts';
 
 /**
- * Dispatch one explicit Vercel API function through the shared Express application.
- * Import the server inside the request handler so a startup/import exception can be
- * caught and returned as JSON instead of crashing the whole Vercel function before
- * it can emit a useful response.
+ * All Express routes are statically bundled into the Vercel function.
+ * Dynamic source imports can be omitted from a serverless function's traced
+ * output and then fail only when the first request reaches the function.
  */
 export async function handleExpressRequest(
   req: IncomingMessage,
   res: ServerResponse
 ): Promise<void> {
   try {
-    const { app, serverReady } = await import('../../server.ts');
     await serverReady;
     app(req as any, res as any);
   } catch (error) {

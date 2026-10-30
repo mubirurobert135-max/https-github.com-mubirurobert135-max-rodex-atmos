@@ -7,14 +7,14 @@
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
     /* RODEX Atmos Design Tokens */
-    --color-obsidian: #050b14;
-    --color-midnight: #0a1120;
-    --color-ink-deep: #0f1a2e;
-    --color-ink-surface: #152238;
-    --color-teal-glow: #67d9ee;
-    --color-emerald-accent: #83e2b5;
-    --color-champagne: #f4e6b2;
-    --color-ivory: #f8fafc;
+    --color-obsidian: #9D91F7;
+    --color-midnight: #8F55F7;
+    --color-ink-deep: #32164D;
+    --color-ink-surface: #C2BCF8;
+    --color-teal-glow: #924EF9;
+    --color-emerald-accent: #C2BCF8;
+    --color-champagne: #E8E9FE;
+    --color-ivory: #FFFFFF;
 
     --sat: env(safe-area-inset-top, 0px);
     --sab: env(safe-area-inset-bottom, 0px);
@@ -207,10 +207,10 @@
 
 @keyframes pulseGlow {
   0%, 100% {
-    box-shadow: 0 0 16px rgba(14, 165, 233, 0.3);
+    box-shadow: 0 0 16px rgba(146, 78, 249, 0.28);
   }
   50% {
-    box-shadow: 0 0 28px rgba(14, 165, 233, 0.6);
+    box-shadow: 0 0 28px rgba(146, 78, 249, 0.42);
   }
 }
 
@@ -357,7 +357,7 @@
 
 /* Focus Visibility Rules */
 :focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid #924EF9;
   outline-offset: 2px;
 }
 
@@ -789,15 +789,15 @@
 :root {
   --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-teal-glow: #78e0ef;
-  --color-emerald-accent: #8fe8bf;
-  --color-champagne: #f2e6bd;
-  --atmos-cyan: #9deaf4;
-  --atmos-mint: #9ce9c1;
-  --atmos-lilac: #b5c5ff;
-  --atmos-glass: rgba(9, 25, 41, .66);
-  --atmos-stroke: rgba(206, 232, 246, .18);
-  --atmos-text-muted: rgba(236, 246, 250, .72);
+  --color-teal-glow: #924EF9;
+  --color-emerald-accent: #C2BCF8;
+  --color-champagne: #E8E9FE;
+  --atmos-cyan: #924EF9;
+  --atmos-mint: #C2BCF8;
+  --atmos-lilac: #E8E9FE;
+  --atmos-glass: rgba(255, 255, 255, .88);
+  --atmos-stroke: rgba(146, 78, 249, .2);
+  --atmos-text-muted: #78668D;
 }
 html {
   scroll-behavior: smooth;
@@ -1085,26 +1085,26 @@ button:disabled {
    component behavior, API integrations and app structure unchanged. */
 :root {
   --atmos-paper: #ffffff;
-  --atmos-paper-soft: #fcfaff;
-  --atmos-lavender: #f4efff;
-  --atmos-lavender-strong: #e9ddff;
-  --atmos-violet: #7c3aed;
-  --atmos-violet-bright: #8b5cf6;
-  --atmos-violet-deep: #4c1d95;
-  --atmos-plum: #2b1745;
-  --atmos-ink: #2c1b41;
-  --atmos-muted: #756583;
+  --atmos-paper-soft: #FFFFFF;
+  --atmos-lavender: #E8E9FE;
+  --atmos-lavender-strong: #C2BCF8;
+  --atmos-violet: #924EF9;
+  --atmos-violet-bright: #8F55F7;
+  --atmos-violet-deep: #32164D;
+  --atmos-plum: #32164D;
+  --atmos-ink: #32164D;
+  --atmos-muted: #665174;
   --atmos-outline: rgba(124, 58, 237, .19);
   --atmos-glass: rgba(255, 255, 255, .88);
   --atmos-stroke: rgba(124, 58, 237, .18);
-  --atmos-text-muted: #756583;
-  --atmos-cyan: #8b5cf6;
-  --atmos-mint: #d8c5ff;
+  --atmos-text-muted: #665174;
+  --atmos-cyan: #8F55F7;
+  --atmos-mint: #C2BCF8;
 }
 
 html { scroll-behavior: smooth; }
 body { accent-color: var(--atmos-violet); }
-::selection { color: #fff; background: #7c3aed; }
+::selection { color: #fff; background: #924EF9; }
 
 /* Bright, premium navigation that remains readable over changing weather scenes. */
 #root > div > header.sticky {
@@ -1116,55 +1116,55 @@ body { accent-color: var(--atmos-violet); }
   padding-top: max(.65rem, env(safe-area-inset-top, 0px));
 }
 #root > div > header.sticky .group.w-9.h-9 {
-  background: linear-gradient(140deg, #a78bfa 0%, #7c3aed 52%, #4c1d95 100%) !important;
+  background: linear-gradient(140deg, #9D91F7 0%, #924EF9 52%, #32164D 100%) !important;
   box-shadow: 0 8px 20px rgba(124, 58, 237, .24) !important;
   border: 1px solid rgba(255,255,255,.82);
 }
 #root > div > header.sticky h1 { color: var(--atmos-ink) !important; }
 #root > div > header.sticky h1 span { color: var(--atmos-violet) !important; }
-#root > div > header.sticky p { color: #76628d !important; }
+#root > div > header.sticky p { color: #665174 !important; }
 #root > div > header.sticky input[aria-label="Search city or country"] {
   color: var(--atmos-ink) !important;
-  background: #f8f5ff !important;
-  border-color: rgba(124,58,237,.18) !important;
+  background: #E8E9FE !important;
+  border-color: rgba(146,78,249,.18) !important;
   box-shadow: inset 0 1px 2px rgba(57,31,85,.035);
 }
 #root > div > header.sticky input[aria-label="Search city or country"]::placeholder {
-  color: #89799b !important;
+  color: #78668D !important;
 }
 #root > div > header.sticky input[aria-label="Search city or country"]:focus {
   background: #fff !important;
-  border-color: rgba(124,58,237,.62) !important;
-  box-shadow: 0 0 0 4px rgba(124,58,237,.09) !important;
+  border-color: rgba(146,78,249,.62) !important;
+  box-shadow: 0 0 0 4px rgba(146,78,249,.09) !important;
 }
 #root > div > header.sticky input[aria-label="Search city or country"] + span {
-  color: #8b78a7 !important;
+  color: #78668D !important;
 }
 #root > div > header.sticky nav[aria-label="Primary Navigation"] {
-  background: #f7f2ff !important;
+  background: #E8E9FE !important;
   border-color: var(--atmos-outline) !important;
   box-shadow: inset 0 1px rgba(255,255,255,.9);
 }
 #root > div > header.sticky nav[aria-label="Primary Navigation"] button[aria-current="page"] {
   color: #fff !important;
-  background: linear-gradient(135deg, #8b5cf6, #6425bd) !important;
+  background: linear-gradient(135deg, #8F55F7, #924EF9) !important;
   border-color: rgba(255,255,255,.55) !important;
-  box-shadow: 0 5px 14px rgba(124,58,237,.22) !important;
+  box-shadow: 0 5px 14px rgba(146,78,249,.22) !important;
 }
 #root > div > header.sticky nav[aria-label="Primary Navigation"] button:not([aria-current="page"]) {
-  color: #6a5780 !important;
+  color: #665174 !important;
 }
 #root > div > header.sticky nav[aria-label="Primary Navigation"] button:not([aria-current="page"]):hover {
   color: var(--atmos-violet-deep) !important;
-  background: #eee5ff !important;
+  background: #C2BCF8 !important;
 }
 #root > div > header.sticky button[title="Toggle temperature unit"] {
   color: var(--atmos-violet-deep) !important;
-  background: #f5f0ff !important;
+  background: #E8E9FE !important;
   border-color: var(--atmos-outline) !important;
 }
 #root > div > header.sticky button[title="Toggle temperature unit"]:hover {
-  background: #e9ddff !important;
+  background: #C2BCF8 !important;
 }
 #root > div > header.sticky button[aria-label="Submit search"] { color: var(--atmos-violet) !important; }
 #root > div > header.sticky .text-sky-400,
@@ -1174,17 +1174,17 @@ body { accent-color: var(--atmos-violet); }
 /* Compact white-and-violet mobile dock, with safe-area clearance preserved. */
 nav[aria-label="Mobile Navigation"] {
   background: rgba(255, 255, 255, .95) !important;
-  border: 1px solid rgba(124,58,237,.2) !important;
+  border: 1px solid rgba(146,78,249,.2) !important;
   box-shadow: 0 15px 42px rgba(45, 21, 78, .18), inset 0 1px #fff !important;
   -webkit-backdrop-filter: blur(26px) saturate(1.2);
   backdrop-filter: blur(26px) saturate(1.2);
 }
 nav[aria-label="Mobile Navigation"] button {
-  color: #78658e !important;
+  color: #665174 !important;
 }
 nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
   color: var(--atmos-violet-deep) !important;
-  background: #f3edff !important;
+  background: #C2BCF8 !important;
   box-shadow: inset 0 1px rgba(255,255,255,.9) !important;
 }
 nav[aria-label="Mobile Navigation"] button[aria-current="page"] svg,
@@ -1195,13 +1195,13 @@ nav[aria-label="Mobile Navigation"] button[aria-current="page"] .bg-sky-400 {
   background: var(--atmos-violet) !important;
 }
 nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
-  background: linear-gradient(145deg, #a78bfa, #7c3aed 57%, #4c1d95) !important;
+  background: linear-gradient(145deg, #9D91F7, #924EF9 57%, #32164D) !important;
   border-color: rgba(255,255,255,.9) !important;
-  box-shadow: 0 10px 26px rgba(124,58,237,.32), inset 0 1px rgba(255,255,255,.55) !important;
+  box-shadow: 0 10px 26px rgba(146,78,249,.32), inset 0 1px rgba(255,255,255,.55) !important;
 }
 nav[aria-label="Mobile Navigation"] > div > div > span,
 nav[aria-label="Mobile Navigation"] .uppercase {
-  color: #7651b2 !important;
+  color: #924EF9 !important;
 }
 
 /* Main weather dashboard: soft white surfaces, plum typography and violet data accents. */
@@ -1209,206 +1209,206 @@ nav[aria-label="Mobile Navigation"] .uppercase {
   color: var(--atmos-ink);
   border: 1px solid rgba(255,255,255,.84) !important;
   background:
-    radial-gradient(ellipse at 83% 0%, rgba(196, 167, 255, .32), transparent 43%),
+    radial-gradient(ellipse at 83% 0%, rgba(194, 188, 248, .32), transparent 43%),
     linear-gradient(132deg, rgba(255,255,255,.98), rgba(250,247,255,.97) 53%, rgba(242,235,255,.96)) !important;
   box-shadow: 0 30px 90px rgba(27, 9, 54, .18), inset 0 1px rgba(255,255,255,.98) !important;
   -webkit-backdrop-filter: blur(24px);
   backdrop-filter: blur(24px);
 }
 .wx-reference-rail {
-  background: linear-gradient(180deg, #fff, #f4edff) !important;
-  border-right: 1px solid rgba(124,58,237,.14) !important;
+  background: linear-gradient(180deg, #fff, #E8E9FE) !important;
+  border-right: 1px solid rgba(146,78,249,.14) !important;
 }
 .wx-reference-mark {
   color: #fff !important;
   border: 1px solid rgba(255,255,255,.75) !important;
-  background: linear-gradient(145deg,#a78bfa,#7c3aed 58%,#4c1d95) !important;
-  box-shadow: 0 8px 25px rgba(124,58,237,.24), inset 0 1px rgba(255,255,255,.36) !important;
+  background: linear-gradient(145deg,#9D91F7,#924EF9 58%,#32164D) !important;
+  box-shadow: 0 8px 25px rgba(146,78,249,.24), inset 0 1px rgba(255,255,255,.36) !important;
 }
 .wx-reference-rail-button {
-  color: #79638f !important;
+  color: #665174 !important;
   border-color: transparent;
 }
 .wx-reference-rail-button.is-active {
-  color: #5b21b6 !important;
-  background: linear-gradient(145deg,#f1e9ff,#e7d9ff) !important;
-  border-color: rgba(124,58,237,.22) !important;
-  box-shadow: 0 6px 18px rgba(124,58,237,.11), inset 0 1px #fff !important;
+  color: #32164D !important;
+  background: linear-gradient(145deg,#C2BCF8,#C2BCF8) !important;
+  border-color: rgba(146,78,249,.22) !important;
+  box-shadow: 0 6px 18px rgba(146,78,249,.11), inset 0 1px #fff !important;
 }
 .wx-reference-rail-button:hover:not(:disabled) {
-  color: #5b21b6 !important;
-  background: #eee5ff !important;
-  border-color: rgba(124,58,237,.22) !important;
+  color: #32164D !important;
+  background: #C2BCF8 !important;
+  border-color: rgba(146,78,249,.22) !important;
 }
 .wx-reference-rail-button::before {
-  background: linear-gradient(180deg,#8b5cf6,#c4b5fd) !important;
+  background: linear-gradient(180deg,#8F55F7,#C2BCF8) !important;
 }
-.wx-reference-heading { border-bottom-color: rgba(124,58,237,.14) !important; }
+.wx-reference-heading { border-bottom-color: rgba(146,78,249,.14) !important; }
 .wx-welcome-line { color: #665174 !important; }
 .wx-welcome-line strong { color: #32164d !important; }
-.wx-reference-kicker { color: #7e6a93 !important; }
-.wx-reference-title, .wx-storm-title { color: #2c1745 !important; text-shadow: none !important; }
-.wx-story-label { color: #775a9c !important; }
-.wx-story-copy { color: #655572 !important; }
-.wx-story-copy strong { color: #3c1b61 !important; }
-.wx-hourly-heading { color: #3f2858 !important; }
-.wx-hourly-heading-note { color: #8668a7 !important; }
+.wx-reference-kicker { color: #78668D !important; }
+.wx-reference-title, .wx-storm-title { color: #32164D !important; text-shadow: none !important; }
+.wx-story-label { color: #78668D !important; }
+.wx-story-copy { color: #665174 !important; }
+.wx-story-copy strong { color: #4B3261 !important; }
+.wx-hourly-heading { color: #4B3261 !important; }
+.wx-hourly-heading-note { color: #78668D !important; }
 .wx-live-status {
-  color: #573574 !important;
+  color: #4B3261 !important;
   background: rgba(255,255,255,.86) !important;
-  border-color: rgba(124,58,237,.18) !important;
+  border-color: rgba(146,78,249,.18) !important;
   box-shadow: 0 4px 14px rgba(64,35,99,.045), inset 0 1px #fff !important;
 }
-.wx-live-divider { background: rgba(124,58,237,.22) !important; }
+.wx-live-divider { background: rgba(146,78,249,.22) !important; }
 .wx-live-pulse, .wx-status-dot.is-live, .wx-eyebrow-dot {
-  background: #8b5cf6 !important;
-  box-shadow: 0 0 0 3px rgba(139,92,246,.13), 0 0 11px rgba(139,92,246,.28) !important;
+  background: #8F55F7 !important;
+  box-shadow: 0 0 0 3px rgba(143,85,247,.13), 0 0 11px rgba(143,85,247,.28) !important;
 }
 .wx-reference-quick-location {
   color: #fff !important;
-  background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important;
-  border-color: rgba(124,58,237,.2) !important;
-  box-shadow: 0 5px 14px rgba(124,58,237,.16);
+  background: linear-gradient(135deg,#8F55F7,#924EF9) !important;
+  border-color: rgba(146,78,249,.2) !important;
+  box-shadow: 0 5px 14px rgba(146,78,249,.16);
 }
 .wx-reference-quick-location:hover:not(:disabled) {
-  background: linear-gradient(135deg,#7c3aed,#5b21b6) !important;
+  background: linear-gradient(135deg,#924EF9,#32164D) !important;
 }
 .wx-hourly-temperature {
-  border: 1px solid rgba(124,58,237,.1);
+  border: 1px solid rgba(146,78,249,.1);
   border-radius: 16px;
   background: rgba(255,255,255,.58);
 }
-.wx-hourly-temperature > span { color: #806e92 !important; }
-.wx-hourly-temperature strong { color: #342047 !important; }
-.wx-hourly-temperature small { color: #82639f !important; }
-.wx-hourly-temperature svg, .wx-weekly-day svg { color: #8050c8 !important; }
+.wx-hourly-temperature > span { color: #78668D !important; }
+.wx-hourly-temperature strong { color: #32164D !important; }
+.wx-hourly-temperature small { color: #78668D !important; }
+.wx-hourly-temperature svg, .wx-weekly-day svg { color: #8F55F7 !important; }
 .wx-weather-curve-panel {
-  border: 1px solid rgba(124,58,237,.12) !important;
+  border: 1px solid rgba(146,78,249,.12) !important;
   background: linear-gradient(145deg,rgba(255,255,255,.84),rgba(246,240,255,.88)) !important;
   box-shadow: inset 0 1px #fff !important;
 }
 .wx-curve-topline { color: #4b3261 !important; }
 .wx-curve-badge {
-  color: #6d28d9 !important;
-  background: #f0e8ff !important;
-  border-color: rgba(124,58,237,.14) !important;
+  color: #924EF9 !important;
+  background: #E8E9FE !important;
+  border-color: rgba(146,78,249,.14) !important;
 }
-.wx-trend-chart line { stroke: rgba(124,58,237,.12) !important; }
-.wx-trend-chart > path:not(:first-of-type) { stroke: #8b5cf6 !important; }
-.wx-trend-chart circle { fill: #7c3aed !important; stroke: #fff !important; }
-.wx-weekly-strip { border-top-color: rgba(124,58,237,.16) !important; }
-.wx-weekly-strip-title { color: #513568 !important; }
+.wx-trend-chart line { stroke: rgba(146,78,249,.12) !important; }
+.wx-trend-chart > path:not(:first-of-type) { stroke: #8F55F7 !important; }
+.wx-trend-chart circle { fill: #924EF9 !important; stroke: #fff !important; }
+.wx-weekly-strip { border-top-color: rgba(146,78,249,.16) !important; }
+.wx-weekly-strip-title { color: #4B3261 !important; }
 .wx-weekly-day {
   background: rgba(255,255,255,.72) !important;
-  border-color: rgba(124,58,237,.12) !important;
+  border-color: rgba(146,78,249,.12) !important;
 }
-.wx-weekly-day > span { color: #806e92 !important; }
-.wx-weekly-day strong { color: #3c2552 !important; }
-.wx-weekly-day small { color: #8a79a0 !important; }
+.wx-weekly-day > span { color: #78668D !important; }
+.wx-weekly-day strong { color: #4B3261 !important; }
+.wx-weekly-day small { color: #78668D !important; }
 .wx-weekly-day.is-today {
-  background: linear-gradient(145deg,#f0e7ff,#e5d6ff) !important;
-  border-color: rgba(124,58,237,.32) !important;
-  box-shadow: 0 6px 17px rgba(124,58,237,.08), inset 0 1px #fff !important;
+  background: linear-gradient(145deg,#C2BCF8,#C2BCF8) !important;
+  border-color: rgba(146,78,249,.32) !important;
+  box-shadow: 0 6px 17px rgba(146,78,249,.08), inset 0 1px #fff !important;
 }
 .wx-live-weather-card, .wx-nearby-panel {
   background:
     radial-gradient(ellipse at 90% 0%, rgba(191,164,255,.2), transparent 47%),
-    linear-gradient(145deg,#fff,#faf7ff) !important;
-  border-color: rgba(124,58,237,.16) !important;
+    linear-gradient(145deg,#fff,#FFFFFF) !important;
+  border-color: rgba(146,78,249,.16) !important;
   box-shadow: 0 12px 28px rgba(50,24,77,.055), inset 0 1px #fff !important;
 }
-.wx-live-weather-location { color: #62427e !important; }
-.wx-location-status { color: #856e9d !important; }
-.wx-live-weather-temp { color: #2d1745 !important; }
-.wx-live-weather-condition { color: #694392 !important; }
-.wx-live-weather-feels { color: #776789 !important; }
+.wx-live-weather-location { color: #4B3261 !important; }
+.wx-location-status { color: #78668D !important; }
+.wx-live-weather-temp { color: #32164D !important; }
+.wx-live-weather-condition { color: #4B3261 !important; }
+.wx-live-weather-feels { color: #78668D !important; }
 .wx-live-weather-symbol {
-  color: #7c3aed !important;
-  background: radial-gradient(circle,#ede2ff,#f9f6ff 72%) !important;
-  border-color: rgba(124,58,237,.15) !important;
+  color: #924EF9 !important;
+  background: radial-gradient(circle,#E8E9FE,#FFFFFF 72%) !important;
+  border-color: rgba(146,78,249,.15) !important;
 }
 .wx-live-weather-metrics > div {
-  background: #f8f5ff !important;
-  border-color: rgba(124,58,237,.1) !important;
+  background: #E8E9FE !important;
+  border-color: rgba(146,78,249,.1) !important;
 }
-.wx-live-weather-metrics svg { color: #8b5cf6 !important; }
-.wx-live-weather-metrics span { color: #7b6a8d !important; }
-.wx-live-weather-metrics strong { color: #3c2552 !important; }
-.wx-nearby-heading span { color: #4e3267 !important; }
-.wx-nearby-heading small { color: #88749b !important; }
-.wx-nearby-heading > svg { color: #8b5cf6 !important; }
-.wx-nearby-city { border-top-color: rgba(124,58,237,.12) !important; }
-.wx-nearby-city-name { color: #3c2552 !important; }
-.wx-nearby-city-condition { color: #867296 !important; }
-.wx-nearby-city > svg { color: #8b5cf6 !important; }
-.wx-nearby-city > strong { color: #3a2154 !important; }
-.wx-nearby-city:hover { background: #f2ebff !important; }
-.wx-nearby-empty, .wx-nearby-loading { color: #7f6d91 !important; }
+.wx-live-weather-metrics svg { color: #8F55F7 !important; }
+.wx-live-weather-metrics span { color: #78668D !important; }
+.wx-live-weather-metrics strong { color: #4B3261 !important; }
+.wx-nearby-heading span { color: #4B3261 !important; }
+.wx-nearby-heading small { color: #78668D !important; }
+.wx-nearby-heading > svg { color: #8F55F7 !important; }
+.wx-nearby-city { border-top-color: rgba(146,78,249,.12) !important; }
+.wx-nearby-city-name { color: #4B3261 !important; }
+.wx-nearby-city-condition { color: #78668D !important; }
+.wx-nearby-city > svg { color: #8F55F7 !important; }
+.wx-nearby-city > strong { color: #32164D !important; }
+.wx-nearby-city:hover { background: #E8E9FE !important; }
+.wx-nearby-empty, .wx-nearby-loading { color: #78668D !important; }
 .wx-nearby-map-link {
-  color: #6d28d9 !important;
-  border-top-color: rgba(124,58,237,.13) !important;
+  color: #924EF9 !important;
+  border-top-color: rgba(146,78,249,.13) !important;
 }
-.wx-nearby-map-link:hover { color: #4c1d95 !important; background: #f7f2ff !important; }
-.wx-reference-rail-status { color: #775890 !important; }
+.wx-nearby-map-link:hover { color: #32164D !important; background: #E8E9FE !important; }
+.wx-reference-rail-status { color: #78668D !important; }
 
 /* Shared forecast cards, detail panels and weather information use the same white-violet finish. */
 .glass-panel, .glass-panel-elevated {
   color: var(--atmos-ink);
-  border-color: rgba(124,58,237,.16) !important;
+  border-color: rgba(146,78,249,.16) !important;
   background: linear-gradient(145deg,rgba(255,255,255,.97),rgba(248,244,255,.96)) !important;
   box-shadow: 0 16px 38px rgba(39,16,71,.09), inset 0 1px #fff !important;
 }
 .glass-panel-interactive:hover {
-  border-color: rgba(124,58,237,.32) !important;
-  box-shadow: 0 20px 42px rgba(124,58,237,.13), inset 0 1px #fff !important;
+  border-color: rgba(146,78,249,.32) !important;
+  box-shadow: 0 20px 42px rgba(146,78,249,.13), inset 0 1px #fff !important;
 }
 .glass-panel-elevated [class~="text-white"],
 .glass-panel-elevated [class~="text-white/90"],
-.glass-panel-elevated [class~="text-white/95"] { color: #342047 !important; }
+.glass-panel-elevated [class~="text-white/95"] { color: #32164D !important; }
 .glass-panel-elevated [class~="text-white/70"],
 .glass-panel-elevated [class~="text-white/60"],
-.glass-panel-elevated [class~="text-white/50"] { color: #776789 !important; }
-.glass-panel-elevated [class~="text-white/40"] { color: #8f80a0 !important; }
+.glass-panel-elevated [class~="text-white/50"] { color: #78668D !important; }
+.glass-panel-elevated [class~="text-white/40"] { color: #78668D !important; }
 .glass-panel-elevated [class~="bg-white/5"],
-.glass-panel-elevated [class~="bg-white/[0.04]"] { background: rgba(124,58,237,.045) !important; }
+.glass-panel-elevated [class~="bg-white/[0.04]"] { background: rgba(146,78,249,.045) !important; }
 .glass-panel-elevated [class~="border-white/10"],
 .glass-panel-elevated [class~="border-white/8"],
-.glass-panel-elevated [class~="border-white/15"] { border-color: rgba(124,58,237,.12) !important; }
+.glass-panel-elevated [class~="border-white/15"] { border-color: rgba(146,78,249,.12) !important; }
 .glass-panel-elevated .text-sky-300,
 .glass-panel-elevated .text-sky-200,
-.glass-panel-elevated .text-sky-400 { color: #7c3aed !important; }
+.glass-panel-elevated .text-sky-400 { color: #924EF9 !important; }
 .glass-panel-elevated .text-indigo-300,
-.glass-panel-elevated .text-indigo-200 { color: #8050c8 !important; }
+.glass-panel-elevated .text-indigo-200 { color: #8F55F7 !important; }
 
 /* AI briefing and insights are light cards with lilac internal modules, while status colors remain available. */
 .wx-reference-support-grid > div {
-  color: #3a2451 !important;
-  border: 1px solid rgba(124,58,237,.16) !important;
-  background: linear-gradient(145deg,#fff 0%,#fcfaff 58%,#f7f1ff 100%) !important;
+  color: #32164D !important;
+  border: 1px solid rgba(146,78,249,.16) !important;
+  background: linear-gradient(145deg,#fff 0%,#FFFFFF 58%,#E8E9FE 100%) !important;
   box-shadow: 0 17px 42px rgba(45,18,76,.085), inset 0 1px #fff !important;
 }
 .wx-reference-support-grid > div [class~="text-white"],
 .wx-reference-support-grid > div [class~="text-white/95"],
-.wx-reference-support-grid > div [class~="text-white/90"] { color: #342047 !important; }
+.wx-reference-support-grid > div [class~="text-white/90"] { color: #32164D !important; }
 .wx-reference-support-grid > div [class~="text-white/70"],
 .wx-reference-support-grid > div [class~="text-white/60"],
 .wx-reference-support-grid > div [class~="text-white/50"],
 .wx-reference-support-grid > div [class~="text-sky-200/70"] { color: #78668d !important; }
 .wx-reference-support-grid > div [class~="text-sky-200"],
 .wx-reference-support-grid > div [class~="text-sky-300"],
-.wx-reference-support-grid > div [class~="text-sky-400"] { color: #7c3aed !important; }
+.wx-reference-support-grid > div [class~="text-sky-400"] { color: #924EF9 !important; }
 .wx-reference-support-grid > div [class~="text-indigo-300"],
-.wx-reference-support-grid > div [class~="text-indigo-200"] { color: #8550c8 !important; }
+.wx-reference-support-grid > div [class~="text-indigo-200"] { color: #8F55F7 !important; }
 .wx-reference-support-grid > div [class~="bg-white/5"],
 .wx-reference-support-grid > div [class~="bg-white/10"],
-.wx-reference-support-grid > div [class~="bg-white/15"] { background: rgba(124,58,237,.055) !important; }
+.wx-reference-support-grid > div [class~="bg-white/15"] { background: rgba(146,78,249,.055) !important; }
 .wx-reference-support-grid > div [class~="border-white/10"],
-.wx-reference-support-grid > div [class~="border-white/15"] { border-color: rgba(124,58,237,.13) !important; }
+.wx-reference-support-grid > div [class~="border-white/15"] { border-color: rgba(146,78,249,.13) !important; }
 .wx-reference-support-grid > div button:not(:disabled) {
   transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
 }
 .wx-reference-support-grid > div button:hover:not(:disabled) {
-  box-shadow: 0 7px 20px rgba(124,58,237,.12);
+  box-shadow: 0 7px 20px rgba(146,78,249,.12);
 }
 .wx-reference-support-grid > div .bg-gradient-to-tr,
 .wx-reference-support-grid > div .bg-gradient-to-r {
@@ -1416,35 +1416,35 @@ nav[aria-label="Mobile Navigation"] .uppercase {
 }
 .wx-reference-support-grid > div button[class*="from-sky-500"],
 .wx-reference-support-grid > div button[class*="from-sky-400"] {
-  background: linear-gradient(135deg,#8b5cf6,#6d28d9) !important;
+  background: linear-gradient(135deg,#8F55F7,#924EF9) !important;
   color: #fff !important;
-  border-color: rgba(124,58,237,.24) !important;
+  border-color: rgba(146,78,249,.24) !important;
 }
 
 /* Keep the search result dropdown visually aligned with the new palette. */
 header.sticky [class*="bg-[#0a1426]"] {
-  color: #3a2451 !important;
+  color: #32164D !important;
   background: rgba(255,255,255,.98) !important;
-  border-color: rgba(124,58,237,.16) !important;
+  border-color: rgba(146,78,249,.16) !important;
   box-shadow: 0 18px 46px rgba(39,16,71,.16) !important;
 }
-header.sticky [class*="bg-[#0a1426]"] button { color: #3b2552 !important; }
-header.sticky [class*="bg-[#0a1426]"] button:hover { background: #f2ebff !important; }
-header.sticky [class*="bg-[#0a1426]"] .text-white\/50 { color: #88759b !important; }
-header.sticky [class*="bg-[#0a1426]"] .border-white\/5 { border-color: rgba(124,58,237,.1) !important; }
+header.sticky [class*="bg-[#0a1426]"] button { color: #32164D !important; }
+header.sticky [class*="bg-[#0a1426]"] button:hover { background: #E8E9FE !important; }
+header.sticky [class*="bg-[#0a1426]"] .text-white\/50 { color: #78668D !important; }
+header.sticky [class*="bg-[#0a1426]"] .border-white\/5 { border-color: rgba(146,78,249,.1) !important; }
 
 /* Map controls keep the purple cue without losing map legibility. */
 .leaflet-control-zoom a {
-  color: #7c3aed !important;
+  color: #924EF9 !important;
   background: rgba(255,255,255,.96) !important;
-  border-color: rgba(124,58,237,.16) !important;
+  border-color: rgba(146,78,249,.16) !important;
 }
-.leaflet-control-zoom a:hover { color: #fff !important; background: #7c3aed !important; }
-.leaflet-container .leaflet-control-attribution a { color: #a78bfa !important; }
+.leaflet-control-zoom a:hover { color: #fff !important; background: #924EF9 !important; }
+.leaflet-container .leaflet-control-attribution a { color: #9D91F7 !important; }
 
 /* Clear focus, touch-friendly controls and responsive behavior for compact devices. */
 button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
-  outline: 2px solid #8b5cf6;
+  outline: 2px solid #8F55F7;
   outline-offset: 3px;
 }
 @media (max-width: 640px) {
@@ -1475,7 +1475,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .glass-panel-elevated [class~="text-white/95"],
 .wx-reference-support-grid > div [class~="text-white"],
 .wx-reference-support-grid > div [class~="text-white/90"],
-.wx-reference-support-grid > div [class~="text-white/95"] { color: #342047 !important; }
+.wx-reference-support-grid > div [class~="text-white/95"] { color: #32164D !important; }
 .glass-panel-elevated [class*="text-sky-200/"],
 .wx-reference-support-grid > div [class*="text-sky-200/"] { color: #78668d !important; }
 .glass-panel-elevated [class~="text-sky-200"],
@@ -1483,7 +1483,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .glass-panel-elevated [class~="text-sky-400"],
 .wx-reference-support-grid > div [class~="text-sky-200"],
 .wx-reference-support-grid > div [class~="text-sky-300"],
-.wx-reference-support-grid > div [class~="text-sky-400"] { color: #7c3aed !important; }
+.wx-reference-support-grid > div [class~="text-sky-400"] { color: #924EF9 !important; }
 nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
   color: #fff !important;
 }
@@ -1495,5 +1495,5 @@ nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and C
     border-color: rgba(76,29,149,.45) !important;
   }
   .wx-story-copy, .wx-hourly-temperature > span, .wx-live-weather-feels,
-  .wx-live-weather-metrics span, .wx-nearby-city-condition { color: #513568 !important; }
+  .wx-live-weather-metrics span, .wx-nearby-city-condition { color: #4B3261 !important; }
 }

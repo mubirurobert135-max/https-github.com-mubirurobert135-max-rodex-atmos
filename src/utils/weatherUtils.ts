@@ -179,6 +179,18 @@ export function findNextHourlyIndex(times: string[] | undefined, currentTime?: s
   return index < 0 ? Math.max(0, times.length - 1) : index;
 }
 
+/** Find the hourly slot covering the current location-local observation time. */
+export function findCurrentHourlyIndex(times: string[] | undefined, currentTime?: string): number {
+  if (!Array.isArray(times) || times.length === 0) return 0;
+  const current = normalizeForecastLocalTime(currentTime);
+  if (!current) return 0;
+
+  const nextIndex = times.findIndex((time) => normalizeForecastLocalTime(time) >= current);
+  if (nextIndex < 0) return Math.max(0, times.length - 1);
+  const nextTime = normalizeForecastLocalTime(times[nextIndex]);
+  return nextIndex > 0 && nextTime > current ? nextIndex - 1 : nextIndex;
+}
+
 /**
  * Select the nearest hourly forecast slot for a local-clock offset from current
  * observation. Uses UTC arithmetic only as a timezone-neutral calendar calculator.
@@ -190,9 +202,10 @@ export function findHourlyIndexForOffset(
 ): number {
   if (!Array.isArray(times) || times.length === 0) return 0;
   const current = normalizeForecastLocalTime(currentTime);
-  if (!current || !Number.isFinite(offsetHours) || offsetHours <= 0) {
+  if (!current || !Number.isFinite(offsetHours)) {
     return findNextHourlyIndex(times, currentTime);
   }
+  if (offsetHours <= 0) return findCurrentHourlyIndex(times, currentTime);
 
   const [datePart, timePart] = current.split('T');
   const [year, month, day] = datePart.split('-').map(Number);

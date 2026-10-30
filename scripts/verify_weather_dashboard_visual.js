@@ -69,6 +69,9 @@ try {
     throw new Error('Desktop navigation active state is missing its 3D depth treatment.');
   }
 
+  if (await page.getByText('PWA Ready', { exact: true }).count() !== 0) {
+    throw new Error('The non-actionable PWA Ready status badge should be removed.');
+  }
   const accountShortcut = page.locator('button.header-account-shortcut');
   if (await accountShortcut.count() !== 1 || !(await accountShortcut.isVisible())) {
     throw new Error('The Account shortcut must be visible directly beside the location search.');

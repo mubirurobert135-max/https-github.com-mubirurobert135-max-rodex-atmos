@@ -732,29 +732,64 @@ async function startServer() {
     }
   }
 
-  // Reverse geocoding helper using Nominatim with coordinates fallback
+  // Reverse geocoding is cached independently from weather and coalesces repeated point clicks.
+  // City/suburb names are stable much longer than weather conditions; this avoids repeated
+  // reverse-geocoding calls when users revisit the same map point.
+  const reverseGeoCache = new Map<string, { timestamp: number; data: { name: string; country: string; admin1: string } }>();
+  const reverseGeoInFlight = new Map<string, Promise<{ name: string; country: string; admin1: string }>>();
+  const REVERSE_GEO_TTL_MS = 24 * 60 * 60 * 1000;
+  const REVERSE_GEO_MAX_ENTRIES = 500;
+
   async function reverseGeocodeCoordinates(lat: number, lon: number): Promise<{ name: string; country: string; admin1: string }> {
-    try {
-      const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=en`;
-      const res = await fetchWithTimeout(url, { headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' } }, 4000);
-      if (res.ok) {
-        const data = await res.json();
-        const addr = data.address || {};
-        const city = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || 'Local Area';
-        const country = addr.country || '';
-        const admin1 = addr.state || addr.region || addr.province || '';
-        const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
-        
-        let displayName = city;
-        if (suburb && suburb !== city && city !== 'Local Area') {
-          displayName = `${suburb}, ${city}`;
-        }
-        return { name: displayName, country, admin1 };
-      }
-    } catch (e) {
-      console.warn('[Reverse Geocode Notice] Nominatim lookup failed, using fallback:', e);
+    const key = lat.toFixed(3) + ',' + lon.toFixed(3);
+    const cached = reverseGeoCache.get(key);
+    if (cached && Date.now() - cached.timestamp < REVERSE_GEO_TTL_MS) {
+      reverseGeoCache.delete(key);
+      reverseGeoCache.set(key, cached);
+      return cached.data;
     }
-    return { name: `${lat.toFixed(2)}°, ${lon.toFixed(2)}°`, country: '', admin1: '' };
+
+    const pending = reverseGeoInFlight.get(key);
+    if (pending) return pending;
+
+    const request = (async () => {
+      let result = { name: lat.toFixed(2) + '°, ' + lon.toFixed(2) + '°', country: '', admin1: '' };
+      try {
+        const url = 'https://nominatim.openstreetmap.org/reverse?lat=' + lat + '&lon=' + lon + '&format=json&accept-language=en';
+        const res = await fetchWithTimeout(url, {
+          headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0 (weather map reverse geocoding)' }
+        }, 4000);
+        if (res.ok) {
+          const data = await res.json();
+          const addr = data.address || {};
+          const city = addr.city || addr.town || addr.village || addr.municipality || addr.district || addr.county || 'Local Area';
+          const country = addr.country || '';
+          const admin1 = addr.state || addr.region || addr.province || '';
+          const suburb = addr.suburb || addr.neighbourhood || addr.quarter || '';
+          const displayName = suburb && suburb !== city && city !== 'Local Area'
+            ? suburb + ', ' + city
+            : city;
+          result = { name: displayName, country, admin1 };
+        }
+      } catch (error) {
+        console.warn('[Reverse Geocode Notice] Nominatim lookup failed, using coordinate fallback:', error);
+      }
+
+      reverseGeoCache.set(key, { timestamp: Date.now(), data: result });
+      while (reverseGeoCache.size > REVERSE_GEO_MAX_ENTRIES) {
+        const oldestKey = reverseGeoCache.keys().next().value;
+        if (oldestKey === undefined) break;
+        reverseGeoCache.delete(oldestKey);
+      }
+      return result;
+    })();
+
+    reverseGeoInFlight.set(key, request);
+    try {
+      return await request;
+    } finally {
+      if (reverseGeoInFlight.get(key) === request) reverseGeoInFlight.delete(key);
+    }
   }
 
   // Helper to fetch weather via Open-Meteo with fallback protection

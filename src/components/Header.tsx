@@ -24,6 +24,13 @@ interface HeaderProps {
 }
 
 interface GeocodingResult {
+// Track the pointer inside a navigation control so its highlight follows the cursor.
+const updateNavPointer = (event: React.PointerEvent<HTMLElement>) => {
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty('--pointer-x', (event.clientX - bounds.left) + 'px');
+  event.currentTarget.style.setProperty('--pointer-y', (event.clientY - bounds.top) + 'px');
+};
+
   name: string;
   country: string;
   admin1?: string;
@@ -179,8 +186,9 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <button
               aria-current={activeTab === 'dashboard' ? 'page' : undefined}
+              onPointerMove={updateNavPointer}
               onClick={() => onSelectTab('dashboard')}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
+              className={`rodex-pointer-spotlight px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
                 activeTab === 'dashboard'
                   ? 'bg-gradient-to-r from-cyan-300/20 to-emerald-300/15 text-white shadow-md shadow-cyan-500/10 border border-cyan-100/20'
                   : 'text-white/65 hover:text-white hover:bg-white/[0.08]'
@@ -191,6 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
             <button
               aria-current={activeTab === 'map' ? 'page' : undefined}
+              onPointerMove={updateNavPointer}
               onClick={() => onSelectTab('map')}
               className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 flex items-center gap-1.5 btn-hover-lift ${
                 activeTab === 'map'
@@ -300,7 +309,8 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onOpenAuth}
-          className="header-account-shortcut"
+          onPointerMove={updateNavPointer}
+          className="header-account-shortcut rodex-pointer-spotlight"
           title={user ? 'Open account settings' : 'Sign in or create an account'}
           aria-label={user ? 'Open account' : 'Sign in or create an account'}
         >
@@ -319,7 +329,8 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           type="button"
           onClick={onOpenAssistant}
-          className="group inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-violet-300/55 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 px-0 text-white shadow-lg shadow-violet-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-violet-500/30 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
+          onPointerMove={updateNavPointer}
+          className="rodex-pointer-spotlight group inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-violet-300/55 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 px-0 text-white shadow-lg shadow-violet-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-violet-500/30 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
           title="Open RODEX AI"
           aria-label="Open RODEX AI Voice and Chat Assistant"
         >

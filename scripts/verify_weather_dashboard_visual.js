@@ -60,6 +60,15 @@ try {
   const searchInput = page.getByRole('textbox', { name: 'Search city or country' });
   await page.setViewportSize({ width: 1440, height: 900 });
   await searchInput.waitFor({ state: 'visible', timeout: 5000 });
+  const desktopActiveRail = page.locator('.wx-reference-rail-button.is-active').first();
+  const desktopDepth = await desktopActiveRail.evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { transform: style.transform, transformStyle: style.transformStyle, shadow: style.boxShadow };
+  });
+  if (desktopDepth.transform === 'none' || desktopDepth.transformStyle !== 'preserve-3d' || desktopDepth.shadow === 'none') {
+    throw new Error('Desktop navigation active state is missing its 3D depth treatment.');
+  }
+
   const accountShortcut = page.locator('button.header-account-shortcut');
   if (await accountShortcut.count() !== 1 || !(await accountShortcut.isVisible())) {
     throw new Error('The Account shortcut must be visible directly beside the location search.');
@@ -70,6 +79,13 @@ try {
     throw new Error('The Account shortcut must remain visible on mobile.');
   }
   const mobileNav = page.locator('nav[aria-label="Mobile Navigation"]');
+  const mobileDepth = await mobileNav.locator('button[aria-current="page"]').evaluate((el) => {
+    const style = getComputedStyle(el);
+    return { transform: style.transform, transformStyle: style.transformStyle, shadow: style.boxShadow };
+  });
+  if (mobileDepth.transform === 'none' || mobileDepth.transformStyle !== 'preserve-3d' || mobileDepth.shadow === 'none') {
+    throw new Error('Mobile active tab is missing its raised 3D treatment.');
+  }
   const selectedBeforeMap = mobileNav.locator('button[aria-current="page"]');
   if (await selectedBeforeMap.count() !== 1 || await selectedBeforeMap.getAttribute('aria-label') !== 'Weather Dashboard') {
     throw new Error('Mobile dashboard tab does not expose a single accessible active state.');
@@ -104,7 +120,7 @@ try {
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
   await page.getByTitle('Close Assistant').click();
   await page.getByRole('dialog').waitFor({ state: 'detached', timeout: 5000 });
-  console.log('PASS interaction checks: search visible, map/dashboard tabs switch, assistant dialog opens and closes.');
+  console.log('PASS interaction checks: 3D desktop/mobile tabs, account shortcut, details disclosure, search, map/dashboard switching, assistant dialog.');
 
   if (pageErrors.length) {
     throw new Error(`Browser runtime errors detected:\n${pageErrors.join('\n')}`);

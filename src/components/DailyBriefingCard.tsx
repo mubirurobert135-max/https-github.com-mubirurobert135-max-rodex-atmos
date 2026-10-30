@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Sun, CloudRain, Wind, AlertTriangle, Sparkles, RefreshCw, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { Sun, CloudRain, Wind, AlertTriangle, Sparkles, RefreshCw, ShieldAlert } from 'lucide-react';
 import { WeatherData, DailyBriefing } from '../types';
 import { formatTemp } from '../utils/weatherUtils';
 
@@ -52,6 +52,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
   const currentWindText = typeof rawWind === 'number' && Number.isFinite(rawWind)
     ? 'Wind ' + Math.round(rawWind) + ' km/h'
     : 'Wind speed unavailable';
+  const rainProbabilities = (data.weather.hourly?.precipitation_probability || [])
+    .filter((value) => typeof value === 'number' && Number.isFinite(value));
+  const peakRainProbability = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
 
   return (
     <div className="w-full bg-gradient-to-br from-slate-900/80 via-sky-950/60 to-indigo-950/80 backdrop-blur-2xl border border-sky-400/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-sky-400/45">
@@ -68,14 +71,14 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-bold text-white tracking-wide font-display">
-                Daily Weather Briefing
+                Daily forecast summary
               </h3>
               <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-medium">
                 {new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}
               </span>
             </div>
             <p className="text-xs text-sky-200/70 font-medium">
-              Proactive atmospheric intelligence & actionable recommendations for {data.location.name}
+              A concise overview of forecast data for {data.location.name}
             </p>
           </div>
         </div>
@@ -174,9 +177,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
               <CloudRain className="w-5 h-5 text-sky-400 shrink-0" />
               <div>
-                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Precipitation Outlook</span>
+                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Peak hourly rain probability</span>
                 <span className="text-xs font-semibold text-white truncate block">
-                  {briefing?.rainLikelihood || 'Rain probability unavailable.'}
+                  {peakRainProbability == null ? 'Unavailable' : peakRainProbability + '%'}
                 </span>
               </div>
             </div>
@@ -192,23 +195,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
             </div>
           </div>
 
-          {/* Actionable Recommendations */}
-          {briefing?.recommendations && briefing.recommendations.length > 0 && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
-              <h5 className="text-xs font-bold text-sky-300 uppercase tracking-wider mb-2.5 flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Recommended Outdoor Actions</span>
-              </h5>
-              <ul className="space-y-1.5 text-xs text-white/90">
-                {briefing.recommendations.map((rec, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-sky-400 font-bold">•</span>
-                    <span className="leading-relaxed">{rec}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
+
         </div>
       )}
     </div>

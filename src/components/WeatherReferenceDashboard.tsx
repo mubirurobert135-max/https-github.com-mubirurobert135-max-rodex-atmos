@@ -6,7 +6,7 @@ import {
   Thermometer, UserRound, Wind, ChevronRight
 } from 'lucide-react';
 import { WeatherData, LocationMode } from '../types';
-import { formatTemp, formatWind, getWeatherCondition } from '../utils/weatherUtils';
+import { formatTemp, formatWind, getWeatherCondition, findNextHourlyIndex, formatForecastLocalHour, formatForecastClock, normalizeForecastLocalTime } from '../utils/weatherUtils';
 
 interface WeatherReferenceDashboardProps {
   data: WeatherData;
@@ -35,35 +35,21 @@ const WeatherSymbol: React.FC<{ code: number; isDay: number; className?: string 
   return <Cloud className={className} aria-hidden="true" />;
 };
 
-function formatHour(value: string, timezone: string): string {
-  try {
-    return new Intl.DateTimeFormat(undefined, { hour: 'numeric', timeZone: timezone || 'UTC' }).format(new Date(value));
-  } catch {
-    return new Date(value).toLocaleTimeString([], { hour: 'numeric' });
-  }
-}
-
-function formatClock(value: string | undefined, timezone: string): string {
-  if (!value) return '—';
-  try {
-    return new Intl.DateTimeFormat(undefined, {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-      timeZone: timezone || 'UTC'
-    }).format(new Date(value));
-  } catch {
-    return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-  }
-}
-
-function formatDay(value: string, timezone: string, index: number): string {
+function formatDay(value: string, index: number): string {
   if (index === 0) return 'Today';
-  try {
-    return new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: timezone || 'UTC' }).format(new Date(value + 'T12:00:00'));
-  } catch {
-    return new Date(value + 'T12:00:00').toLocaleDateString([], { weekday: 'short' });
-  }
+  const date = new Date(value + 'T12:00:00Z');
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' }).format(date);
+}
+
+function formatLocalDateLabel(value: string): string {
+  const local = normalizeForecastLocalTime(value);
+  const datePart = local ? local.slice(0, 10) : value.slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return 'Local forecast';
+  const date = new Date(datePart + 'T12:00:00Z');
+  return new Intl.DateTimeFormat(undefined, {
+    weekday: 'long', month: 'short', day: 'numeric', timeZone: 'UTC'
+  }).format(date);
 }
 
 
@@ -91,13 +77,31 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const todaySunrise = daily.sunrise?.[0];
   const todaySunset = daily.sunset?.[0];
   const todayUv = daily.uv_index_max?.[0];
-  const nextHours = (hourly.time || []).slice(0, 6).map((time, index) => ({
-    time,
-    temperature: hourly.temperature_2m?.[index] ?? current.temperature_2m,
-    probability: hourly.precipitation_probability?.[index] ?? 0,
-    code: hourly.weather_code?.[index] ?? current.weather_code,
-    isDay: hourly.is_day?.[index] ?? current.is_day
-  }));
+  const firstCurrentHourIndex = findNextHourlyIndex(hourly.time, current.time);
+  const currentLocalTime = normalizeForecastLocalTime(current.time);
+  const nextFutureIndex = (hourly.time || []).findIndex((time) =>
+    normalizeForecastLocalTime(time) > currentLocalTime
+  );
+  const futureStartIndex = nextFutureIndex >= 0 ? nextFutureIndex : firstCurrentHourIndex;
+  const nextHours = [
+    {
+      time: current.time,
+      temperature: current.temperature_2m,
+      probability: hourly.precipitation_probability?.[firstCurrentHourIndex] ?? 0,
+      code: current.weather_code,
+      isDay: current.is_day
+    },
+    ...(hourly.time || []).slice(futureStartIndex, futureStartIndex + 5).map((time, offset) => {
+      const index = futureStartIndex + offset;
+      return {
+        time,
+        temperature: hourly.temperature_2m?.[index] ?? current.temperature_2m,
+        probability: hourly.precipitation_probability?.[index] ?? 0,
+        code: hourly.weather_code?.[index] ?? current.weather_code,
+        isDay: hourly.is_day?.[index] ?? current.is_day
+      };
+    })
+  ];
 
   const nextDays = (daily.time || []).slice(0, 7).map((day, index) => ({
     day,
@@ -111,17 +115,8 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
     : locationMode === 'network' ? 'Approximate location'
     : locationMode === 'search' ? 'Selected location' : 'Default location';
 
-  const dateLabel = (() => {
-    try {
-      return new Intl.DateTimeFormat(undefined, {
-        weekday: 'long', month: 'short', day: 'numeric', timeZone: timezone
-      }).format(new Date());
-    } catch {
-      return new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
-    }
-  })();
-
-  const localTime = formatHour(current.time, timezone);
+  const dateLabel = formatLocalDateLabel(current.time);
+  const localTime = formatForecastLocalHour(current.time);
   const rainChance = Math.max(0, ...nextHours.map((item) => item.probability));
 
   return (
@@ -227,11 +222,11 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
             </div>
             <div className="wx-hero-metric">
               <span className="wx-hero-metric-icon"><Sunrise /></span>
-              <span className="wx-hero-metric-copy"><small>Sunrise</small><strong>{formatClock(todaySunrise, timezone)}</strong></span>
+              <span className="wx-hero-metric-copy"><small>Sunrise</small><strong>{formatForecastClock(todaySunrise)}</strong></span>
             </div>
             <div className="wx-hero-metric">
               <span className="wx-hero-metric-icon"><Sunset /></span>
-              <span className="wx-hero-metric-copy"><small>Sunset</small><strong>{formatClock(todaySunset, timezone)}</strong></span>
+              <span className="wx-hero-metric-copy"><small>Sunset</small><strong>{formatForecastClock(todaySunset)}</strong></span>
             </div>
           </div>
         </section>
@@ -248,7 +243,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
             <div className="wx-dashboard-hourly-list">
               {nextHours.map((item, index) => (
                 <div className={'wx-dashboard-hour ' + (index === 0 ? 'is-current' : '')} key={item.time}>
-                  <span className="wx-dashboard-hour-time">{index === 0 ? 'Now' : formatHour(item.time, timezone)}</span>
+                  <span className="wx-dashboard-hour-time">{index === 0 ? 'Now' : formatForecastLocalHour(item.time)}</span>
                   <WeatherSymbol code={item.code} isDay={item.isDay} className="wx-dashboard-hour-icon" />
                   <strong>{formatTemp(item.temperature, unit)}</strong>
                   <small>{Math.round(item.probability)}% rain</small>
@@ -271,7 +266,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
             <div className="wx-dashboard-daily-list">
               {nextDays.map((day) => (
                 <div className={'wx-dashboard-day ' + (day.index === 0 ? 'is-today' : '')} key={day.day}>
-                  <span className="wx-dashboard-day-name">{formatDay(day.day, timezone, day.index)}</span>
+                  <span className="wx-dashboard-day-name">{formatDay(day.day, day.index)}</span>
                   <WeatherSymbol code={day.code} isDay={1} className="wx-dashboard-day-icon" />
                   <span className="wx-dashboard-day-condition">{getWeatherCondition(day.code, 1).label}</span>
                   <strong>{formatTemp(day.high, unit)}</strong>

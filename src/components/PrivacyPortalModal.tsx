@@ -430,7 +430,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   </div>
 
                   <div className="p-3 rounded-xl bg-black/20 border border-white/10 text-[11px] text-white/60 leading-relaxed">
-                    <strong>Data Integrity Disclosure:</strong> RODEX Atmos stores only basic account identifiers (`uid`, `displayName`, `email`, `phoneNumber`, `createdAt`) in Firestore. Passwords, secret keys, or authentication tokens are managed securely by Firebase Auth and are never exposed or saved to Firestore.
+                    <strong>Data Integrity Disclosure:</strong> RODEX Atmos stores basic account profile details (`uid`, `displayName`, `photoURL`, `email`, `phoneNumber`, `createdAt`) and the preferences you choose in Firestore. Passwords, secret keys, or authentication tokens are managed securely by Firebase Auth and are never exposed or saved to Firestore.
                   </div>
                 </div>
               </div>

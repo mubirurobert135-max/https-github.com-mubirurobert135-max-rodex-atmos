@@ -246,10 +246,15 @@ export function formatForecastLocalHour(value: string, hour12 = true): string {
 
 /** Format the calendar day in the forecast location's local clock. */
 export function formatForecastLocalDate(value?: string): string {
-  const local = normalizeForecastLocalTime(value);
-  const datePart = local ? local.slice(0, 10) : '';
+  if (typeof value !== 'string' || !value.trim()) return 'Forecast date unavailable';
+  const raw = value.trim();
+  // Daily provider dates are commonly YYYY-MM-DD, while current observations may be full timestamps.
+  const datePart = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+    ? raw
+    : normalizeForecastLocalTime(raw).slice(0, 10);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(datePart)) return 'Forecast date unavailable';
   const date = new Date(datePart + 'T12:00:00Z');
+  if (!Number.isFinite(date.getTime())) return 'Forecast date unavailable';
   return new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
     month: 'short',

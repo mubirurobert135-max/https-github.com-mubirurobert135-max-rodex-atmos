@@ -144,7 +144,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
         
         {/* Top Header: Metadata Badges & Verification Status */}
         <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 text-xs">
-          {/* Live Conditions Pill */}
+          {/* Current Conditions Pill */}
           <span className="px-3 py-1 rounded-full bg-white/10 border border-white/15 text-white font-semibold shadow-sm">
             Live Conditions
           </span>

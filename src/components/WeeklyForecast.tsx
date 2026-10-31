@@ -1,7 +1,7 @@
 import React from 'react';
 import { Calendar, Sun, CloudSun, Cloud, CloudRain, CloudSnow, CloudLightning } from 'lucide-react';
 import { DailyWeather } from '../types';
-import { formatTemp, getWeatherCondition } from '../utils/weatherUtils';
+import { formatTemp, getWeatherCondition, formatForecastLocalDate } from '../utils/weatherUtils';
 
 interface WeeklyForecastProps {
   daily: DailyWeather;
@@ -12,8 +12,10 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
   const { time, weather_code, temperature_2m_max, temperature_2m_min } = daily;
 
   // Calculate global min and max for temperature range bars
-  const allMax = Math.max(...temperature_2m_max);
-  const allMin = Math.min(...temperature_2m_min);
+  const knownMax = temperature_2m_max.filter((value) => typeof value === 'number' && Number.isFinite(value));
+  const knownMin = temperature_2m_min.filter((value) => typeof value === 'number' && Number.isFinite(value));
+  const allMax = knownMax.length ? Math.max(...knownMax) : 0;
+  const allMin = knownMin.length ? Math.min(...knownMin) : 0;
   const rangeSpan = allMax - allMin || 1;
 
   const renderConditionIcon = (code: number) => {
@@ -47,17 +49,17 @@ export const WeeklyForecast: React.FC<WeeklyForecastProps> = ({ daily, unit }) =
 
       <div className="space-y-2.5">
         {time.map((dateStr, idx) => {
-          const date = new Date(dateStr);
           const isToday = idx === 0;
-          const dayName = isToday ? 'Today' : date.toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+          const dayName = isToday ? 'Today' : formatForecastLocalDate(dateStr);
           const code = weather_code[idx];
           const cond = getWeatherCondition(code, 1);
           const maxT = temperature_2m_max[idx];
           const minT = temperature_2m_min[idx];
 
           // Calculate percentage width for visual temperature range bar
-          const leftPercent = Math.max(0, Math.min(100, ((minT - allMin) / rangeSpan) * 100));
-          const widthPercent = Math.max(16, Math.min(100 - leftPercent, ((maxT - minT) / rangeSpan) * 100));
+          const hasTemperatureRange = Number.isFinite(minT) && Number.isFinite(maxT);
+          const leftPercent = hasTemperatureRange ? Math.max(0, Math.min(100, ((minT - allMin) / rangeSpan) * 100)) : 0;
+          const widthPercent = hasTemperatureRange ? Math.max(0, Math.min(100 - leftPercent, ((maxT - minT) / rangeSpan) * 100)) : 0;
 
           return (
             <div

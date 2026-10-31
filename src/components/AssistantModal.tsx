@@ -462,6 +462,30 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     isMutedRef.current = isMuted;
   }, [isMuted]);
 
+  const handleToggleMute = () => {
+    const nextMuted = !isMutedRef.current;
+    // Update the ref synchronously so audio callbacks never send one extra muted frame.
+    isMutedRef.current = nextMuted;
+    setIsMuted(nextMuted);
+
+    // Native Live sessions: disable the actual microphone track, not only its network frames.
+    mediaStreamRef.current?.getAudioTracks().forEach((track) => {
+      track.enabled = !nextMuted;
+    });
+
+    // Browser compatibility sessions use SpeechRecognition instead of a MediaStream.
+    if (isCompatModeRef.current && recognitionRef.current) {
+      if (nextMuted) {
+        try { recognitionRef.current.abort(); } catch (e) {}
+        setInterimUserSpeech('');
+      } else if (voiceState === 'listening') {
+        try { recognitionRef.current.start(); } catch (e) {}
+      }
+    }
+  };
+
+
+
   useEffect(() => {
     if (chatBottomRef.current) {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -863,7 +887,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 turnTimer.markSynthesisRequested(Date.now());
                 const ttsController = new AbortController();
                 compatibilityTtsAbortControllerRef.current = ttsController;
-                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 7500);
+                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 4800);
                 try {
                   const ttsRes = await fetch('/api/ai/synthesize-speech', {
                     method: 'POST',
@@ -973,7 +997,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
 
       recognition.onend = () => {
         // If still listening and not in the middle of processing speech, restart recognition cleanly
-        if (isCompatModeRef.current && !isSpeechProcessingRef.current) {
+        if (isCompatModeRef.current && !isSpeechProcessingRef.current && !isMutedRef.current) {
           setVoiceState('listening');
           processedResultIndicesRef.current.clear();
           try { recognition.start(); } catch (e) {}
@@ -995,6 +1019,8 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   // Start Live Voice Session: explicitly requested on user click
   const startVoiceSession = async () => {
     const tStart = performance.now();
+    isMutedRef.current = false;
+    setIsMuted(false);
     setVoiceError(null);
     setIsAutoRecovering(false);
     sessionIdRef.current += 1;
@@ -1282,10 +1308,9 @@ Available Function Tools:
                 return;
               }
 
-              // Do not send mic audio while the assistant is currently speaking the greeting or active audio
-              if (activeSourcesRef.current.length > 0) {
-                return;
-              }
+              // Keep the microphone stream active during assistant playback.
+              // Gemini Live voice activity detection uses this input for natural barge-in;
+              // getUserMedia echo cancellation helps prevent speaker feedback.
 
               sessionDiagnosticsRef.current.micFramesCaptured += 1;
 

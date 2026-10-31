@@ -1,5 +1,5 @@
 import React from 'react';
-import { Shirt, Umbrella, Sun, Wind, Sparkles, CheckCircle2, ArrowUpRight } from 'lucide-react';
+import { Shirt, Umbrella, Sun, Wind, CloudLightning, Sparkles, CheckCircle2, ArrowUpRight } from 'lucide-react';
 import { WeatherData } from '../types';
 import { buildWeatherWardrobeAdvice } from '../utils/weatherWardrobe';
 
@@ -34,7 +34,7 @@ export const WeatherWardrobeCard: React.FC<WeatherWardrobeCardProps> = ({ data, 
           </div>
         </div>
         <span className={advice.dataStatus === 'good' ? 'wx-wardrobe-status' : 'wx-wardrobe-status is-limited'}>
-          {advice.dataStatus === 'good' ? 'Live weather-based' : 'Limited weather data'}
+          {advice.dataStatus === 'good' ? 'Weather-based' : 'Limited weather data'}
         </span>
       </div>
 
@@ -57,7 +57,7 @@ export const WeatherWardrobeCard: React.FC<WeatherWardrobeCardProps> = ({ data, 
       {advice.weatherNotes.length > 0 && (
         <div className="wx-wardrobe-notes">
           {advice.weatherNotes.map((note, index) => {
-            const Icon = /rain|umbrella/i.test(note) ? Umbrella : /UV|sun protection/i.test(note) ? Sun : Wind;
+            const Icon = /thunderstorm|lightning/i.test(note) ? CloudLightning : /rain|umbrella/i.test(note) ? Umbrella : /UV|sun protection/i.test(note) ? Sun : Wind;
             return <p key={index}><Icon className="h-3.5 w-3.5" />{note}</p>;
           })}
         </div>

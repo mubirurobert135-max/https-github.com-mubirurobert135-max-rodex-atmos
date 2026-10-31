@@ -25,9 +25,6 @@ export function buildWeatherWardrobeAdvice(input: {
     : typeof current.temperature_2m === 'number' && Number.isFinite(current.temperature_2m)
       ? current.temperature_2m
       : null;
-  const temperature = typeof current.temperature_2m === 'number' && Number.isFinite(current.temperature_2m)
-    ? current.temperature_2m
-    : null;
   const code = typeof current.weather_code === 'number' && Number.isFinite(current.weather_code)
     ? current.weather_code
     : null;
@@ -74,10 +71,13 @@ export function buildWeatherWardrobeAdvice(input: {
   }
 
   const weatherNotes: string[] = [];
+  const isThunderstorm = code != null && code >= 95 && code <= 99;
   const isRainCondition = code != null && (
-    (code >= 51 && code <= 67) || (code >= 80 && code <= 82) || (code >= 95 && code <= 99)
+    (code >= 51 && code <= 67) || (code >= 80 && code <= 82)
   );
-  if (isRainCondition || (rainChance != null && rainChance >= 50)) {
+  if (isThunderstorm) {
+    weatherNotes.push('Thunderstorms are indicated; stay indoors and avoid exposed outdoor areas until conditions pass.');
+  } else if (isRainCondition || (rainChance != null && rainChance >= 50)) {
     items.push('Compact umbrella or light rain shell');
     if (rainChance != null) {
       weatherNotes.push(`Rain probability reaches ${Math.round(rainChance)}% over the next 8 hours.`);
@@ -94,7 +94,7 @@ export function buildWeatherWardrobeAdvice(input: {
     weatherNotes.push(`The forecast UV index reaches ${Math.round(uv)}; use shade and suitable sun protection.`);
   }
 
-  if (temperature == null) {
+  if (feelsLike == null) {
     weatherNotes.push('The current temperature is unavailable.');
   }
   if (rainChance != null && rainChance < 50 && !isRainCondition) {

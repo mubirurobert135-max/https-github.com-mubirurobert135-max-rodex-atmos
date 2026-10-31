@@ -2185,12 +2185,12 @@ Available Function Tools:
                   <span>Live Spoken Conversation</span>
                   {voiceState === 'speaking' && (
                     <span className="text-[9px] text-sky-300 font-medium animate-pulse flex items-center gap-1">
-                      <Volume2 className="w-3 h-3" /> Speaking 24kHz
+                      <Volume2 className="w-3 h-3" /> Atmos is speaking
                     </span>
                   )}
                   {voiceState === 'listening' && (
                     <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-1">
-                      <Mic className="w-3 h-3 animate-pulse" /> 16kHz Mono Stream
+                      <Mic className="w-3 h-3 animate-pulse" /> Microphone active
                     </span>
                   )}
                 </div>
@@ -2258,7 +2258,7 @@ Available Function Tools:
                   <button
                     type="button"
                      onClick={() => stopVoiceSession('ended')}
-                    className="px-4 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/20 text-white text-xs font-semibold transition"
+                    className="touch-target px-4 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/20 text-white text-xs font-semibold transition"
                   >
                     End Voice
                   </button>

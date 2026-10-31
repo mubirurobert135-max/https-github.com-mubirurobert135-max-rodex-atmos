@@ -1227,7 +1227,7 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     const lowTemp = typeof rawLow === 'number' && Number.isFinite(rawLow) ? Math.round(rawLow) : null;
     const currentTemp = typeof rawCurrentTemp === 'number' && Number.isFinite(rawCurrentTemp) ? Math.round(rawCurrentTemp) : null;
     const rainProbabilities = Array.isArray(hourly?.precipitation_probability)
-      ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
+      ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + briefingRainSampleCount).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
       : [];
     const maxPrecipProb = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
     const rawWind = current?.wind_speed_10m;

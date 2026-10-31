@@ -87,6 +87,9 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const todaySunset = daily.sunset?.[0];
   const todayUv = daily.uv_index_max?.[0];
   const firstCurrentHourIndex = findCurrentHourlyIndex(hourly.time, current.time);
+  const forecastIntervalHours = Number.isFinite(hourly.intervalHours) && (hourly.intervalHours as number) > 0
+    ? (hourly.intervalHours as number)
+    : 1;
   const currentLocalTime = normalizeForecastLocalTime(current.time);
   const nextFutureIndex = (hourly.time || []).findIndex((time) =>
     normalizeForecastLocalTime(time) > currentLocalTime
@@ -102,7 +105,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
       code: finiteValue(current.weather_code) ?? -1,
       isDay: current.is_day
     },
-    ...(hourly.time || []).slice(futureStartIndex, futureStartIndex + 5).map((time, offset) => {
+    ...(hourly.time || []).slice(futureStartIndex, futureStartIndex + Math.max(1, Math.ceil(6 / forecastIntervalHours))).map((time, offset) => {
       const index = futureStartIndex + offset;
       return {
         time,

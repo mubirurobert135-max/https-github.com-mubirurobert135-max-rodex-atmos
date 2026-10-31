@@ -53,8 +53,12 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
     ? 'Wind ' + Math.round(rawWind) + ' km/h'
     : 'Wind speed unavailable';
   const rainStartIndex = findCurrentHourlyIndex(data.weather.hourly?.time, data.weather.current?.time);
+  const rainIntervalHours = Number.isFinite(data.weather.hourly?.intervalHours) && (data.weather.hourly?.intervalHours as number) > 0
+    ? (data.weather.hourly?.intervalHours as number)
+    : 1;
+  const rainSampleCount = Math.max(1, Math.ceil(24 / rainIntervalHours));
   const rainProbabilities = (data.weather.hourly?.precipitation_probability || [])
-    .slice(rainStartIndex, rainStartIndex + 24)
+    .slice(rainStartIndex, rainStartIndex + rainSampleCount)
     .filter((value) => typeof value === 'number' && Number.isFinite(value));
   const peakRainProbability = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
 

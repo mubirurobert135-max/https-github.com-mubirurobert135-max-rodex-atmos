@@ -104,7 +104,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               <span className="text-xs text-white/70 font-medium">Accumulation</span>
             </div>
             <div className="text-lg sm:text-xl font-heading font-black text-white tabular-nums">
-              {current.precipitation} <span className="text-xs font-normal text-white/60">mm</span>
+              {Number.isFinite(current.precipitation) ? current.precipitation.toFixed(1) : '—'} <span className="text-xs font-normal text-white/60">mm</span>
             </div>
           </div>
 
@@ -114,7 +114,7 @@ export const WeatherDetailsGrid: React.FC<WeatherDetailsGridProps> = ({ data, un
               <span className="text-xs text-white/70 font-medium">Sea Level</span>
             </div>
             <div className="text-lg sm:text-xl font-heading font-black text-white tabular-nums">
-              {current.surface_pressure} <span className="text-xs font-normal text-white/60">hPa</span>
+              {Number.isFinite(current.surface_pressure) ? Math.round(current.surface_pressure) : '—'} <span className="text-xs font-normal text-white/60">hPa</span>
             </div>
           </div>
         </div>

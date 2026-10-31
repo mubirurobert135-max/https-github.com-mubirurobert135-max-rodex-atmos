@@ -401,11 +401,18 @@ export function getMaxUpcomingPrecipitationProbability(
   times: string[] | undefined,
   probabilities: number[] | undefined,
   currentTime?: string,
-  periods = 12
+  intervalHours = 1,
+  periodHours = 12
 ): number | null {
-  if (!Array.isArray(probabilities) || probabilities.length === 0 || !Number.isFinite(periods) || periods <= 0) return null;
+  if (
+    !Array.isArray(probabilities) ||
+    probabilities.length === 0 ||
+    !Number.isFinite(intervalHours) || intervalHours <= 0 ||
+    !Number.isFinite(periodHours) || periodHours <= 0
+  ) return null;
   const startIndex = findCurrentHourlyIndex(times, currentTime);
-  const upcoming = probabilities.slice(startIndex, startIndex + Math.floor(periods))
+  const sampleCount = Math.max(1, Math.ceil(periodHours / intervalHours));
+  const upcoming = probabilities.slice(startIndex, startIndex + sampleCount)
     .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
   return upcoming.length ? Math.max(...upcoming) : null;
 }

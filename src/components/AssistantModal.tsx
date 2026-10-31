@@ -2245,10 +2245,10 @@ Available Function Tools:
                     type="button"
                      onClick={handleToggleMute}
                      aria-pressed={isMuted}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition ${
+                    className={`touch-target flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition ${
                       isMuted
-                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-200'
-                        : 'bg-white/10 hover:bg-white/20 border-white/20 text-white'
+                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-100'
+                        : 'bg-violet-500/20 hover:bg-violet-500/30 border-violet-300/35 text-white'
                     }`}
                   >
                     {isMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-sky-300" />}
@@ -2264,6 +2264,9 @@ Available Function Tools:
                   </button>
                 </div>
               )}
+              <p className="mt-2 max-w-md text-center text-[11px] leading-relaxed text-slate-300/85">
+                Speak naturally, even while Atmos is answering, to interrupt. Use Mute Mic whenever you need privacy.
+              </p>
             </div>
           )}
 

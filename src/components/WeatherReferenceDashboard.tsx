@@ -32,6 +32,7 @@ interface WeatherReferenceDashboardProps {
 const WeatherSymbol: React.FC<{ code: number; isDay: number; className?: string }> = ({
   code, isDay, className = 'h-6 w-6'
 }) => {
+  if (!Number.isFinite(code) || code < 0) return <Cloud className={className} aria-hidden="true" />;
   if (code >= 95) return <CloudLightning className={className} aria-hidden="true" />;
   if (code >= 80) return <CloudRain className={className} aria-hidden="true" />;
   if (code >= 71 && code <= 77) return <CloudSnow className={className} aria-hidden="true" />;
@@ -80,8 +81,8 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const hourly = weather.hourly;
   const condition = getWeatherCondition(current.weather_code, current.is_day);
   const timezone = weather.timezone || location.timezone || 'UTC';
-  const todayHigh = daily.temperature_2m_max?.[0] ?? current.temperature_2m;
-  const todayLow = daily.temperature_2m_min?.[0] ?? current.temperature_2m;
+  const todayHigh = daily.temperature_2m_max?.[0];
+  const todayLow = daily.temperature_2m_min?.[0];
   const todaySunrise = daily.sunrise?.[0];
   const todaySunset = daily.sunset?.[0];
   const todayUv = daily.uv_index_max?.[0];
@@ -91,22 +92,24 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
     normalizeForecastLocalTime(time) > currentLocalTime
   );
   const futureStartIndex = nextFutureIndex >= 0 ? nextFutureIndex : firstCurrentHourIndex;
+  const finiteValue = (value: unknown): number | null =>
+    typeof value === 'number' && Number.isFinite(value) ? value : null;
   const nextHours = [
     {
       time: current.time,
-      temperature: current.temperature_2m,
-      probability: hourly.precipitation_probability?.[firstCurrentHourIndex] ?? 0,
-      code: current.weather_code,
+      temperature: finiteValue(current.temperature_2m),
+      probability: finiteValue(hourly.precipitation_probability?.[firstCurrentHourIndex]),
+      code: finiteValue(current.weather_code) ?? -1,
       isDay: current.is_day
     },
     ...(hourly.time || []).slice(futureStartIndex, futureStartIndex + 5).map((time, offset) => {
       const index = futureStartIndex + offset;
       return {
         time,
-        temperature: hourly.temperature_2m?.[index] ?? current.temperature_2m,
-        probability: hourly.precipitation_probability?.[index] ?? 0,
-        code: hourly.weather_code?.[index] ?? current.weather_code,
-        isDay: hourly.is_day?.[index] ?? current.is_day
+        temperature: finiteValue(hourly.temperature_2m?.[index]),
+        probability: finiteValue(hourly.precipitation_probability?.[index]),
+        code: finiteValue(hourly.weather_code?.[index]) ?? -1,
+        isDay: finiteValue(hourly.is_day?.[index]) ?? current.is_day
       };
     })
   ];
@@ -114,9 +117,9 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
   const nextDays = (daily.time || []).slice(0, 7).map((day, index) => ({
     day,
     index,
-    code: daily.weather_code?.[index] ?? current.weather_code,
-    high: daily.temperature_2m_max?.[index] ?? current.temperature_2m,
-    low: daily.temperature_2m_min?.[index] ?? current.temperature_2m
+    code: finiteValue(daily.weather_code?.[index]) ?? -1,
+    high: finiteValue(daily.temperature_2m_max?.[index]),
+    low: finiteValue(daily.temperature_2m_min?.[index])
   }));
 
   const statusLabel = locationMode === 'gps' ? 'GPS location'
@@ -125,7 +128,8 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
 
   const dateLabel = formatLocalDateLabel(current.time);
   const localTime = formatForecastLocalHour(current.time);
-  const rainChance = Math.max(0, ...nextHours.map((item) => item.probability));
+  const knownRainChances = nextHours.map((item) => item.probability).filter((value): value is number => value != null);
+  const rainChance = knownRainChances.length ? Math.max(...knownRainChances) : null;
 
   return (
     <section className="wx-reference-shell" aria-label="RODEX Atmos weather dashboard">
@@ -254,12 +258,12 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
                   <span className="wx-dashboard-hour-time">{index === 0 ? 'Now' : formatForecastLocalHour(item.time)}</span>
                   <WeatherSymbol code={item.code} isDay={item.isDay} className="wx-dashboard-hour-icon" />
                   <strong>{formatTemp(item.temperature, unit)}</strong>
-                  <small>{Math.round(item.probability)}% rain</small>
+                  <small>{item.probability == null ? 'Rain unavailable' : Math.round(item.probability) + '% rain'}</small>
                 </div>
               ))}
             </div>
             <div className="wx-dashboard-hourly-foot">
-              <span>Peak rain chance</span><strong>{Math.round(rainChance)}%</strong>
+              <span>Peak rain chance</span><strong>{rainChance == null ? 'Unavailable' : Math.round(rainChance) + '%'}</strong>
             </div>
           </section>
 

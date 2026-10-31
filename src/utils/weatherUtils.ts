@@ -263,3 +263,125 @@ export function formatForecastClock(value?: string): string {
   const timePart = local.split('T')[1];
   return formatForecastLocalHour('2000-01-01T' + timePart, true);
 }
+
+
+function parseClockMinutes(value?: string | null): number | null {
+  if (typeof value !== 'string' || !value.trim()) return null;
+  const text = value.trim();
+  const twelveHour = text.match(/^(0?[1-9]|1[0-2]):([0-5]\\d)\\s*([AP]M)$/i);
+  if (twelveHour) {
+    const hour = Number(twelveHour[1]) % 12 + (twelveHour[3].toUpperCase() === 'PM' ? 12 : 0);
+    return hour * 60 + Number(twelveHour[2]);
+  }
+  const twentyFourHour = text.match(/^(?:([01]?\\d|2[0-3])):([0-5]\\d)(?::[0-5]\\d)?$/);
+  if (twentyFourHour) return Number(twentyFourHour[1]) * 60 + Number(twentyFourHour[2]);
+
+  const local = normalizeForecastLocalTime(text);
+  if (local) return parseClockMinutes(local.split('T')[1]);
+  return null;
+}
+
+function formatClockFromInstant(
+  instant: Date,
+  timezone?: string,
+  timezoneOffsetSeconds?: number
+): string {
+  if (Number.isFinite(timezoneOffsetSeconds)) {
+    const shifted = new Date(instant.getTime() + (timezoneOffsetSeconds as number) * 1000);
+    return new Intl.DateTimeFormat(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
+    }).format(shifted);
+  }
+  if (timezone && timezone !== 'auto') {
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+        timeZone: timezone
+      }).format(instant);
+    } catch {
+      // Fall through to the browser's local time only when no usable location zone exists.
+    }
+  }
+  return instant.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+/** Format a real instant in the forecast location's timezone (or known UTC offset). */
+export function formatLocationLocalTime(
+  instant: Date | string | number = new Date(),
+  timezone?: string,
+  timezoneOffsetSeconds?: number
+): string {
+  const parsed = instant instanceof Date ? instant : new Date(instant);
+  if (!Number.isFinite(parsed.getTime())) return '—';
+  return formatClockFromInstant(parsed, timezone, timezoneOffsetSeconds);
+}
+
+/**
+ * Current observations from Open-Meteo and WeatherAPI are often wall-clock
+ * timestamps without a UTC designator. Preserve those values as location-local
+ * clock time; convert actual UTC/offset timestamps through the location zone.
+ */
+export function formatProviderObservationTime(
+  value?: string | null,
+  timezone?: string,
+  timezoneOffsetSeconds?: number
+): string {
+  if (typeof value !== 'string' || !value.trim()) return '—';
+  const text = value.trim();
+  const hasExplicitOffset = /[T ]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(text);
+  if (hasExplicitOffset) {
+    const instant = new Date(text);
+    return Number.isFinite(instant.getTime())
+      ? formatClockFromInstant(instant, timezone, timezoneOffsetSeconds)
+      : '—';
+  }
+  return formatForecastLocalHour(text);
+}
+
+/** True when the location-local clock is within the threshold of sunrise or sunset. */
+export function isWithinLocalSolarWindow(
+  sunrise?: string | null,
+  sunset?: string | null,
+  timezone?: string,
+  timezoneOffsetSeconds?: number,
+  thresholdMinutes = 45,
+  now: Date = new Date()
+): boolean {
+  const sunriseMinutes = parseClockMinutes(sunrise);
+  const sunsetMinutes = parseClockMinutes(sunset);
+  if (sunriseMinutes == null && sunsetMinutes == null) return false;
+
+  let currentMinutes: number;
+  if (Number.isFinite(timezoneOffsetSeconds)) {
+    const shifted = new Date(now.getTime() + (timezoneOffsetSeconds as number) * 1000);
+    currentMinutes = shifted.getUTCHours() * 60 + shifted.getUTCMinutes();
+  } else {
+    try {
+      const options: Intl.DateTimeFormatOptions = {
+        hour: '2-digit',
+        minute: '2-digit',
+        hourCycle: 'h23'
+      };
+      if (timezone && timezone !== 'auto') options.timeZone = timezone;
+      const parts = new Intl.DateTimeFormat('en-GB', options).formatToParts(now);
+      const hour = Number(parts.find((part) => part.type === 'hour')?.value);
+      const minute = Number(parts.find((part) => part.type === 'minute')?.value);
+      if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
+      currentMinutes = hour * 60 + minute;
+    } catch {
+      return false;
+    }
+  }
+
+  const isNear = (solarMinutes: number | null) => {
+    if (solarMinutes == null) return false;
+    const difference = Math.abs(currentMinutes - solarMinutes);
+    return Math.min(difference, 1440 - difference) <= thresholdMinutes;
+  };
+  return isNear(sunriseMinutes) || isNear(sunsetMinutes);
+}

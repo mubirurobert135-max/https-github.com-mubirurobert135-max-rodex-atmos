@@ -21,6 +21,7 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit, cu
     ? (hourly.intervalHours as number)
     : 1;
   const hoursToShow = Math.max(1, Math.ceil(24 / intervalHours));
+  const intervalLabel = intervalHours === 1 ? 'Hourly updates' : `Every ${intervalHours} hours`;
   const startIndex = Math.max(0, nowIndex);
   const endIndex = Math.min(hourly.time.length, startIndex + hoursToShow);
 
@@ -53,11 +54,11 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit, cu
         <div className="flex items-center gap-2.5">
           <Clock className="w-4 h-4 text-sky-400" />
           <h3 className="text-base sm:text-lg font-heading font-bold text-white tracking-wide">
-            Hourly Atmospheric Forecast
+            {intervalHours === 1 ? 'Hourly Atmospheric Forecast' : 'Forecast snapshots'}
           </h3>
         </div>
         <div className="flex items-center gap-1 text-xs text-sky-200/60 font-medium">
-          <span>24-Hour Horizon</span>
+          <span>24-Hour Horizon · {intervalLabel}</span>
           <ChevronRight className="w-3.5 h-3.5 text-sky-400/80" />
         </div>
       </div>
@@ -89,13 +90,15 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit, cu
                 {formatTemp(temps[idx], unit)}
               </div>
 
-              {precipProbs[idx] > 10 ? (
+              {Number.isFinite(precipProbs[idx]) && precipProbs[idx] > 10 ? (
                 <div className="flex items-center gap-1 mt-2 text-[11px] text-sky-300 font-semibold tabular-nums">
                   <Droplets className="w-3 h-3 text-sky-400" />
                   <span>{precipProbs[idx]}%</span>
                 </div>
-              ) : (
+              ) : Number.isFinite(precipProbs[idx]) ? (
                 <div className="h-4 mt-2" />
+              ) : (
+                <span className="mt-2 text-[10px] text-white/45">Rain —</span>
               )}
             </div>
           );

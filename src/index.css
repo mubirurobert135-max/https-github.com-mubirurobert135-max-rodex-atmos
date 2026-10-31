@@ -5365,3 +5365,262 @@ nav[aria-label="Mobile Navigation"] > div > div > span {
   font-weight: 900 !important;
   text-shadow: 0 1px 0 rgba(255, 255, 255, .72);
 }
+
+
+/* RODEX Atmos — professional violet / indigo visual system */
+.wx-reference-shell {
+  --wx-edge: rgba(167, 139, 250, .32);
+  --wx-muted: rgba(226, 232, 240, .82);
+  --wx-text: #F8FAFC;
+  --wx-accent: #C4B5FD;
+  border-color: rgba(167, 139, 250, .38);
+  background:
+    radial-gradient(ellipse at 82% -12%, rgba(91, 33, 182, .23), transparent 39%),
+    linear-gradient(125deg, rgba(8, 13, 31, .97), rgba(16, 19, 48, .96) 54%, rgba(18, 20, 54, .97));
+  box-shadow: 0 28px 80px rgba(4, 8, 27, .42), inset 0 1px rgba(255,255,255,.12);
+}
+.wx-reference-rail {
+  border-right-color: rgba(167, 139, 250, .2);
+  background: linear-gradient(180deg, rgba(16, 18, 48, .95), rgba(10, 16, 37, .96));
+}
+.wx-reference-mark {
+  border-color: rgba(196, 181, 253, .55);
+  background: linear-gradient(145deg, rgba(124, 58, 237, .52), rgba(49, 46, 129, .5));
+  box-shadow: 0 7px 18px rgba(76, 29, 149, .24), inset 0 1px rgba(255,255,255,.28);
+}
+.wx-reference-heading { border-bottom-color: rgba(167, 139, 250, .22); }
+.wx-reference-kicker,
+.wx-welcome-line { color: rgba(226, 232, 240, .88); }
+.wx-reference-kicker span { color: #A78BFA; }
+.wx-live-status {
+  color: #F8FAFC;
+  border-color: rgba(167, 139, 250, .34);
+  background: rgba(49, 46, 129, .32);
+}
+.wx-live-pulse, .wx-status-dot.is-live {
+  background: #A78BFA;
+  box-shadow: 0 0 0 3px rgba(167,139,250,.17), 0 0 13px rgba(167,139,250,.68);
+}
+.wx-dashboard-hero {
+  border-color: rgba(221, 214, 254, .42);
+  background:
+    radial-gradient(ellipse at 72% 2%, rgba(192, 132, 252, .27), transparent 40%),
+    linear-gradient(112deg, #4C1D95 0%, #5B21B6 40%, #3730A3 100%);
+  box-shadow: 0 19px 42px rgba(55, 27, 117, .38), inset 0 1px rgba(255,255,255,.31);
+}
+.wx-dashboard-panel {
+  border-color: rgba(167, 139, 250, .24) !important;
+  background: linear-gradient(145deg, rgba(20, 24, 57, .94), rgba(12, 18, 42, .96)) !important;
+  box-shadow: 0 17px 38px rgba(3, 8, 28, .28), inset 0 1px rgba(255,255,255,.06) !important;
+}
+.wx-dashboard-panel-heading h2,
+.wx-dashboard-panel-heading p { color: #F8FAFC !important; }
+.wx-dashboard-panel-heading p { color: rgba(203, 213, 225, .82) !important; }
+.wx-dashboard-hour,
+.wx-dashboard-day { border-color: rgba(167,139,250,.13) !important; }
+.wx-dashboard-hour.is-current,
+.wx-dashboard-day.is-today {
+  border-color: rgba(196,181,253,.54) !important;
+  background: linear-gradient(145deg, rgba(91,33,182,.28), rgba(49,46,129,.24)) !important;
+}
+.wx-dashboard-hour-time,
+.wx-dashboard-day-name { color: #F8FAFC !important; }
+.wx-dashboard-hour small,
+.wx-dashboard-day small,
+.wx-dashboard-day-condition { color: rgba(203,213,225,.82) !important; }
+.wx-dashboard-hour strong,
+.wx-dashboard-day strong { color: #FFFFFF !important; }
+.wx-dashboard-hourly-foot,
+.wx-dashboard-daily-foot { border-top-color: rgba(167,139,250,.2) !important; }
+.wx-dashboard-hourly-foot strong,
+.wx-dashboard-daily-foot strong { color: #C4B5FD !important; }
+.wx-nearby-panel {
+  border-color: rgba(167,139,250,.25) !important;
+  background: linear-gradient(135deg, rgba(30,27,75,.83), rgba(15,23,53,.9)) !important;
+}
+.wx-nearby-heading > div > span { color: #F8FAFC !important; }
+.wx-nearby-heading small,
+.wx-map-discovery-copy { color: rgba(203,213,225,.82) !important; }
+.wx-nearby-map-link {
+  color: #E9D5FF !important;
+  border-color: rgba(196,181,253,.42) !important;
+  background: rgba(91,33,182,.3) !important;
+}
+.wx-reference-rail-button { color: rgba(226,232,240,.88); }
+.wx-reference-rail-button:hover:not(:disabled) {
+  border-color: rgba(196,181,253,.4);
+  background: rgba(91,33,182,.24);
+}
+
+/* Weather Wardrobe: actionable lifestyle guidance, visually distinct but on-brand. */
+.wx-wardrobe-card {
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+  padding: clamp(16px, 2.1vw, 23px);
+  border: 1px solid rgba(167,139,250,.38);
+  border-radius: 22px;
+  color: #F8FAFC;
+  background:
+    radial-gradient(ellipse at 92% -12%, rgba(124,58,237,.27), transparent 42%),
+    linear-gradient(125deg, rgba(18,22,55,.97), rgba(23,27,70,.96) 58%, rgba(16,26,62,.97));
+  box-shadow: 0 18px 44px rgba(3,8,28,.3), inset 0 1px rgba(255,255,255,.08);
+}
+.wx-wardrobe-topline,
+.wx-wardrobe-heading,
+.wx-wardrobe-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.wx-wardrobe-heading { justify-content: flex-start; min-width: 0; }
+.wx-wardrobe-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(221,214,254,.38);
+  border-radius: 14px;
+  color: #E9D5FF;
+  background: linear-gradient(145deg, rgba(124,58,237,.48), rgba(49,46,129,.5));
+  box-shadow: inset 0 1px rgba(255,255,255,.16);
+}
+.wx-wardrobe-eyebrow {
+  margin: 0 0 3px;
+  color: #C4B5FD;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .14em;
+}
+.wx-wardrobe-heading h2 {
+  margin: 0;
+  color: #FFFFFF;
+  font-size: clamp(17px, 1.65vw, 21px);
+  font-weight: 800;
+  letter-spacing: -.025em;
+}
+.wx-wardrobe-subtitle { margin: 3px 0 0; color: rgba(226,232,240,.76); font-size: 11px; }
+.wx-wardrobe-status {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid rgba(52,211,153,.32);
+  border-radius: 999px;
+  color: #A7F3D0;
+  background: rgba(5,150,105,.13);
+  font-size: 9px;
+  font-weight: 700;
+}
+.wx-wardrobe-status.is-limited {
+  border-color: rgba(251,191,36,.35);
+  color: #FDE68A;
+  background: rgba(180,83,9,.13);
+}
+.wx-wardrobe-content {
+  display: grid;
+  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+  gap: 18px;
+  margin-top: 17px;
+  align-items: center;
+}
+.wx-wardrobe-main { min-width: 0; }
+.wx-wardrobe-label {
+  color: #A78BFA;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+.wx-wardrobe-main h3 {
+  margin: 6px 0 6px;
+  color: #FFFFFF;
+  font-size: clamp(16px, 1.7vw, 21px);
+  font-weight: 800;
+  line-height: 1.2;
+}
+.wx-wardrobe-main p {
+  margin: 0;
+  color: rgba(226,232,240,.86);
+  font-size: 12px;
+  line-height: 1.65;
+}
+.wx-wardrobe-items {
+  display: flex;
+  align-content: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+.wx-wardrobe-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 7px 9px;
+  border: 1px solid rgba(167,139,250,.23);
+  border-radius: 11px;
+  color: #F1F5F9;
+  background: rgba(49,46,129,.27);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.wx-wardrobe-item svg { flex: 0 0 auto; color: #C4B5FD; }
+.wx-wardrobe-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin-top: 13px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(167,139,250,.18);
+}
+.wx-wardrobe-notes p {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 100%;
+  margin: 0;
+  color: #DDD6FE;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.wx-wardrobe-notes svg { flex: 0 0 auto; margin-top: 1px; color: #A78BFA; }
+.wx-wardrobe-footer {
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 11px;
+  border-top: 1px solid rgba(167,139,250,.15);
+}
+.wx-wardrobe-footer > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: rgba(203,213,225,.78);
+  font-size: 10px;
+}
+.wx-wardrobe-footer > span svg { color: #C4B5FD; }
+.wx-wardrobe-footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid rgba(221,214,254,.45);
+  border-radius: 11px;
+  color: #FFFFFF;
+  background: linear-gradient(120deg, #6D28D9, #4338CA);
+  box-shadow: 0 7px 18px rgba(76,29,149,.26), inset 0 1px rgba(255,255,255,.2);
+  font-size: 10px;
+  font-weight: 750;
+  transition: transform .18s ease, filter .18s ease;
+}
+.wx-wardrobe-footer button:hover { filter: brightness(1.12); transform: translateY(-1px); }
+.wx-wardrobe-footer button:focus-visible { outline: 2px solid #DDD6FE; outline-offset: 3px; }
+@media (max-width: 680px) {
+  .wx-wardrobe-topline { align-items: flex-start; flex-direction: column; }
+  .wx-wardrobe-content { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .wx-wardrobe-items { gap: 6px; }
+}
+@media (max-width: 390px) {
+  .wx-wardrobe-card { padding: 13px; border-radius: 17px; }
+  .wx-wardrobe-item { font-size: 9px; padding: 6px 7px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wx-wardrobe-footer button { transition: none; }
+}

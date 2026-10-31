@@ -4,6 +4,13 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
+import {
+  findCurrentHourlyIndex,
+  formatForecastLocalDate,
+  formatForecastLocalHour,
+  formatLocationLocalTime,
+  getMaxUpcomingPrecipitationProbability
+} from './src/utils/weatherUtils';
 import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
 
@@ -246,20 +253,27 @@ async function startServer() {
       });
     }
 
-    // 2. Generate Forecast-Based Notifications based on real data thresholds
-    const temp = data.current?.temperature_2m ?? 20;
-    const precip = data.current?.precipitation ?? 0;
-    const wind = data.current?.wind_speed_10m ?? 0;
-    const weatherCode = data.current?.weather_code ?? 0;
-    const maxPrecipProb = data.hourly?.precipitation_probability ? Math.max(...data.hourly.precipitation_probability.slice(0, 12)) : 0;
-    const maxUv = data.daily?.uv_index_max?.[0] ?? 5;
+    // 2. Generate forecast notices only from real, finite observations.
+    const finiteOrNull = (value: unknown): number | null =>
+      typeof value === 'number' && Number.isFinite(value) ? value : null;
+    const temp = finiteOrNull(data.current?.temperature_2m);
+    const precip = finiteOrNull(data.current?.precipitation);
+    const wind = finiteOrNull(data.current?.wind_speed_10m);
+    const weatherCode = finiteOrNull(data.current?.weather_code);
+    const maxPrecipProb = getMaxUpcomingPrecipitationProbability(
+      data.hourly?.time,
+      data.hourly?.precipitation_probability,
+      data.current?.time,
+      12
+    );
+    const maxUv = finiteOrNull(data.daily?.uv_index_max?.[0]);
 
     // Thunderstorm / Severe Rain
     if (weatherCode === 95 || weatherCode === 96 || weatherCode === 99) {
       alerts.push({
         id: `forecast-thunderstorm-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Active Thunderstorm Alert',
-        description: `Thunderstorms with lightning activity detected in ${locationName}. Take indoor shelter.`,
+        title: 'Thunderstorm Conditions Reported',
+        description: `The current weather observation reports thunderstorms in ${locationName}. Seek shelter indoors and stay away from exposed areas.`,
         severity: 'severe',
         type: 'forecast',
         locationName,
@@ -269,42 +283,45 @@ async function startServer() {
         instruction: 'Avoid open outdoor spaces and metal objects during lightning activity.',
         createdAt: new Date().toISOString()
       });
-    } else if (precip >= 10 || maxPrecipProb >= 80) {
+    } else if ((precip != null && precip >= 10) || (maxPrecipProb != null && maxPrecipProb >= 80)) {
+      const evidence: string[] = [];
+      if (maxPrecipProb != null) evidence.push(`rain probability reaches ${Math.round(maxPrecipProb)}% in the next 12 forecast hours`);
+      if (precip != null && precip >= 10) evidence.push(`the latest observation reports ${precip.toFixed(1)} mm precipitation`);
       alerts.push({
         id: `forecast-heavy-rain-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Heavy Rainfall Warning',
-        description: `Heavy rain expected in ${locationName} (${maxPrecipProb}% probability, up to ${precip}mm/h). Road pooling possible.`,
-        severity: maxPrecipProb >= 90 || precip >= 15 ? 'severe' : 'moderate',
+        title: 'High Rainfall Risk',
+        description: `Rain risk in ${locationName}: ${evidence.join('; ')}. Check the hourly outlook before travelling.`,
+        severity: (maxPrecipProb != null && maxPrecipProb >= 90) || (precip != null && precip >= 15) ? 'severe' : 'moderate',
         type: 'forecast',
         locationName,
         issuingAuthority: 'RODEX Atmos Forecast Intelligence',
         effective: new Date().toISOString(),
         expires: new Date(Date.now() + 21600000).toISOString(),
-        instruction: 'Ensure umbrella or waterproof rain gear is accessible when venturing outdoors.',
+        instruction: 'Carry suitable rain protection and allow extra travel time if heavy showers develop.',
         createdAt: new Date().toISOString()
       });
-    } else if (maxPrecipProb >= 50) {
+    } else if (maxPrecipProb != null && maxPrecipProb >= 50) {
       alerts.push({
         id: `forecast-rain-notice-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Rain Expectation Notice',
-        description: `Moderate probability of rainfall (${maxPrecipProb}%) anticipated over the next few hours in ${locationName}.`,
+        title: 'Rain Possible',
+        description: `The highest rain probability in the next 12 forecast hours is ${Math.round(maxPrecipProb)}% in ${locationName}.`,
         severity: 'minor',
         type: 'forecast',
         locationName,
         issuingAuthority: 'RODEX Atmos Forecast Intelligence',
         effective: new Date().toISOString(),
         expires: new Date(Date.now() + 21600000).toISOString(),
-        instruction: 'Consider taking an umbrella if planning afternoon outdoor activities.',
+        instruction: 'Check the hourly forecast before outdoor activities.',
         createdAt: new Date().toISOString()
       });
     }
 
-    // Strong Wind Notice
-    if (wind >= 45) {
+    // Sustained 10-metre wind speed; this is not a gust measurement.
+    if (wind != null && wind >= 45) {
       alerts.push({
         id: `forecast-strong-wind-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Strong Wind Advisory',
-        description: `Elevated wind gusts reaching ${Math.round(wind)} km/h in ${locationName}.`,
+        title: 'Strong Wind Notice',
+        description: `Reported 10-metre wind speed is around ${Math.round(wind)} km/h in ${locationName}; gust speed is a separate measurement.`,
         severity: wind >= 65 ? 'severe' : 'moderate',
         type: 'forecast',
         locationName,
@@ -316,12 +333,12 @@ async function startServer() {
       });
     }
 
-    // Extreme Temperatures
-    if (temp >= 35) {
+    // Extreme temperature notices require an actual current temperature reading.
+    if (temp != null && temp >= 35) {
       alerts.push({
         id: `forecast-extreme-heat-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Extreme Heat Advisory',
-        description: `High temperature of ${Math.round(temp)}°C in ${locationName}. Heat stress likely during peak hours.`,
+        title: 'Extreme Heat Notice',
+        description: `The current temperature observation is ${Math.round(temp)}°C in ${locationName}. Heat stress is possible during prolonged exertion.`,
         severity: 'severe',
         type: 'forecast',
         locationName,
@@ -331,24 +348,24 @@ async function startServer() {
         instruction: 'Hydrate frequently and avoid strenuous activity in direct sunlight.',
         createdAt: new Date().toISOString()
       });
-    } else if (temp <= 2) {
+    } else if (temp != null && temp <= 2) {
       alerts.push({
         id: `forecast-freezing-cold-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        title: 'Freezing Temperature Advisory',
-        description: `Low temperature of ${Math.round(temp)}°C in ${locationName}. Frost patches possible.`,
+        title: 'Very Cold Conditions Notice',
+        description: `The current temperature observation is ${Math.round(temp)}°C in ${locationName}.`,
         severity: 'moderate',
         type: 'forecast',
         locationName,
         issuingAuthority: 'RODEX Atmos Forecast Intelligence',
         effective: new Date().toISOString(),
         expires: new Date(Date.now() + 28800000).toISOString(),
-        instruction: 'Wear warm insulated clothing and take care on potentially slick walkways.',
+        instruction: 'Wear warm insulated clothing and take care on potentially icy walkways.',
         createdAt: new Date().toISOString()
       });
     }
 
-    // High UV Index Warning
-    if (maxUv >= 8) {
+    // High UV Index Warning; do not invent an index when absent.
+    if (maxUv != null && maxUv >= 8) {
       alerts.push({
         id: `forecast-high-uv-${locationName}`.toLowerCase().replace(/[^a-z0-9]/g, '-'),
         title: 'High UV Index Warning',
@@ -436,7 +453,7 @@ async function startServer() {
       dailyMin.push(d.day.mintemp_c);
       dailySunrise.push(d.astro.sunrise);
       dailySunset.push(d.astro.sunset);
-      dailyUv.push(d.day.uv || 5);
+      dailyUv.push(Number.isFinite(d.day.uv) ? d.day.uv : null);
     });
 
     const alerts = processWeatherAlerts({
@@ -612,7 +629,8 @@ async function startServer() {
       admin1: '',
       latitude: lat,
       longitude: lon,
-      timezone: 'UTC'
+      timezone: 'UTC',
+      timezoneOffsetSeconds: timezoneOffset
     };
     const hourly = {
       time: hourlyTimes,
@@ -1958,21 +1976,12 @@ ACTIVE WEATHER MAP LAYER DATA (${activeLayerName.toUpperCase()} LAYER):
 - Wind Layer Metrics: Speed ${current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) + ' km/h' : 'unavailable'}, direction ${current?.wind_direction_10m ?? 'unavailable'}°.
 If user asks about the active map layer, use supplied provider values and acknowledge unavailable fields.`;
 
-      // Calculate local time for the target city using provider timezone
-      let localTime = 'N/A';
-      try {
-        if (location?.timezone && location.timezone !== 'auto') {
-          localTime = new Date().toLocaleTimeString('en-US', {
-            timeZone: location.timezone,
-            hour: '2-digit',
-            minute: '2-digit'
-          });
-        } else {
-          localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-        }
-      } catch (tzErr) {
-        localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-      }
+      // Always calculate current time in the forecast location's timezone or known UTC offset.
+      const localTime = formatLocationLocalTime(
+        new Date(),
+        location?.timezone,
+        location?.timezoneOffsetSeconds
+      );
 
       const conditionLabel = current?.weather_code != null && current.weather_code >= 0 ? getWeatherConditionLabel(current.weather_code, current.is_day ?? 1) : 'conditions unavailable';
       const temp = current?.temperature_2m != null && Number.isFinite(current.temperature_2m) ? Math.round(current.temperature_2m) : null;
@@ -1981,20 +1990,22 @@ If user asks about the active map layer, use supplied provider values and acknow
       const wind = current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) : null;
       const precip = current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation : null;
 
-      // Produce 12-hour hourly summary (including precipitation probability)
-      const hourlySummary = hourly?.time?.slice(0, 12).map((t: string, idx: number) => {
+      // Start the outlook at the current forecast hour, not the beginning of the provider's day array.
+      const hourlyStartIndex = findCurrentHourlyIndex(hourly?.time, current?.time);
+      const hourlySummary = hourly?.time?.slice(hourlyStartIndex, hourlyStartIndex + 12).map((t: string, offset: number) => {
+        const idx = hourlyStartIndex + offset;
         const temperature = hourly?.temperature_2m?.[idx];
         const probability = hourly?.precipitation_probability?.[idx];
-        const hourStr = new Date(t).toLocaleTimeString([], { hour: 'numeric', hour12: true });
+        const hourStr = formatForecastLocalHour(t);
         if (!Number.isFinite(temperature)) return hourStr + ': temperature unavailable';
         return Number.isFinite(probability)
           ? hourStr + ': ' + Math.round(temperature) + '°C (' + Math.round(probability) + '% rain chance)'
           : hourStr + ': ' + Math.round(temperature) + '°C (rain probability unavailable)';
       }).join(', ') || 'N/A';
 
-      // Produce 7-day outlook
+      // Produce 7-day outlook using the provider's location-local calendar dates.
       const dailySummary = daily?.time?.slice(0, 7).map((d: string, idx: number) => {
-        const dayName = idx === 0 ? 'Today' : new Date(d).toLocaleDateString([], { weekday: 'short' });
+        const dayName = idx === 0 ? 'Today' : formatForecastLocalDate(d);
         const low = daily?.temperature_2m_min?.[idx];
         const high = daily?.temperature_2m_max?.[idx];
         if (!Number.isFinite(low) || !Number.isFinite(high)) return `${dayName}: forecast temperatures unavailable`;

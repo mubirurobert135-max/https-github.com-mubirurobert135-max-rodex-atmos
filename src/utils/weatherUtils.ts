@@ -272,12 +272,12 @@ export function formatForecastClock(value?: string): string {
 function parseClockMinutes(value?: string | null): number | null {
   if (typeof value !== 'string' || !value.trim()) return null;
   const text = value.trim();
-  const twelveHour = text.match(/^(0?[1-9]|1[0-2]):([0-5]\\d)\\s*([AP]M)$/i);
+  const twelveHour = text.match(/^(0?[1-9]|1[0-2]):([0-5]\d)\s*([AP]M)$/i);
   if (twelveHour) {
     const hour = Number(twelveHour[1]) % 12 + (twelveHour[3].toUpperCase() === 'PM' ? 12 : 0);
     return hour * 60 + Number(twelveHour[2]);
   }
-  const twentyFourHour = text.match(/^(?:([01]?\\d|2[0-3])):([0-5]\\d)(?::[0-5]\\d)?$/);
+  const twentyFourHour = text.match(/^(?:([01]?\d|2[0-3])):([0-5]\d)(?::[0-5]\d)?$/);
   if (twentyFourHour) return Number(twentyFourHour[1]) * 60 + Number(twentyFourHour[2]);
 
   const local = normalizeForecastLocalTime(text);
@@ -337,7 +337,7 @@ export function formatProviderObservationTime(
 ): string {
   if (typeof value !== 'string' || !value.trim()) return '—';
   const text = value.trim();
-  const hasExplicitOffset = /[T ]\\d{2}:\\d{2}(?::\\d{2}(?:\\.\\d+)?)?(?:Z|[+-]\\d{2}:?\\d{2})$/i.test(text);
+  const hasExplicitOffset = /[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:?\d{2})$/i.test(text);
   if (hasExplicitOffset) {
     const instant = new Date(text);
     return Number.isFinite(instant.getTime())

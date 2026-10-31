@@ -27,7 +27,7 @@ test('clamps out-of-range microphone samples before PCM encoding', () => {
 });
 
 test('rejects truncated odd-byte PCM instead of decoding a partial sample', () => {
-  assert.equal(base64ToFloat32Array(btoa('\\x00')).length, 0);
+  assert.equal(base64ToFloat32Array(btoa(String.fromCharCode(0))).length, 0);
   assert.equal(base64ToFloat32Array('').length, 0);
 });
 

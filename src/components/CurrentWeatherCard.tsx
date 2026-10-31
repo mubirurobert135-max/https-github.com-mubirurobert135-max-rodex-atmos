@@ -4,7 +4,7 @@ import {
   CloudRain, CloudSnow, CloudLightning, ArrowUp, ArrowDown, Clock, Navigation, RefreshCw, Globe, MapPin 
 } from 'lucide-react';
 import { WeatherData, LocationMode } from '../types';
-import { formatTemp, formatWind, getWeatherCondition, getWindDirectionLabel } from '../utils/weatherUtils';
+import { formatTemp, formatWind, getWeatherCondition, getWindDirectionLabel, formatProviderObservationTime } from '../utils/weatherUtils';
 
 interface CurrentWeatherCardProps {
   data: WeatherData;
@@ -26,21 +26,34 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
   const daily = weather.daily;
 
   const condition = getWeatherCondition(current.weather_code, current.is_day);
-  const maxTemp = daily?.temperature_2m_max?.[0] ?? current.temperature_2m + 3;
-  const minTemp = daily?.temperature_2m_min?.[0] ?? current.temperature_2m - 3;
-  const uvMax = daily?.uv_index_max?.[0] ?? 5;
+  const rawMaxTemp = daily?.temperature_2m_max?.[0];
+  const rawMinTemp = daily?.temperature_2m_min?.[0];
+  const rawUvMax = daily?.uv_index_max?.[0];
+  const maxTemp = typeof rawMaxTemp === 'number' && Number.isFinite(rawMaxTemp) ? rawMaxTemp : null;
+  const minTemp = typeof rawMinTemp === 'number' && Number.isFinite(rawMinTemp) ? rawMinTemp : null;
+  const uvMax = typeof rawUvMax === 'number' && Number.isFinite(rawUvMax) ? rawUvMax : null;
 
-  const updateTimeFormatted = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // Display the provider's observation timestamp in the selected location's clock.
+  const updateTimeFormatted = formatProviderObservationTime(
+    current.time,
+    location.timezone,
+    location.timezoneOffsetSeconds
+  );
 
-  // UV risk description
-  const uvDescription = uvMax >= 8 ? 'Very High' : uvMax >= 6 ? 'High' : uvMax >= 3 ? 'Moderate' : 'Low';
+  // UV risk description; never substitute a made-up index when the provider omits it.
+  const uvDescription = uvMax == null
+    ? 'Unavailable'
+    : uvMax >= 8 ? 'Very High' : uvMax >= 6 ? 'High' : uvMax >= 3 ? 'Moderate' : 'Low';
 
   // Air comfort description
-  const airComfort = current.relative_humidity_2m > 70 
-    ? 'Humid & damp' 
-    : current.relative_humidity_2m < 30 
-      ? 'Dry air' 
-      : 'Optimal balance';
+  const humidityKnown = typeof current.relative_humidity_2m === 'number' && Number.isFinite(current.relative_humidity_2m);
+  const airComfort = !humidityKnown
+    ? 'Unavailable'
+    : current.relative_humidity_2m > 70
+      ? 'Humid & damp'
+      : current.relative_humidity_2m < 30
+        ? 'Dry air'
+        : 'Optimal balance';
 
   // Condition Icon with rich aesthetic presentation matching reference
   const renderConditionIcon = (iconName: string) => {
@@ -139,7 +152,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
           {/* Timestamp */}
           <span className="flex items-center gap-1.5 text-white/70 font-medium">
             <Clock className="w-3.5 h-3.5 text-sky-400" />
-            <span>Updated {updateTimeFormatted}</span>
+            <span>Observed {updateTimeFormatted} local time</span>
           </span>
 
           {/* Verification Pill */}
@@ -248,7 +261,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
               </div>
               <div className="mt-2.5">
                 <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
-                  {current.relative_humidity_2m}%
+                  {humidityKnown ? `${current.relative_humidity_2m}%` : '—'}
                 </div>
                 <div className="text-xs text-sky-200/60 mt-0.5 truncate">
                   {airComfort}
@@ -280,7 +293,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
               </div>
               <div className="mt-2.5">
                 <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
-                  {uvMax}
+                  {uvMax == null ? '—' : uvMax.toFixed(1).replace(/\.0$/, '')}
                 </div>
                 <div className="text-xs text-sky-200/60 mt-0.5 truncate">
                   {uvDescription}

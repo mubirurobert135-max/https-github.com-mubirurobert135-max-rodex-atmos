@@ -26,6 +26,8 @@ export interface CurrentWeather {
 }
 
 export interface HourlyWeather {
+  /** Hours between provider forecast samples (e.g. 1 for hourly or 3 for OpenWeather's 3-hour feed). */
+  intervalHours?: number;
   time: string[];
   temperature_2m: number[];
   precipitation_probability: number[];

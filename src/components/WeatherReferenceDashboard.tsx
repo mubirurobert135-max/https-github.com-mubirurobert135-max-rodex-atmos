@@ -191,7 +191,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
         <header className="wx-reference-heading">
           <div className="wx-reference-title-group">
             <div className="wx-welcome-line">Welcome back to <strong>RODEX Atmos</strong></div>
-            <div className="wx-reference-kicker">{dateLabel} <span>·</span> Live weather update</div>
+            <div className="wx-reference-kicker">{dateLabel} <span>·</span> Weather observations</div>
           </div>
           <div className="wx-reference-heading-right">
             <div className="wx-live-status">

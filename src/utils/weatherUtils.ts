@@ -389,3 +389,18 @@ export function isWithinLocalSolarWindow(
   };
   return isNear(sunriseMinutes) || isNear(sunsetMinutes);
 }
+
+
+/** Maximum rain probability over the next N forecast slots, starting at the current local hour. */
+export function getMaxUpcomingPrecipitationProbability(
+  times: string[] | undefined,
+  probabilities: number[] | undefined,
+  currentTime?: string,
+  periods = 12
+): number | null {
+  if (!Array.isArray(probabilities) || probabilities.length === 0 || !Number.isFinite(periods) || periods <= 0) return null;
+  const startIndex = findCurrentHourlyIndex(times, currentTime);
+  const upcoming = probabilities.slice(startIndex, startIndex + Math.floor(periods))
+    .filter((value): value is number => typeof value === 'number' && Number.isFinite(value));
+  return upcoming.length ? Math.max(...upcoming) : null;
+}

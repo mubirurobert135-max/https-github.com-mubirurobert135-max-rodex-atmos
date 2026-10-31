@@ -9,7 +9,8 @@ import {
   formatForecastLocalDate,
   formatForecastLocalHour,
   formatLocationLocalTime,
-  getMaxUpcomingPrecipitationProbability
+  getMaxUpcomingPrecipitationProbability,
+  normalizeForecastLocalTime
 } from './src/utils/weatherUtils';
 import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
@@ -1198,12 +1199,13 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
       return res.status(400).json({ error: 'Missing required weather parameters for daily briefing.' });
     }
 
+    const rainWindowStartIndex = findCurrentHourlyIndex(hourly?.time, current?.time);
     const briefingCacheKey = 'ai:briefing:' + JSON.stringify([
       location.name, location.country, location.latitude, location.longitude,
       current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
       current.wind_speed_10m, current.precipitation, current.weather_code,
       daily?.temperature_2m_max?.[0], daily?.temperature_2m_min?.[0], daily?.uv_index_max?.[0],
-      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(0, 12) : [],
+      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + 12) : [],
       Array.isArray(alerts) ? alerts.map((alert: any) => [alert.type, alert.severity, alert.title, alert.description]) : []
     ]);
     const cachedBriefing = cache.get(briefingCacheKey);
@@ -1220,7 +1222,7 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     const lowTemp = typeof rawLow === 'number' && Number.isFinite(rawLow) ? Math.round(rawLow) : null;
     const currentTemp = typeof rawCurrentTemp === 'number' && Number.isFinite(rawCurrentTemp) ? Math.round(rawCurrentTemp) : null;
     const rainProbabilities = Array.isArray(hourly?.precipitation_probability)
-      ? hourly.precipitation_probability.slice(0, 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
+      ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + 12).filter((value: unknown): value is number => typeof value === 'number' && Number.isFinite(value))
       : [];
     const maxPrecipProb = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
     const rawWind = current?.wind_speed_10m;
@@ -1249,7 +1251,9 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     const headlineAlert = topAlert ? `[${topAlert.type === 'official' ? 'Official Warning' : 'Forecast Alert'}] ${topAlert.title}: ${topAlert.description}` : undefined;
 
     let greetingTime = 'Good day';
-    const hour = new Date().getHours();
+    const localClock = normalizeForecastLocalTime(current?.time);
+    const localHour = localClock ? Number(localClock.slice(11, 13)) : Number.NaN;
+    const hour = Number.isFinite(localHour) ? localHour : new Date().getHours();
     if (hour < 12) greetingTime = 'Good morning';
     else if (hour < 18) greetingTime = 'Good afternoon';
     else greetingTime = 'Good evening';

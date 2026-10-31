@@ -546,8 +546,13 @@ async function startServer() {
       ? (currentTimestamp >= sunriseTimestamp && currentTimestamp < sunsetTimestamp ? 1 : 0)
       : 1;
     const currentWeatherCode = mapOpenWeatherCode(currentData.weather?.[0]?.id);
+    // Keep OpenWeather timestamps as location-local wall time (no Z suffix),
+    // matching the wall-clock convention used by the provider's 3-hour forecast feed.
+    const toLocationWallTime = (timestamp: number) =>
+      new Date((timestamp + timezoneOffset) * 1000).toISOString().slice(0, 16);
+
     const current = {
-      time: new Date(currentTimestamp * 1000).toISOString(),
+      time: toLocationWallTime(currentTimestamp),
       temperature_2m: Number.isFinite(currentData.main?.temp) ? currentData.main.temp : null,
       relative_humidity_2m: Number.isFinite(currentData.main?.humidity) ? currentData.main.humidity : null,
       apparent_temperature: Number.isFinite(currentData.main?.feels_like) ? currentData.main.feels_like : null,
@@ -575,7 +580,7 @@ async function startServer() {
       const code = mapOpenWeatherCode(item.weather?.[0]?.id);
 
       // OpenWeather's standard forecast feed provides 3-hour samples, not one-hour samples.
-      hourlyTimes.push(new Date(timestamp * 1000).toISOString());
+      hourlyTimes.push(toLocationWallTime(timestamp));
       hourlyTemps.push(temp == null ? Number.NaN : temp);
       hourlyPrecipProb.push(Number.isFinite(item.pop) ? Math.round(item.pop * 100) : Number.NaN);
       hourlyCodes.push(code);

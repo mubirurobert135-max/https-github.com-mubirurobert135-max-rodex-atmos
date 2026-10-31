@@ -7,6 +7,7 @@ export interface WeatherLocation {
   latitude: number;
   longitude: number;
   timezone: string;
+  timezoneOffsetSeconds?: number;
   isApproximateNetwork?: boolean;
   detectedIP?: string;
 }

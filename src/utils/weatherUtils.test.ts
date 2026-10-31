@@ -47,3 +47,33 @@ test('unknown weather codes are not presented as clear skies', () => {
   assert.equal(condition.label, 'Conditions Unavailable');
   assert.equal(condition.theme, 'overcast');
 });
+
+
+import {
+  formatLocationLocalTime,
+  formatProviderObservationTime,
+  isWithinLocalSolarWindow
+} from './weatherUtils';
+
+test('formats location-local current time instead of the viewer device time', () => {
+  const instant = new Date('2026-10-31T05:30:00.000Z');
+  assert.equal(formatLocationLocalTime(instant, 'Asia/Kolkata'), '11:00 AM');
+  assert.equal(formatLocationLocalTime(instant, 'Africa/Kampala'), '8:30 AM');
+});
+
+test('keeps provider wall-clock observation times in the forecast location', () => {
+  assert.equal(formatProviderObservationTime('2026-10-31 14:25', 'Asia/Tokyo'), '2:25 PM');
+  assert.equal(formatProviderObservationTime('2026-10-31T14:25', 'Asia/Tokyo'), '2:25 PM');
+});
+
+test('converts UTC observations into the location timezone', () => {
+  assert.equal(formatProviderObservationTime('2026-10-31T05:30:00Z', 'Asia/Kolkata'), '11:00 AM');
+  assert.equal(formatProviderObservationTime('2026-10-31T05:30:00Z', 'UTC', 19800), '11:00 AM');
+});
+
+test('evaluates sunrise and sunset windows using the forecast location clock', () => {
+  const now = new Date('2026-06-01T03:30:00.000Z'); // 06:30 in Kampala
+  assert.equal(isWithinLocalSolarWindow('06:00', '18:30', 'Africa/Kampala', undefined, 45, now), true);
+  assert.equal(isWithinLocalSolarWindow('06:00', '18:30', 'America/Los_Angeles', undefined, 45, now), false);
+  assert.equal(isWithinLocalSolarWindow('Unavailable', 'Unavailable', 'Africa/Kampala', undefined, 45, now), false);
+});

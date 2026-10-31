@@ -91,3 +91,12 @@ test('returns unavailable when no finite upcoming rain probabilities exist', () 
   assert.equal(getMaxUpcomingPrecipitationProbability([], [], undefined), null);
   assert.equal(getMaxUpcomingPrecipitationProbability(['2026-10-31T13:00'], [Number.NaN], '2026-10-31T13:00'), null);
 });
+
+
+import { formatForecastLocalDate } from './weatherUtils';
+
+test('formats daily forecast date-only values without requiring an hourly timestamp', () => {
+  assert.notEqual(formatForecastLocalDate('2026-10-31'), 'Forecast date unavailable');
+  assert.notEqual(formatForecastLocalDate('2026-10-31T13:00'), 'Forecast date unavailable');
+  assert.equal(formatForecastLocalDate('not-a-date'), 'Forecast date unavailable');
+});

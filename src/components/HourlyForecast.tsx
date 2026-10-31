@@ -17,7 +17,10 @@ export const HourlyForecast: React.FC<HourlyForecastProps> = ({ hourly, unit, cu
     ? hourly.time.findIndex((time) => normalizeForecastLocalTime(time) > localNow)
     : findNextHourlyIndex(hourly.time, currentTime);
   const nowIndex = firstFutureIndex >= 0 ? firstFutureIndex : Math.max(0, hourly.time.length - 1);
-  const hoursToShow = 24;
+  const intervalHours = Number.isFinite(hourly.intervalHours) && (hourly.intervalHours as number) > 0
+    ? (hourly.intervalHours as number)
+    : 1;
+  const hoursToShow = Math.max(1, Math.ceil(24 / intervalHours));
   const startIndex = Math.max(0, nowIndex);
   const endIndex = Math.min(hourly.time.length, startIndex + hoursToShow);
 

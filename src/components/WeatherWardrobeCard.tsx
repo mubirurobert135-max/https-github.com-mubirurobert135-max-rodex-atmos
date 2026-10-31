@@ -13,7 +13,8 @@ export const WeatherWardrobeCard: React.FC<WeatherWardrobeCardProps> = ({ data, 
   const advice = buildWeatherWardrobeAdvice({
     current: data.weather.current,
     daily: data.weather.daily,
-    hourly: data.weather.hourly
+    hourly: data.weather.hourly,
+    unit
   });
 
   const outfitPrompt = `What should I wear in ${data.location.name} today? Use the current weather and the next 8 hours of forecast. Explain the recommendation in 2 or 3 concise sentences.`;

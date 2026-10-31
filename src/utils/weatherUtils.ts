@@ -71,14 +71,16 @@ export function cToF(c: number): number {
   return Math.round((c * 9) / 5 + 32);
 }
 
-export function formatTemp(c: number, unit: 'C' | 'F'): string {
+export function formatTemp(c: number | null | undefined, unit: 'C' | 'F'): string {
+  if (typeof c !== 'number' || !Number.isFinite(c)) return '—';
   if (unit === 'F') {
     return `${cToF(c)}°F`;
   }
   return `${Math.round(c)}°C`;
 }
 
-export function formatWind(speedKmH: number, unit: 'C' | 'F'): string {
+export function formatWind(speedKmH: number | null | undefined, unit: 'C' | 'F'): string {
+  if (typeof speedKmH !== 'number' || !Number.isFinite(speedKmH)) return '—';
   if (unit === 'F') {
     const mph = Math.round(speedKmH * 0.621371);
     return `${mph} mph`;
@@ -86,9 +88,11 @@ export function formatWind(speedKmH: number, unit: 'C' | 'F'): string {
   return `${Math.round(speedKmH)} km/h`;
 }
 
-export function getWindDirectionLabel(degrees: number): string {
+export function getWindDirectionLabel(degrees: number | null | undefined): string {
+  if (typeof degrees !== 'number' || !Number.isFinite(degrees)) return '—';
+  const normalized = ((degrees % 360) + 360) % 360;
   const directions = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  const index = Math.round((degrees % 360) / 22.5);
+  const index = Math.round(normalized / 22.5);
   return directions[index % 16];
 }
 

@@ -33,8 +33,6 @@ export interface HourlyWeather {
   precipitation_probability: number[];
   weather_code: number[];
   is_day: number[];
-  /** Hours between consecutive forecast samples (1 for hourly feeds, 3 for OpenWeather's standard feed). */
-  intervalHours?: number;
 }
 
 export interface DailyWeather {

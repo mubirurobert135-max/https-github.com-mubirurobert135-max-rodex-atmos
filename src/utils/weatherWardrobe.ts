@@ -14,8 +14,12 @@ export function buildWeatherWardrobeAdvice(input: {
   current: CurrentWeather;
   daily?: DailyWeather;
   hourly?: HourlyWeather;
+  unit?: 'C' | 'F';
 }): WeatherWardrobeAdvice {
   const { current, daily, hourly } = input;
+  const unit = input.unit || 'C';
+  const formatDisplayedTemp = (celsius: number) =>
+    unit === 'F' ? `${Math.round((celsius * 9) / 5 + 32)}°F` : `${Math.round(celsius)}°C`;
   const feelsLike = typeof current.apparent_temperature === 'number' && Number.isFinite(current.apparent_temperature)
     ? current.apparent_temperature
     : typeof current.temperature_2m === 'number' && Number.isFinite(current.temperature_2m)
@@ -50,23 +54,23 @@ export function buildWeatherWardrobeAdvice(input: {
   } else if (feelsLike <= 10) {
     outfit = 'Warm layers with a proper jacket';
     items = ['Long-sleeve base layer', 'Warm sweater', 'Insulated jacket', 'Closed shoes'];
-    reason = `It feels like ${Math.round(feelsLike)}°C, so extra layers will help keep you comfortable.`;
+    reason = `It feels like ${formatDisplayedTemp(feelsLike)}, so extra layers will help keep you comfortable.`;
   } else if (feelsLike <= 17) {
     outfit = 'A light sweater or jacket';
     items = ['Comfortable top', 'Light sweater or jacket', 'Full-length trousers', 'Comfortable shoes'];
-    reason = `It feels like ${Math.round(feelsLike)}°C, making a light outer layer a sensible choice.`;
+    reason = `It feels like ${formatDisplayedTemp(feelsLike)}, making a light outer layer a sensible choice.`;
   } else if (feelsLike <= 24) {
     outfit = 'Comfortable light layers';
     items = ['T-shirt or breathable shirt', 'Light trousers or jeans', 'Comfortable everyday shoes'];
-    reason = `It feels like ${Math.round(feelsLike)}°C, so comfortable light layers should work well.`;
+    reason = `It feels like ${formatDisplayedTemp(feelsLike)}, so comfortable light layers should work well.`;
   } else if (feelsLike <= 29) {
     outfit = 'Breathable, lightweight clothing';
     items = ['Loose breathable shirt', 'Lightweight trousers or shorts', 'Breathable footwear'];
-    reason = `It feels like ${Math.round(feelsLike)}°C, so lightweight fabrics can help you stay comfortable.`;
+    reason = `It feels like ${formatDisplayedTemp(feelsLike)}, so lightweight fabrics can help you stay comfortable.`;
   } else {
     outfit = 'Loose, airy clothing';
     items = ['Loose light-coloured clothing', 'Breathable footwear', 'A cap or wide-brimmed hat'];
-    reason = `It feels like ${Math.round(feelsLike)}°C, so choose airy clothing and limit direct sun exposure.`;
+    reason = `It feels like ${formatDisplayedTemp(feelsLike)}, so choose airy clothing and limit direct sun exposure.`;
   }
 
   const weatherNotes: string[] = [];
@@ -100,7 +104,7 @@ export function buildWeatherWardrobeAdvice(input: {
   return {
     outfit,
     items: [...new Set(items)],
-    reason: [reason, ...weatherNotes].join(' '),
+    reason,
     weatherNotes,
     dataStatus: feelsLike == null ? 'limited' : 'good'
   };

@@ -434,7 +434,7 @@ async function startServer() {
       day.hour.forEach((h: any) => {
         hourlyTimes.push(h.time);
         hourlyTemps.push(h.temp_c);
-        hourlyPrecipProb.push(h.chance_of_rain || 0);
+        hourlyPrecipProb.push(Number.isFinite(h.chance_of_rain) ? h.chance_of_rain : Number.NaN);
         hourlyCodes.push(mapWeatherAPIcode(h.condition.code, h.is_day));
         hourlyIsDay.push(h.is_day);
       });
@@ -586,7 +586,8 @@ async function startServer() {
       hourlyTemps.push(temp == null ? Number.NaN : temp);
       hourlyPrecipProb.push(Number.isFinite(item.pop) ? Math.round(item.pop * 100) : Number.NaN);
       hourlyCodes.push(code);
-      hourlyIsDay.push(1);
+      const providerDayFlag = item.sys?.pod;
+      hourlyIsDay.push(providerDayFlag === 'd' ? 1 : providerDayFlag === 'n' ? 0 : (localHour >= 6 && localHour < 18 ? 1 : 0));
 
       if (!dailyByDate.has(localDate)) dailyByDate.set(localDate, { temps: [], codes: [], codeHours: [] });
       const day = dailyByDate.get(localDate)!;

@@ -1385,8 +1385,8 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
   const TTS_CACHE_TTL_MS = 10 * 60 * 1000;
   const TTS_CACHE_MAX_ENTRIES = 48;
   const TTS_CACHE_MAX_TEXT_LENGTH = 160;
-  const TTS_TOTAL_BUDGET_MS = 7000;
-  const TTS_REQUEST_TIMEOUT_MS = 4500;
+  const TTS_TOTAL_BUDGET_MS = 4800;
+  const TTS_REQUEST_TIMEOUT_MS = 3000;
 
   interface InternalSynthesisResult {
     audio: string | null;

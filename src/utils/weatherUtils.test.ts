@@ -84,12 +84,12 @@ import { getMaxUpcomingPrecipitationProbability } from './weatherUtils';
 test('rain probability window begins at the current forecast hour, not midnight', () => {
   const times = Array.from({ length: 24 }, (_, hour) => `2026-10-31T${String(hour).padStart(2, '0')}:00`);
   const probabilities = Array.from({ length: 24 }, (_, hour) => hour < 12 ? 95 : hour === 18 ? 78 : 10);
-  assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T13:25', 12), 78);
+  assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T13:25', 1, 12), 78);
 });
 
 test('returns unavailable when no finite upcoming rain probabilities exist', () => {
-  assert.equal(getMaxUpcomingPrecipitationProbability([], [], undefined), null);
-  assert.equal(getMaxUpcomingPrecipitationProbability(['2026-10-31T13:00'], [Number.NaN], '2026-10-31T13:00'), null);
+  assert.equal(getMaxUpcomingPrecipitationProbability([], [], undefined, 1, 12), null);
+  assert.equal(getMaxUpcomingPrecipitationProbability(['2026-10-31T13:00'], [Number.NaN], '2026-10-31T13:00', 1, 12), null);
 });
 
 
@@ -99,4 +99,23 @@ test('formats daily forecast date-only values without requiring an hourly timest
   assert.notEqual(formatForecastLocalDate('2026-10-31'), 'Forecast date unavailable');
   assert.notEqual(formatForecastLocalDate('2026-10-31T13:00'), 'Forecast date unavailable');
   assert.equal(formatForecastLocalDate('not-a-date'), 'Forecast date unavailable');
+});
+
+
+test('converts a requested 12-hour rain window to four samples for a 3-hour provider', () => {
+  const times = Array.from({ length: 12 }, (_, i) => {
+    const hour = i * 3;
+    return `2026-10-31T${String(hour).padStart(2, '0')}:00`;
+  });
+  const probabilities = [10, 20, 85, 30, 95, 10, 10, 10, 10, 10, 10, 10];
+  assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T03:30', 3, 12), 95);
+});
+
+test('converts an eight-hour wardrobe window to three samples for a 3-hour provider', () => {
+  const times = Array.from({ length: 12 }, (_, i) => {
+    const hour = i * 3;
+    return `2026-10-31T${String(hour).padStart(2, '0')}:00`;
+  });
+  const probabilities = [5, 10, 25, 95, 20, 10, 0, 0, 0, 0, 0, 0];
+  assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T00:20', 3, 8), 25);
 });

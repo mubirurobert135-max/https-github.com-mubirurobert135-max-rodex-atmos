@@ -57,3 +57,16 @@ test('adds a wind-resistant layer only when measured wind is strong', () => {
   const advice = buildWeatherWardrobeAdvice(fixture({ wind_speed_10m: 36 }));
   assert.ok(advice.items.some(item => /wind-resistant/i.test(item)));
 });
+
+
+test('uses the selected Fahrenheit unit when explaining feels-like temperature', () => {
+  const input = { ...fixture(), unit: 'F' as const };
+  const advice = buildWeatherWardrobeAdvice(input);
+  assert.match(advice.reason, /73°F/);
+});
+
+test('does not recommend carrying an umbrella into a thunderstorm', () => {
+  const advice = buildWeatherWardrobeAdvice(fixture({ weather_code: 95 }));
+  assert.ok(!advice.items.some(item => /umbrella/i.test(item)));
+  assert.ok(advice.weatherNotes.some(note => /stay indoors/i.test(note)));
+});

@@ -77,3 +77,17 @@ test('evaluates sunrise and sunset windows using the forecast location clock', (
   assert.equal(isWithinLocalSolarWindow('06:00', '18:30', 'America/Los_Angeles', undefined, 45, now), false);
   assert.equal(isWithinLocalSolarWindow('Unavailable', 'Unavailable', 'Africa/Kampala', undefined, 45, now), false);
 });
+
+
+import { getMaxUpcomingPrecipitationProbability } from './weatherUtils';
+
+test('rain probability window begins at the current forecast hour, not midnight', () => {
+  const times = Array.from({ length: 24 }, (_, hour) => `2026-10-31T${String(hour).padStart(2, '0')}:00`);
+  const probabilities = Array.from({ length: 24 }, (_, hour) => hour < 12 ? 95 : hour === 18 ? 78 : 10);
+  assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T13:25', 12), 78);
+});
+
+test('returns unavailable when no finite upcoming rain probabilities exist', () => {
+  assert.equal(getMaxUpcomingPrecipitationProbability([], [], undefined), null);
+  assert.equal(getMaxUpcomingPrecipitationProbability(['2026-10-31T13:00'], [Number.NaN], '2026-10-31T13:00'), null);
+});

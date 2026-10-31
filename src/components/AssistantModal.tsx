@@ -6,6 +6,7 @@ import {
 import { WeatherData } from '../types';
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array, resampleAudioBuffer } from '../utils/audioUtils';
 import { getWeatherCondition, formatLocationLocalTime } from '../utils/weatherUtils';
+import { buildWeatherWardrobeAdvice } from '../utils/weatherWardrobe';
 import { useAuth } from '../context/AuthContext';
 import { 
   sanitizeUserName, 
@@ -1206,6 +1207,12 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
         // Send Initial Setup with Weather Grounding, Map Context, Authenticated User Identity & Concise Speech Rules
         const location = weatherData?.location;
         const current = weatherData?.weather?.current;
+        const daily = weatherData?.weather?.daily;
+        const hourly = weatherData?.weather?.hourly;
+        const wardrobeAdvice = current ? buildWeatherWardrobeAdvice({ current, daily, hourly }) : null;
+        const wardrobeContext = wardrobeAdvice
+          ? `${wardrobeAdvice.outfit}; items: ${wardrobeAdvice.items.join(', ')}; reason: ${wardrobeAdvice.reason}; notes: ${wardrobeAdvice.weatherNotes.join(' ') || 'none'}`
+          : 'Unavailable because current weather measurements are missing';
         const devLoc = deviceLocationData?.location;
         const mapLoc = mapContextData?.location;
         const mapCurr = mapContextData?.weather?.current;
@@ -1223,11 +1230,13 @@ VOICE PERSONALITY & DELIVERY:
 
 Location Context Hierarchy & Rules:
 1. User's Detected Physical Location: ${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}. (Use when user asks "What's the weather here?" or "How is my local weather?").
-2. Currently Displayed Dashboard Location: ${location?.name || 'Local'}, ${location?.country || ''} (${current?.temperature_2m != null ? Math.round(current.temperature_2m) + '°C' : 'N/A'}).
+2. Currently Displayed Dashboard Location: ${location?.name || 'Local'}, ${location?.country || ''} (${current?.temperature_2m != null ? formatWeatherMetric(current.temperature_2m, '°C') : 'N/A'}).
+   Current wardrobe guidance: ${wardrobeContext}. Today's UV index: ${daily?.uv_index_max?.[0] != null && Number.isFinite(daily.uv_index_max[0]) ? daily.uv_index_max[0] : 'unavailable'}.
 3. Currently Selected Map Context Location: ${mapLoc?.name || location?.name || 'None'} (${mapCurr?.temperature_2m != null ? Math.round(mapCurr.temperature_2m) + '°C' : 'N/A'}). (Use when user asks "What's the weather at this location?", "How is it on the map?", or "Tell me about this spot").
 4. Active Weather Map Layer: ${activeMapLayer || 'temperature'}. (Describe this layer using real metrics when asked to explain the map layer).
-5. Explicit City Overrides: If user names a city explicitly (e.g. "What's the weather in Kampala?"), call 'getCityWeather'.
-6. Location Comparisons: If user asks to compare two locations (e.g. "Compare Kampala and Entebbe", "Compare my location with Entebbe"), call 'compareWeather'.
+5. Weather Wardrobe: When asked what to wear, use the supplied outfit guidance. If the user names another city, call 'getCityWeather' first.
+6. Explicit City Overrides: If user names a city explicitly (e.g. "What's the weather in Kampala?"), call 'getCityWeather'.
+7. Location Comparisons: If user asks to compare two locations (e.g. "Compare Kampala and Entebbe", "Compare my location with Entebbe"), call 'compareWeather'.
 
 Available Function Tools:
 - 'getCityWeather': Fetch live weather conditions for a single city.
@@ -1494,6 +1503,11 @@ Available Function Tools:
 
                   const conditionObj = getWeatherCondition(data.weather.current.weather_code, data.weather.current.is_day);
                   const conditionText = conditionObj.label;
+                  const cityWardrobeAdvice = buildWeatherWardrobeAdvice({
+                    current: data.weather.current,
+                    daily: data.weather.daily,
+                    hourly: data.weather.hourly
+                  });
 
                   // Respond to Live API tool call with real provider fields
                   ws.send(JSON.stringify({
@@ -1513,7 +1527,13 @@ Available Function Tools:
                               weatherCode: Number.isFinite(data.weather.current.weather_code) ? data.weather.current.weather_code : 'unavailable',
                               wind: formatWeatherMetric(data.weather.current.wind_speed_10m, ' km/h'),
                               humidity: formatWeatherMetric(data.weather.current.relative_humidity_2m, '%'),
-                              precipitation: formatWeatherMetric(data.weather.current.precipitation, ' mm', 1)
+                              precipitation: formatWeatherMetric(data.weather.current.precipitation, ' mm', 1),
+                              wardrobe: {
+                                outfit: cityWardrobeAdvice.outfit,
+                                items: cityWardrobeAdvice.items,
+                                reason: cityWardrobeAdvice.reason,
+                                weatherNotes: cityWardrobeAdvice.weatherNotes
+                              }
                             }
                           }
                         }

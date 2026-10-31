@@ -13,6 +13,7 @@ import {
   normalizeForecastLocalTime
 } from './src/utils/weatherUtils';
 import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
+import { buildWeatherWardrobeAdvice } from './src/utils/weatherWardrobe';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
 
 dotenv.config();
@@ -2003,6 +2004,15 @@ If user asks about the active map layer, use supplied provider values and acknow
       const humidity = current?.relative_humidity_2m != null && Number.isFinite(current.relative_humidity_2m) ? Math.round(current.relative_humidity_2m) : null;
       const wind = current?.wind_speed_10m != null && Number.isFinite(current.wind_speed_10m) ? Math.round(current.wind_speed_10m) : null;
       const precip = current?.precipitation != null && Number.isFinite(current.precipitation) ? current.precipitation : null;
+      const uvIndex = daily?.uv_index_max?.[0] != null && Number.isFinite(daily.uv_index_max[0])
+        ? daily.uv_index_max[0]
+        : null;
+      const wardrobeAdvice = current
+        ? buildWeatherWardrobeAdvice({ current, daily, hourly })
+        : null;
+      const wardrobeContext = wardrobeAdvice
+        ? `${wardrobeAdvice.outfit}; items: ${wardrobeAdvice.items.join(', ')}; reason: ${wardrobeAdvice.reason}; notes: ${wardrobeAdvice.weatherNotes.join(' ') || 'none'}`
+        : 'Unavailable because current weather measurements are missing';
 
       // Start the outlook at the current forecast hour, not the beginning of the provider's day array.
       const hourlyStartIndex = findCurrentHourlyIndex(hourly?.time, current?.time);
@@ -2046,6 +2056,7 @@ STRICT GROUNDING & LOCATION RULES:
 7. Distinguish current precipitation (${precip == null ? 'unavailable' : precip + ' mm'}) and reported condition (${current?.weather_code ?? 'unavailable'}) from future rain probability; do not treat probability alone as proof that rain is falling.
 8. Location Comparisons: Compare temperatures, rain chances, wind speeds, and comfort levels directly using verified data.
 9. Layer Explanations: Explain active map layers (${activeLayerName}) using real provider values (temperature, precipitation, wind speed).
+10. Weather Wardrobe: For outfit questions, use the supplied wardrobe guidance and explain the practical reason in one concise sentence. Never invent missing temperature, rain, wind, or UV measurements.
 
 REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - City: ${location?.name || 'Unknown'}, ${location?.country || ''}
@@ -2056,7 +2067,9 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
 - Humidity: ${humidity == null ? 'unavailable' : humidity + '%'}
 - Wind Speed: ${wind == null ? 'unavailable' : wind + ' km/h'}
 - Precipitation Volume: ${precip == null ? 'unavailable' : precip + ' mm'}
-- Surface Pressure: ${current?.surface_pressure != null ? current.surface_pressure + ' hPa' : 'unavailable'}
+- Surface Pressure: ${current?.surface_pressure != null && Number.isFinite(current.surface_pressure) ? current.surface_pressure + ' hPa' : 'unavailable'}
+- UV Index Forecast: ${uvIndex == null ? 'unavailable' : uvIndex}
+- Weather Wardrobe Guidance: ${wardrobeContext}
 - Today's Hourly Outlook (Next 12 Hours): ${hourlySummary}
 - 7-Day Outlook: ${dailySummary}${comparisonContext}${layerContext}${alertsContext}`;
 
@@ -2110,15 +2123,12 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
         ? 'In ' + (location?.name || 'the selected location') + ', the local time is ' + localTime + '. Current data reports ' + currentFacts.join(', ') + '.'
         : 'I can’t provide a reliable current-weather answer for ' + (location?.name || 'this location') + ' because the latest measurements are incomplete. Please refresh the forecast.';
 
-      if (/\b(wear|clothes|dress|jacket|coat)\b/i.test(lastUserMsg)) {
-        if (temp == null) {
-          fallbackReply = 'I can’t make a temperature-based clothing recommendation for ' + (location?.name || 'this location') + ' because the current temperature is unavailable.';
-        } else if (temp < 15) {
-          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. A warm jacket or sweater is a sensible choice.';
-        } else if (temp > 24) {
-          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Breathable, lightweight clothing should be comfortable.';
+      if (/\b(?:what should i wear|what can i wear|what to wear|wear|clothes|dress|jacket|coat|outfit|wardrobe)\b/i.test(lastUserMsg) && wardrobeAdvice) {
+        if (wardrobeAdvice.dataStatus === 'limited') {
+          fallbackReply = wardrobeAdvice.reason;
         } else {
-          fallbackReply = 'In ' + (location?.name || 'this location') + ', it’s ' + temp + '°C. Comfortable light layers are a reasonable choice.';
+          const wardrobeNote = wardrobeAdvice.weatherNotes[0];
+          fallbackReply = `For ${location?.name || 'this location'}, ${wardrobeAdvice.outfit.toLowerCase()}. ${wardrobeAdvice.reason}${wardrobeNote ? ' ' + wardrobeNote : ''}`;
         }
       } else if (/\b(umbrella|rain)\b/i.test(lastUserMsg)) {
         const rainIndicated = (precip != null && precip > 0) ||

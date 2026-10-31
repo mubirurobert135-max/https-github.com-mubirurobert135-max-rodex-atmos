@@ -36,7 +36,7 @@ test('recommends light layers for mild feels-like temperature', () => {
 test('adds an umbrella when rain is likely in upcoming hours', () => {
   const advice = buildWeatherWardrobeAdvice(fixture());
   assert.ok(advice.items.some(item => /umbrella/i.test(item)));
-  assert.match(advice.reason, /70%/);
+  assert.ok(advice.weatherNotes.some(note => /70%/.test(note)));
 });
 
 test('adds sun protection when UV is high', () => {

@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { WeatherData } from '../types';
 import { floatTo16BitPCM, arrayBufferToBase64, base64ToFloat32Array, resampleAudioBuffer } from '../utils/audioUtils';
-import { getWeatherCondition } from '../utils/weatherUtils';
+import { getWeatherCondition, formatLocationLocalTime } from '../utils/weatherUtils';
 import { useAuth } from '../context/AuthContext';
 import { 
   sanitizeUserName, 
@@ -21,6 +21,11 @@ import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE } from '../utils/voic
 import { resolveVoicePrerequisites } from '../utils/voiceSession';
 
 import { LocationMode } from '../types';
+
+function formatWeatherMetric(value: unknown, unit: string, digits = 0): string {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 'unavailable';
+  return `${digits > 0 ? value.toFixed(digits) : Math.round(value)}${unit}`;
+}
 
 interface AssistantModalProps {
   isOpen: boolean;
@@ -1451,20 +1456,11 @@ Available Function Tools:
                     onSelectCityWeather(data);
                   }
 
-                  let localTime = 'N/A';
-                  try {
-                    if (data.location?.timezone && data.location.timezone !== 'auto') {
-                      localTime = new Date().toLocaleTimeString('en-US', {
-                        timeZone: data.location.timezone,
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      });
-                    } else {
-                      localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                    }
-                  } catch (e) {
-                    localTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                  }
+                  const localTime = formatLocationLocalTime(
+                    new Date(),
+                    data.location?.timezone,
+                    data.location?.timezoneOffsetSeconds
+                  );
 
                   const conditionObj = getWeatherCondition(data.weather.current.weather_code, data.weather.current.is_day);
                   const conditionText = conditionObj.label;
@@ -1482,12 +1478,12 @@ Available Function Tools:
                               country: data.location.country,
                               localTime: localTime,
                               condition: conditionText,
-                              temperature: `${Math.round(data.weather.current.temperature_2m)}°C`,
-                              feelsLike: `${Math.round(data.weather.current.apparent_temperature)}°C`,
-                              weatherCode: data.weather.current.weather_code,
-                              wind: `${Math.round(data.weather.current.wind_speed_10m)} km/h`,
-                              humidity: `${data.weather.current.relative_humidity_2m}%`,
-                              precipitation: `${data.weather.current.precipitation} mm`
+                              temperature: formatWeatherMetric(data.weather.current.temperature_2m, '°C'),
+                              feelsLike: formatWeatherMetric(data.weather.current.apparent_temperature, '°C'),
+                              weatherCode: Number.isFinite(data.weather.current.weather_code) ? data.weather.current.weather_code : 'unavailable',
+                              wind: formatWeatherMetric(data.weather.current.wind_speed_10m, ' km/h'),
+                              humidity: formatWeatherMetric(data.weather.current.relative_humidity_2m, '%'),
+                              precipitation: formatWeatherMetric(data.weather.current.precipitation, ' mm', 1)
                             }
                           }
                         }
@@ -1527,6 +1523,10 @@ Available Function Tools:
                   clearTimeout(tId1);
                   clearTimeout(tId2);
 
+                  if (!res1.ok || !res2.ok) {
+                    throw new Error('One or both city weather lookups failed.');
+                  }
+
                   const data1: WeatherData = await res1.json();
                   const data2: WeatherData = await res2.json();
 
@@ -1534,11 +1534,11 @@ Available Function Tools:
                     city: data.location.name,
                     country: data.location.country,
                     condition: getWeatherCondition(data.weather.current.weather_code, data.weather.current.is_day).label,
-                    temperature: `${Math.round(data.weather.current.temperature_2m)}°C`,
-                    feelsLike: `${Math.round(data.weather.current.apparent_temperature)}°C`,
-                    wind: `${Math.round(data.weather.current.wind_speed_10m)} km/h`,
-                    humidity: `${data.weather.current.relative_humidity_2m}%`,
-                    precipitation: `${data.weather.current.precipitation} mm`
+                    temperature: formatWeatherMetric(data.weather.current.temperature_2m, '°C'),
+                    feelsLike: formatWeatherMetric(data.weather.current.apparent_temperature, '°C'),
+                    wind: formatWeatherMetric(data.weather.current.wind_speed_10m, ' km/h'),
+                    humidity: formatWeatherMetric(data.weather.current.relative_humidity_2m, '%'),
+                    precipitation: formatWeatherMetric(data.weather.current.precipitation, ' mm', 1)
                   });
 
                   ws.send(JSON.stringify({

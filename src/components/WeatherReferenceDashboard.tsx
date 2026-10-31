@@ -226,7 +226,7 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
           <div className="wx-hero-metrics">
             <div className="wx-hero-metric">
               <span className="wx-hero-metric-icon"><Droplets /></span>
-              <span className="wx-hero-metric-copy"><small>Humidity</small><strong>{Math.round(current.relative_humidity_2m)}%</strong></span>
+              <span className="wx-hero-metric-copy"><small>Humidity</small><strong>{finiteValue(current.relative_humidity_2m) == null ? '—' : Math.round(finiteValue(current.relative_humidity_2m) as number) + '%'}</strong></span>
             </div>
             <div className="wx-hero-metric">
               <span className="wx-hero-metric-icon"><Wind /></span>

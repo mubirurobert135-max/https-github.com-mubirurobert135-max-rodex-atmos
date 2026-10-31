@@ -745,6 +745,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       recognition.lang = 'en-US';
 
       recognition.onresult = (event: any) => {
+        if (isMutedRef.current) {
+          setInterimUserSpeech('');
+          return;
+        }
         let interimText = '';
         let finalizedSegment = '';
 
@@ -1215,6 +1219,7 @@ VOICE PERSONALITY & DELIVERY:
 2. Speak at a brisk, clear conversational pace. Keep articulation crisp, vary emphasis naturally, and avoid flat, sleepy, robotic, overly slow or exaggerated sing-song delivery.
 3. Keep most replies to one or two natural sentences and under 30 spoken words unless the user needs a more detailed explanation.
 4. Never recite capabilities or use robotic disclaimers. If the user says hello, thanks, or greets you, answer casually in one short sentence without calling tools.
+5. Support natural interruption: when the user begins speaking during your answer, yield immediately, listen to the new request and respond without finishing the previous sentence.
 
 Location Context Hierarchy & Rules:
 1. User's Detected Physical Location: ${devLoc?.name || location?.name || 'Local Area'}, ${devLoc?.country || location?.country || ''}. (Use when user asks "What's the weather here?" or "How is my local weather?").
@@ -1989,7 +1994,7 @@ Available Function Tools:
             <div className="flex-1 flex flex-col justify-between items-center text-center py-4">
               
               {/* Voice State Badge */}
-              <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md">
+              <div role="status" aria-live="polite" className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-950/70 border border-violet-300/25 backdrop-blur-md">
                 <span className={`w-2.5 h-2.5 rounded-full ${
                   voiceState === 'listening' ? 'bg-emerald-400 animate-ping' :
                   voiceState === 'speaking' ? 'bg-sky-400 animate-pulse' :
@@ -2064,12 +2069,14 @@ Available Function Tools:
 
                 {/* Primary Mic Trigger Button */}
                 <button
-                  onClick={handlePrimaryVoiceTap}
+                  type="button"
+                   onClick={handlePrimaryVoiceTap}
+                   aria-label={voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended' ? 'Start Atmos voice conversation' : 'End Atmos voice conversation'}
                   className={`w-28 h-28 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 z-10 ${
                     voiceState === 'listening'
-                      ? 'bg-gradient-to-tr from-emerald-500 to-sky-500 text-white shadow-emerald-500/50 scale-105 ring-4 ring-emerald-400/50'
+                      ? 'bg-gradient-to-tr from-violet-500 to-indigo-600 text-white shadow-violet-500/45 scale-105 ring-4 ring-violet-300/45'
                       : voiceState === 'speaking'
-                      ? 'bg-gradient-to-tr from-sky-500 to-indigo-600 text-white shadow-sky-500/50 scale-105 ring-4 ring-sky-400/50'
+                      ? 'bg-gradient-to-tr from-indigo-500 to-blue-600 text-white shadow-indigo-500/45 scale-105 ring-4 ring-indigo-300/45'
                       : voiceState === 'thinking'
                       ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-amber-500/50 scale-95'
                       : voiceState === 'connecting'
@@ -2078,7 +2085,7 @@ Available Function Tools:
                       ? 'bg-amber-600/80 text-amber-100 animate-pulse ring-4 ring-amber-400/40'
                       : voiceState === 'ended'
                       ? 'bg-slate-700 hover:bg-slate-600 text-white shadow-slate-700/40 hover:scale-105 cursor-pointer ring-2 ring-white/20'
-                      : 'bg-gradient-to-tr from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white shadow-sky-500/30 hover:scale-105 cursor-pointer'
+                      : 'bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-violet-500/35 hover:scale-105 cursor-pointer'
                   }`}
                   title={
                     voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended'
@@ -2173,7 +2180,7 @@ Available Function Tools:
               </div>
 
               {/* Real-Time Live Transcripts & Spoken Captions */}
-              <div className="w-full max-w-lg bg-black/40 border border-white/10 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
+              <div aria-live="polite" aria-relevant="additions text" className="w-full max-w-lg bg-slate-950/70 border border-violet-300/20 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
                 <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider flex items-center justify-between">
                   <span>Live Spoken Conversation</span>
                   {voiceState === 'speaking' && (
@@ -2235,7 +2242,9 @@ Available Function Tools:
               {voiceState !== 'idle' && voiceState !== 'ended' && (
                 <div className="flex items-center gap-3 mt-4">
                   <button
-                    onClick={() => setIsMuted((m) => !m)}
+                    type="button"
+                     onClick={handleToggleMute}
+                     aria-pressed={isMuted}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition ${
                       isMuted
                         ? 'bg-rose-500/20 border-rose-500/40 text-rose-200'
@@ -2247,7 +2256,8 @@ Available Function Tools:
                   </button>
 
                   <button
-                    onClick={() => stopVoiceSession('ended')}
+                    type="button"
+                     onClick={() => stopVoiceSession('ended')}
                     className="px-4 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/20 text-white text-xs font-semibold transition"
                   >
                     End Voice

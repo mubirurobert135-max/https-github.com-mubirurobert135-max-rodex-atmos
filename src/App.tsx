@@ -13,6 +13,7 @@ import { AlertCenterModal } from './components/AlertCenterModal';
 import { WeatherMap } from './components/WeatherMap';
 import { Interactive3DGlobe } from './components/Interactive3DGlobe';
 import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboard';
+import { WeatherWardrobeCard } from './components/WeatherWardrobeCard';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
@@ -566,6 +567,12 @@ export default function App() {
                   onOpenAccount={() => setIsAuthOpen(true)}
                   onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
                   onOpenAlerts={() => setIsAlertsModalOpen(true)}
+                />
+
+                <WeatherWardrobeCard
+                  data={weatherData}
+                  unit={unit}
+                  onOpenAssistant={handleOpenAssistant}
                 />
 
                 <button

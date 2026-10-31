@@ -891,7 +891,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 turnTimer.markSynthesisRequested(Date.now());
                 const ttsController = new AbortController();
                 compatibilityTtsAbortControllerRef.current = ttsController;
-                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 4800);
+                const ttsTimeout = window.setTimeout(() => ttsController.abort(), 5600);
                 try {
                   const ttsRes = await fetch('/api/ai/synthesize-speech', {
                     method: 'POST',

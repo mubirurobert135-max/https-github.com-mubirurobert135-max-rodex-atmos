@@ -265,6 +265,7 @@ async function startServer() {
       data.hourly?.time,
       data.hourly?.precipitation_probability,
       data.current?.time,
+      data.hourly?.intervalHours ?? 1,
       12
     );
     const maxUv = finiteOrNull(data.daily?.uv_index_max?.[0]);
@@ -639,6 +640,7 @@ async function startServer() {
       timezoneOffsetSeconds: timezoneOffset
     };
     const hourly = {
+      intervalHours: 3,
       time: hourlyTimes,
       temperature_2m: hourlyTemps,
       precipitation_probability: hourlyPrecipProb,
@@ -1200,12 +1202,14 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
     }
 
     const rainWindowStartIndex = findCurrentHourlyIndex(hourly?.time, current?.time);
+    const briefingIntervalHours = Number.isFinite(hourly?.intervalHours) && hourly.intervalHours > 0 ? hourly.intervalHours : 1;
+    const briefingRainSampleCount = Math.max(1, Math.ceil(12 / briefingIntervalHours));
     const briefingCacheKey = 'ai:briefing:' + JSON.stringify([
       location.name, location.country, location.latitude, location.longitude,
       current.temperature_2m, current.apparent_temperature, current.relative_humidity_2m,
       current.wind_speed_10m, current.precipitation, current.weather_code,
       daily?.temperature_2m_max?.[0], daily?.temperature_2m_min?.[0], daily?.uv_index_max?.[0],
-      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + 12) : [],
+      Array.isArray(hourly?.precipitation_probability) ? hourly.precipitation_probability.slice(rainWindowStartIndex, rainWindowStartIndex + briefingRainSampleCount) : [],
       Array.isArray(alerts) ? alerts.map((alert: any) => [alert.type, alert.severity, alert.title, alert.description]) : []
     ]);
     const cachedBriefing = cache.get(briefingCacheKey);
@@ -2001,7 +2005,9 @@ If user asks about the active map layer, use supplied provider values and acknow
 
       // Start the outlook at the current forecast hour, not the beginning of the provider's day array.
       const hourlyStartIndex = findCurrentHourlyIndex(hourly?.time, current?.time);
-      const hourlySummary = hourly?.time?.slice(hourlyStartIndex, hourlyStartIndex + 12).map((t: string, offset: number) => {
+      const hourlyIntervalHours = Number.isFinite(hourly?.intervalHours) && hourly.intervalHours > 0 ? hourly.intervalHours : 1;
+      const hourlySlotsFor12Hours = Math.max(1, Math.ceil(12 / hourlyIntervalHours));
+      const hourlySummary = hourly?.time?.slice(hourlyStartIndex, hourlyStartIndex + hourlySlotsFor12Hours).map((t: string, offset: number) => {
         const idx = hourlyStartIndex + offset;
         const temperature = hourly?.temperature_2m?.[idx];
         const probability = hourly?.precipitation_probability?.[idx];

@@ -29,8 +29,9 @@ export function base64ToFloat32Array(base64: string): Float32Array {
   try {
     const binaryString = atob(base64);
     const len = binaryString.length;
-    const sampleCount = Math.floor(len / 2);
-    if (sampleCount === 0) return new Float32Array(0);
+    // Gemini Live audio is signed 16-bit PCM: reject truncated samples instead of decoding partial audio.
+    if (len === 0 || len % 2 !== 0) return new Float32Array(0);
+    const sampleCount = len / 2;
 
     const bytes = new Uint8Array(len);
     for (let i = 0; i < len; i++) {
@@ -60,6 +61,10 @@ export function resampleAudioBuffer(
   sourceRate: number,
   targetRate: number = 16000
 ): Float32Array {
+  if (!Number.isFinite(sourceRate) || sourceRate <= 0 ||
+      !Number.isFinite(targetRate) || targetRate <= 0) {
+    return new Float32Array(0);
+  }
   if (sourceRate === targetRate || input.length === 0) {
     return input;
   }

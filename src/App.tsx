@@ -16,7 +16,7 @@ import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboar
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { MobileNavBar } from './components/MobileNavBar';
 import { WeatherData, LocationMode } from './types';
-import { getWeatherCondition } from './utils/weatherUtils';
+import { getWeatherCondition, isWithinLocalSolarWindow } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map, ChevronDown } from 'lucide-react';
 
@@ -331,20 +331,20 @@ export default function App() {
     ? getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).theme
     : 'sunny';
 
-  // Check if current time is within twilight window (near sunrise or sunset)
-  if (weatherData?.weather?.daily?.sunrise?.[0] && weatherData?.weather?.daily?.sunset?.[0]) {
-    try {
-      const now = new Date();
-      const sunrise = new Date(weatherData.weather.daily.sunrise[0]);
-      const sunset = new Date(weatherData.weather.daily.sunset[0]);
-      const diffSunriseMin = Math.abs(now.getTime() - sunrise.getTime()) / (1000 * 60);
-      const diffSunsetMin = Math.abs(now.getTime() - sunset.getTime()) / (1000 * 60);
-      if ((diffSunriseMin <= 45 || diffSunsetMin <= 45) && currentTheme !== 'thunder' && currentTheme !== 'snowy' && currentTheme !== 'rainy') {
-        currentTheme = 'twilight';
-      }
-    } catch {
-      // Fallback to condition-derived theme
-    }
+  // Evaluate sunrise/sunset against the selected forecast location's own local clock.
+  if (
+    weatherData &&
+    isWithinLocalSolarWindow(
+      weatherData.weather.daily?.sunrise?.[0],
+      weatherData.weather.daily?.sunset?.[0],
+      weatherData.location.timezone,
+      weatherData.location.timezoneOffsetSeconds
+    ) &&
+    currentTheme !== 'thunder' &&
+    currentTheme !== 'snowy' &&
+    currentTheme !== 'rainy'
+  ) {
+    currentTheme = 'twilight';
   }
 
   const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;

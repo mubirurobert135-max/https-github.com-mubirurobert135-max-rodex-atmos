@@ -38,6 +38,7 @@ export function buildWeatherWardrobeAdvice(input: {
     hourly?.time,
     hourly?.precipitation_probability,
     current.time,
+    hourly?.intervalHours ?? 1,
     8
   );
 

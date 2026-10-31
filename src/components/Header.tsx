@@ -163,20 +163,14 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="rodex-header-layout max-w-7xl mx-auto flex items-center justify-between gap-3 sm:gap-4">
         
         {/* Brand Logo & Title */}
-        <div className="rodex-header-brand flex items-center gap-3 shrink-0">
-          <div className="group w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-cyan-500/20 text-white font-bold text-lg shrink-0 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-cyan-400/30">
-            <Compass className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-500 group-hover:rotate-12" />
-          </div>
-          {activeTab !== 'dashboard' && (
-            <div className="hidden sm:block">
-              <h1 className="text-lg sm:text-xl font-black tracking-wide text-white flex items-center gap-1.5 font-heading">
-                RODEX <span className="text-sky-300 font-light">Atmos</span>
-              </h1>
-              <p className="text-[11px] text-sky-200/70 font-medium font-body leading-none mt-0.5">
-                Understand your day
-              </p>
-            </div>
-          )}
+        <div className="rodex-header-brand flex items-center shrink-0">
+          <img
+            src="/rodex-atmos-logo.svg"
+            alt="RODEX Atmos — Understand your day"
+            width="190"
+            height="44"
+            className="h-auto w-[132px] sm:w-[174px] lg:w-[190px] object-contain drop-shadow-[0_2px_12px_rgba(91,63,190,0.28)] transition-transform duration-300 hover:scale-[1.025]"
+          />
         </div>
 
         {/* Desktop Navigation Tabs */}

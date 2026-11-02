@@ -196,7 +196,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
     // Color helper according to temperature
     const getTempColor = (celsius: number) => {
-      if (celsius <= 0) return 'from-blue-600 to-indigo-700 text-white border-blue-400';
+      if (celsius <= 0) return 'from-neutral-600 to-neutral-800 text-white border-blue-400';
       if (celsius <= 15) return 'from-cyan-500 to-teal-600 text-white border-cyan-300';
       if (celsius <= 24) return 'from-emerald-500 to-green-600 text-white border-emerald-300';
       if (celsius <= 32) return 'from-amber-500 to-orange-600 text-white border-amber-300';
@@ -477,11 +477,11 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
   };
 
   return (
-    <div className={`wx-map-root w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#E8E5F5] p-2 sm:p-4' : 'relative my-6'}`}>
-      <div className={`wx-map-card w-full rounded-3xl overflow-hidden border border-violet-200/50 bg-[#F4F0FF] shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[500px] sm:h-[620px]'}`}>
+    <div className={`wx-map-root w-full transition-all duration-300 ${isFullscreen ? 'fixed inset-0 z-50 bg-[#111111] p-2 sm:p-4' : 'relative my-6'}`}>
+      <div className={`wx-map-card w-full rounded-3xl overflow-hidden border border-neutral-200/50 bg-[#161616] shadow-2xl flex flex-col ${isFullscreen ? 'h-full' : 'h-[500px] sm:h-[620px]'}`}>
         
         {/* Map Header Controls Toolbar */}
-        <div className="wx-map-toolbar p-3 sm:p-4 border-b border-violet-200 flex flex-wrap items-center justify-between gap-2.5 z-10">
+        <div className="wx-map-toolbar p-3 sm:p-4 border-b border-neutral-200 flex flex-wrap items-center justify-between gap-2.5 z-10">
           
           {/* Left: Metric Layers Tabs */}
           <div className="wx-map-layer-controls flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
@@ -547,7 +547,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 value={mapSearchTerm}
                 onChange={(e) => setMapSearchTerm(e.target.value)}
                 placeholder="Search a place or city..." aria-label="Search a place on the map"
-                className="wx-map-search-input w-full pl-8 pr-2 py-1.5 text-[#32164D] text-xs rounded-xl border border-violet-300 focus:border-violet-600 focus:outline-none transition min-h-[40px]"
+                className="wx-map-search-input w-full pl-8 pr-2 py-1.5 text-[#E5E5E5] text-xs rounded-xl border border-neutral-300 focus:border-neutral-600 focus:outline-none transition min-h-[40px]"
               />
               {(searchResults.length > 0 || isSearching || mapSearchTerm.trim().length >= 2) && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1426] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
@@ -563,10 +563,10 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                         setSearchResults([]);
                         setMapSearchTerm('');
                       }}
-                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-violet-50 text-[#32164D] flex justify-between items-center border-b border-violet-100 last:border-0"
+                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-neutral-50 text-[#E5E5E5] flex justify-between items-center border-b border-neutral-100 last:border-0"
                     >
-                      <span className="font-semibold text-violet-900">{city.name}</span>
-                      <span className="text-[10px] text-violet-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
+                      <span className="font-semibold text-neutral-900">{city.name}</span>
+                      <span className="text-[10px] text-neutral-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
                     </button>
                   ))}
                 </div>

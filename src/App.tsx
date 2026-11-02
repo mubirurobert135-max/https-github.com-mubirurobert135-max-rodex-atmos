@@ -640,7 +640,7 @@ export default function App() {
       <aside aria-label="Quick Actions" className="fixed bottom-6 right-6 z-40 hidden lg:flex">
         <button
           onClick={() => handleOpenAssistant()}
-          className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-sky-500 via-indigo-600 to-purple-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-sm shadow-2xl shadow-sky-500/40 border border-sky-300/40 transition transform hover:scale-105 group backdrop-blur-md"
+          className="flex items-center gap-2.5 px-5 py-3 rounded-2xl bg-gradient-to-r from-neutral-200 via-neutral-300 to-neutral-400 hover:from-white hover:to-neutral-300 text-neutral-950 font-bold text-sm shadow-2xl shadow-black/40 border border-white/40 transition transform hover:scale-105 group backdrop-blur-md"
           title="Open RODEX AI Voice & Chat"
         >
           <div className="relative">

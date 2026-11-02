@@ -6404,3 +6404,62 @@ body {
     transform: none !important;
   }
 }
+
+
+/* Final monochrome coverage: inner dashboard surface and utility-based cards
+   on the existing map/detail screens. These rules only affect presentation. */
+.rodex-monochrome-theme .wx-reference-content {
+  color: #f8fafc !important;
+  background: linear-gradient(145deg, #171b22 0%, #0e1117 58%, #191d24 100%) !important;
+}
+
+.rodex-monochrome-theme .wx-brand-copy strong,
+.rodex-monochrome-theme .wx-brand-copy small {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-rail-assistant-card {
+  background: linear-gradient(145deg, rgba(255,255,255,.13), rgba(255,255,255,.045)) !important;
+}
+
+.rodex-monochrome-theme main [class*="text-sky-"],
+.rodex-monochrome-theme main [class*="text-cyan-"],
+.rodex-monochrome-theme main [class*="text-indigo-"],
+.rodex-monochrome-theme main [class*="text-violet-"],
+.rodex-monochrome-theme main [class*="text-purple-"],
+.rodex-monochrome-theme main [class*="text-teal-"] {
+  color: #dbe1e8 !important;
+}
+
+.rodex-monochrome-theme main button[class*="bg-sky-"],
+.rodex-monochrome-theme main button[class*="bg-cyan-"],
+.rodex-monochrome-theme main button[class*="bg-indigo-"],
+.rodex-monochrome-theme main button[class*="bg-violet-"],
+.rodex-monochrome-theme main button[class*="bg-purple-"],
+.rodex-monochrome-theme main button[class*="bg-teal-"],
+.rodex-monochrome-theme main button[class*="from-sky-"],
+.rodex-monochrome-theme main button[class*="from-indigo-"],
+.rodex-monochrome-theme main button[class*="from-violet-"],
+.rodex-monochrome-theme main button[class*="from-purple-"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.88) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.78) !important;
+}
+
+.rodex-monochrome-theme main button[class*="bg-sky-"] svg,
+.rodex-monochrome-theme main button[class*="bg-cyan-"] svg,
+.rodex-monochrome-theme main button[class*="bg-indigo-"] svg,
+.rodex-monochrome-theme main button[class*="bg-violet-"] svg,
+.rodex-monochrome-theme main button[class*="bg-purple-"] svg,
+.rodex-monochrome-theme main button[class*="bg-teal-"] svg,
+.rodex-monochrome-theme main button[class*="from-sky-"] svg,
+.rodex-monochrome-theme main button[class*="from-indigo-"] svg,
+.rodex-monochrome-theme main button[class*="from-violet-"] svg,
+.rodex-monochrome-theme main button[class*="from-purple-"] svg {
+  color: #101318 !important;
+}
+
+.rodex-monochrome-theme .leaflet-container {
+  background: #11151b !important;
+}

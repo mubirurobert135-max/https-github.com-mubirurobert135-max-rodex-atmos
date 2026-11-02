@@ -1,6 +1,13 @@
-import express from 'express';
+import { createRequire } from 'node:module';
+import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+// Load Express through Node's native CommonJS loader. Its dependency chain
+// (body-parser/depd) contains dynamic built-in requires that must not be folded
+// into Vercel's ESM serverless bundle.
+const require = createRequire(import.meta.url);
+const express = require('express') as typeof import('express');
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
@@ -2161,7 +2168,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
   });
 
   // Normalize malformed/oversized JSON requests without exposing stack traces.
-  app.use((error: any, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+  app.use((error: any, _req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     if (res.headersSent) return next(error);
     const status = Number.isInteger(error?.status) && error.status >= 400 && error.status < 600
       ? error.status

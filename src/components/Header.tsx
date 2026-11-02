@@ -348,7 +348,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Right-Hand Controls Cluster */}
-        <div className="rodex-header-controls flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <div className="rodex-header-controls flex items-center gap-[6px] sm:gap-2 shrink-0">
           
           {/* PWA Install Button */}
           <PWAInstallButton />

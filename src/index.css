@@ -6621,3 +6621,718 @@ body {
   color-scheme: dark;
 }
 
+
+
+
+/* ================================================================
+   RODEX Atmos — unified black, white and graphite system
+   Final application-wide tokens and component coverage. This layer
+   deliberately replaces every legacy purple/blue/green accent from
+   earlier themes without changing weather data or feature behavior.
+   ================================================================ */
+:root {
+  color-scheme: dark;
+  --atmos-obsidian: #080A0E;
+  --atmos-graphite: #11151B;
+  --atmos-panel: #171C23;
+  --atmos-panel-raised: #202630;
+  --atmos-border: rgba(255,255,255,.14);
+  --atmos-border-strong: rgba(255,255,255,.24);
+  --atmos-text: #F8FAFC;
+  --atmos-muted: #A7B0BC;
+  --atmos-silver: #DCE2E9;
+  --atmos-highlight: #FFFFFF;
+}
+html,
+body,
+#root {
+  min-height: 100%;
+  background: var(--atmos-obsidian) !important;
+  color: var(--atmos-text);
+  color-scheme: dark;
+}
+body {
+  overflow-x: hidden;
+  overscroll-behavior-y: contain;
+}
+#root > div,
+.rodex-monochrome-theme {
+  min-width: 320px;
+  min-height: 100dvh;
+  color: var(--atmos-text) !important;
+  background: transparent;
+  isolation: isolate;
+}
+.rodex-monochrome-theme {
+  --color-obsidian: #080A0E;
+  --color-midnight: #11151B;
+  --color-ink-deep: #080A0E;
+  --color-ink-surface: #1B2028;
+  --color-teal-glow: #E2E8F0;
+  --color-emerald-accent: #CBD5E1;
+  --color-champagne: #F8FAFC;
+  --atmos-cyan: #E2E8F0;
+  --atmos-mint: #CBD5E1;
+  --atmos-violet: #DCE2E9;
+  --atmos-reference-violet: #DCE2E9;
+  --atmos-reference-ink: #F8FAFC;
+  --atmos-reference-muted: #A7B0BC;
+  --atmos-reference-border: rgba(255,255,255,.16);
+  --atmos-glass: rgba(17,21,27,.9);
+  --atmos-stroke: rgba(255,255,255,.16);
+  --atmos-text-muted: #A7B0BC;
+  --tw-ring-color: rgba(255,255,255,.34);
+}
+
+/* No legacy utility colour may leak into controls, text, borders or dialogs. */
+.rodex-monochrome-theme [class*="text-violet-"],
+.rodex-monochrome-theme [class*="text-purple-"],
+.rodex-monochrome-theme [class*="text-indigo-"],
+.rodex-monochrome-theme [class*="text-sky-"],
+.rodex-monochrome-theme [class*="text-cyan-"],
+.rodex-monochrome-theme [class*="text-blue-"],
+.rodex-monochrome-theme [class*="text-teal-"],
+.rodex-monochrome-theme [class*="text-emerald-"],
+.rodex-monochrome-theme [class*="text-green-"],
+.rodex-monochrome-theme [class*="text-amber-"],
+.rodex-monochrome-theme [class*="text-yellow-"],
+.rodex-monochrome-theme [class*="text-orange-"],
+.rodex-monochrome-theme [class*="text-rose-"],
+.rodex-monochrome-theme [class*="text-red-"],
+.rodex-monochrome-theme [class*="text-lime-"],
+.rodex-monochrome-theme [class*="text-pink-"] {
+  color: var(--atmos-silver) !important;
+}
+.rodex-monochrome-theme [class*="border-violet-"],
+.rodex-monochrome-theme [class*="border-purple-"],
+.rodex-monochrome-theme [class*="border-indigo-"],
+.rodex-monochrome-theme [class*="border-sky-"],
+.rodex-monochrome-theme [class*="border-cyan-"],
+.rodex-monochrome-theme [class*="border-blue-"],
+.rodex-monochrome-theme [class*="border-teal-"],
+.rodex-monochrome-theme [class*="border-emerald-"],
+.rodex-monochrome-theme [class*="border-green-"],
+.rodex-monochrome-theme [class*="border-amber-"],
+.rodex-monochrome-theme [class*="border-yellow-"],
+.rodex-monochrome-theme [class*="border-orange-"],
+.rodex-monochrome-theme [class*="border-rose-"],
+.rodex-monochrome-theme [class*="border-red-"] {
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme [class*="bg-violet-"],
+.rodex-monochrome-theme [class*="bg-purple-"],
+.rodex-monochrome-theme [class*="bg-indigo-"],
+.rodex-monochrome-theme [class*="bg-sky-"],
+.rodex-monochrome-theme [class*="bg-cyan-"],
+.rodex-monochrome-theme [class*="bg-blue-"],
+.rodex-monochrome-theme [class*="bg-teal-"],
+.rodex-monochrome-theme [class*="bg-emerald-"],
+.rodex-monochrome-theme [class*="bg-green-"],
+.rodex-monochrome-theme [class*="bg-amber-"],
+.rodex-monochrome-theme [class*="bg-yellow-"],
+.rodex-monochrome-theme [class*="bg-orange-"],
+.rodex-monochrome-theme [class*="bg-rose-"],
+.rodex-monochrome-theme [class*="bg-red-"],
+.rodex-monochrome-theme [class*="bg-lime-"],
+.rodex-monochrome-theme [class*="bg-pink-"] {
+  background-color: rgba(255,255,255,.075) !important;
+}
+.rodex-monochrome-theme [class*="from-violet-"],
+.rodex-monochrome-theme [class*="from-purple-"],
+.rodex-monochrome-theme [class*="from-indigo-"],
+.rodex-monochrome-theme [class*="from-sky-"],
+.rodex-monochrome-theme [class*="from-cyan-"],
+.rodex-monochrome-theme [class*="from-blue-"],
+.rodex-monochrome-theme [class*="from-teal-"],
+.rodex-monochrome-theme [class*="from-emerald-"],
+.rodex-monochrome-theme [class*="from-green-"],
+.rodex-monochrome-theme [class*="from-amber-"],
+.rodex-monochrome-theme [class*="from-rose-"],
+.rodex-monochrome-theme [class*="from-red-"],
+.rodex-monochrome-theme [class*="via-violet-"],
+.rodex-monochrome-theme [class*="via-purple-"],
+.rodex-monochrome-theme [class*="via-indigo-"],
+.rodex-monochrome-theme [class*="via-sky-"],
+.rodex-monochrome-theme [class*="via-cyan-"],
+.rodex-monochrome-theme [class*="via-blue-"],
+.rodex-monochrome-theme [class*="to-violet-"],
+.rodex-monochrome-theme [class*="to-purple-"],
+.rodex-monochrome-theme [class*="to-indigo-"],
+.rodex-monochrome-theme [class*="to-sky-"],
+.rodex-monochrome-theme [class*="to-cyan-"],
+.rodex-monochrome-theme [class*="to-blue-"],
+.rodex-monochrome-theme [class*="to-teal-"],
+.rodex-monochrome-theme [class*="to-emerald-"] {
+  background-image: linear-gradient(135deg, rgba(255,255,255,.17), rgba(255,255,255,.055)) !important;
+}
+.rodex-monochrome-theme [class*="ring-violet-"],
+.rodex-monochrome-theme [class*="ring-purple-"],
+.rodex-monochrome-theme [class*="ring-indigo-"],
+.rodex-monochrome-theme [class*="ring-sky-"],
+.rodex-monochrome-theme [class*="ring-cyan-"] {
+  --tw-ring-color: rgba(255,255,255,.3) !important;
+}
+
+/* Shared card elevations are consistent on dashboard, map and detail views. */
+.rodex-monochrome-theme .glass-panel,
+.rodex-monochrome-theme .glass-panel-elevated,
+.rodex-monochrome-theme .wx-reference-shell,
+.rodex-monochrome-theme .wx-reference-support-grid > div,
+.rodex-monochrome-theme .wx-dashboard-panel,
+.rodex-monochrome-theme .wx-dashboard-hero,
+.rodex-monochrome-theme .wx-wardrobe-card {
+  color: var(--atmos-text) !important;
+  background: linear-gradient(145deg, rgba(27,32,40,.96), rgba(12,15,20,.97)) !important;
+  border-color: var(--atmos-border) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.045) !important;
+}
+.rodex-monochrome-theme .wx-reference-content {
+  color: var(--atmos-text) !important;
+  background: linear-gradient(145deg,#171C23 0%,#0D1015 60%,#171C23 100%) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail {
+  background: linear-gradient(180deg,#171C23,#0C0F14) !important;
+  border-right-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .wx-reference-mark {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#FFFFFF,#AEB7C2) !important;
+  border-color: rgba(255,255,255,.8) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.36) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail-button,
+.rodex-monochrome-theme .wx-reference-rail-status,
+.rodex-monochrome-theme .wx-welcome-line,
+.rodex-monochrome-theme .wx-reference-kicker,
+.rodex-monochrome-theme .wx-story-label,
+.rodex-monochrome-theme .wx-story-copy,
+.rodex-monochrome-theme .wx-hourly-heading-note,
+.rodex-monochrome-theme .wx-location-status,
+.rodex-monochrome-theme .wx-live-weather-feels,
+.rodex-monochrome-theme .wx-nearby-city-condition {
+  color: var(--atmos-muted) !important;
+}
+.rodex-monochrome-theme .wx-reference-title,
+.rodex-monochrome-theme .wx-storm-title,
+.rodex-monochrome-theme .wx-hourly-heading,
+.rodex-monochrome-theme .wx-hourly-temperature strong,
+.rodex-monochrome-theme .wx-weekly-strip-title,
+.rodex-monochrome-theme .wx-weekly-day strong,
+.rodex-monochrome-theme .wx-live-weather-temp,
+.rodex-monochrome-theme .wx-live-weather-condition,
+.rodex-monochrome-theme .wx-nearby-heading span,
+.rodex-monochrome-theme .wx-nearby-city-name,
+.rodex-monochrome-theme .wx-nearby-city > strong {
+  color: var(--atmos-text) !important;
+  text-shadow: none !important;
+}
+.rodex-monochrome-theme .wx-live-status,
+.rodex-monochrome-theme .wx-hourly-temperature,
+.rodex-monochrome-theme .wx-weather-curve-panel,
+.rodex-monochrome-theme .wx-weekly-day,
+.rodex-monochrome-theme .wx-live-weather-card,
+.rodex-monochrome-theme .wx-nearby-panel,
+.rodex-monochrome-theme .wx-live-weather-metrics > div,
+.rodex-monochrome-theme .wx-hero-metric {
+  color: var(--atmos-text) !important;
+  background: rgba(255,255,255,.045) !important;
+  border-color: var(--atmos-border) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.035) !important;
+}
+.rodex-monochrome-theme .wx-weekly-day.is-today,
+.rodex-monochrome-theme .wx-reference-rail-button.is-active {
+  color: #FFFFFF !important;
+  background: rgba(255,255,255,.13) !important;
+  border-color: var(--atmos-border-strong) !important;
+}
+.rodex-monochrome-theme .wx-status-dot,
+.rodex-monochrome-theme .wx-live-pulse,
+.rodex-monochrome-theme .wx-eyebrow-dot,
+.rodex-monochrome-theme .wx-hero-eyebrow > span {
+  background: #E2E8F0 !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.1), 0 0 10px rgba(255,255,255,.18) !important;
+}
+.rodex-monochrome-theme .wx-trend-chart line {
+  stroke: rgba(255,255,255,.15) !important;
+}
+.rodex-monochrome-theme .wx-trend-chart > path:not(:first-of-type) {
+  stroke: #E2E8F0 !important;
+}
+.rodex-monochrome-theme .wx-trend-chart circle {
+  fill: #FFFFFF !important;
+  stroke: #171C23 !important;
+}
+.rodex-monochrome-theme .wx-reference-quick-location,
+.rodex-monochrome-theme .wx-nearby-map-link,
+.rodex-monochrome-theme .wx-rail-assistant-card {
+  color: #F8FAFC !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.13),rgba(255,255,255,.045)) !important;
+  border-color: var(--atmos-border-strong) !important;
+}
+
+/* Top navigation: fixed order, clear active state and consistent access everywhere. */
+.rodex-monochrome-theme header.sticky {
+  color: var(--atmos-text) !important;
+  background: rgba(9,12,17,.94) !important;
+  border-bottom: 1px solid var(--atmos-border) !important;
+  box-shadow: 0 8px 28px rgba(0,0,0,.36) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.05);
+  backdrop-filter: blur(24px) saturate(1.05);
+}
+.rodex-monochrome-theme .rodex-header-brand img {
+  filter: drop-shadow(0 2px 10px rgba(255,255,255,.08)) !important;
+}
+.rodex-monochrome-theme .rodex-header-primary-nav {
+  background: rgba(255,255,255,.045) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .rodex-header-primary-nav button {
+  color: var(--atmos-muted) !important;
+}
+.rodex-monochrome-theme .rodex-header-primary-nav button[aria-current="page"] {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#FFFFFF,#CBD2DA) !important;
+  border-color: rgba(255,255,255,.78) !important;
+  box-shadow: 0 5px 14px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.85) !important;
+}
+.rodex-monochrome-theme .rodex-header-search input,
+.rodex-monochrome-theme .wx-map-search-input {
+  color: #F8FAFC !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: var(--atmos-border) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.035) !important;
+}
+.rodex-monochrome-theme .rodex-header-search input:hover,
+.rodex-monochrome-theme .rodex-header-search input:focus,
+.rodex-monochrome-theme .wx-map-search-input:focus {
+  background: rgba(255,255,255,.09) !important;
+  border-color: rgba(255,255,255,.42) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.07) !important;
+}
+.rodex-monochrome-theme .rodex-header-search input::placeholder,
+.rodex-monochrome-theme .wx-map-search-input::placeholder {
+  color: rgba(226,232,240,.62) !important;
+}
+.rodex-monochrome-theme .rodex-header-search > form > svg,
+.rodex-monochrome-theme .rodex-header-search button,
+.rodex-monochrome-theme .rodex-header-controls > button,
+.rodex-monochrome-theme .header-account-shortcut,
+.rodex-monochrome-theme .header-privacy-shortcut {
+  color: var(--atmos-silver) !important;
+}
+.rodex-monochrome-theme .header-account-shortcut,
+.rodex-monochrome-theme .header-privacy-shortcut,
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] {
+  display: inline-flex;
+  min-height: 39px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  color: #F8FAFC !important;
+  background: rgba(255,255,255,.055) !important;
+  border: 1px solid var(--atmos-border) !important;
+  border-radius: 13px;
+  box-shadow: none !important;
+}
+.rodex-monochrome-theme .header-account-shortcut:hover,
+.rodex-monochrome-theme .header-privacy-shortcut:hover,
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"]:hover {
+  background: rgba(255,255,255,.12) !important;
+  border-color: var(--atmos-border-strong) !important;
+}
+.rodex-monochrome-theme .header-account-icon {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#FFFFFF,#AEB7C2) !important;
+}
+.rodex-monochrome-theme .header-account-label {
+  color: #F8FAFC !important;
+}
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] {
+  width: auto;
+  min-width: 39px;
+}
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] svg {
+  color: #FFFFFF !important;
+}
+.rodex-monochrome-theme .rodex-header-controls > button[title="Toggle temperature unit"] {
+  color: #F8FAFC !important;
+  background: rgba(255,255,255,.06) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .rodex-header-search > div.absolute {
+  color: #F8FAFC !important;
+  background: rgba(17,21,27,.98) !important;
+  border-color: var(--atmos-border) !important;
+  box-shadow: 0 18px 40px rgba(0,0,0,.56) !important;
+}
+.rodex-monochrome-theme .rodex-header-search > div.absolute button {
+  color: #F8FAFC !important;
+}
+.rodex-monochrome-theme .rodex-header-search > div.absolute button:hover {
+  background: rgba(255,255,255,.08) !important;
+}
+
+/* Map toolbar, search, timeline and fullscreen mode now match the core interface. */
+.rodex-monochrome-theme .wx-map-root.fixed {
+  background: #080A0E !important;
+}
+.rodex-monochrome-theme .wx-map-card {
+  color: #F8FAFC !important;
+  background: #11151B !important;
+  border: 1px solid var(--atmos-border) !important;
+  box-shadow: 0 18px 48px rgba(0,0,0,.48) !important;
+}
+.rodex-monochrome-theme .wx-map-toolbar {
+  color: #F8FAFC !important;
+  background: #171C23 !important;
+  border-bottom-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .wx-map-layer-controls > button,
+.rodex-monochrome-theme .wx-map-search-controls > button,
+.rodex-monochrome-theme .wx-map-timeline-toggle,
+.rodex-monochrome-theme .wx-map-ai-link {
+  color: #E2E8F0 !important;
+  background: rgba(255,255,255,.06) !important;
+  border: 1px solid var(--atmos-border) !important;
+  box-shadow: none !important;
+}
+.rodex-monochrome-theme .wx-map-layer-controls > button[aria-pressed="true"],
+.rodex-monochrome-theme .wx-map-layer-controls > button[class*="bg-sky-500"],
+.rodex-monochrome-theme .wx-map-layer-controls > button[class*="bg-blue-500"],
+.rodex-monochrome-theme .wx-map-layer-controls > button[class*="bg-teal-500"] {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#FFFFFF,#CBD2DA) !important;
+  border-color: rgba(255,255,255,.86) !important;
+}
+.rodex-monochrome-theme .wx-map-search-input {
+  color: #F8FAFC !important;
+  background: #0D1117 !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .wx-map-search-state,
+.rodex-monochrome-theme .wx-map-timeline-card {
+  color: #F8FAFC !important;
+  background: rgba(17,21,27,.97) !important;
+  border: 1px solid var(--atmos-border) !important;
+  box-shadow: 0 15px 36px rgba(0,0,0,.45) !important;
+}
+.rodex-monochrome-theme .wx-map-footer {
+  color: var(--atmos-muted) !important;
+  background: #11151B !important;
+  border-top-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .leaflet-container {
+  filter: grayscale(1) contrast(1.04) !important;
+  background: #11151B !important;
+  font-family: var(--font-body);
+}
+.rodex-monochrome-theme .leaflet-popup-content-wrapper,
+.rodex-monochrome-theme .leaflet-popup-tip {
+  color: #F8FAFC !important;
+  background: rgba(17,21,27,.98) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .leaflet-control-zoom a {
+  color: #F8FAFC !important;
+  background: rgba(20,24,31,.97) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .leaflet-control-zoom a:hover {
+  color: #101318 !important;
+  background: #E2E8F0 !important;
+}
+.rodex-monochrome-theme .leaflet-control-attribution,
+.rodex-monochrome-theme .leaflet-control-scale-line {
+  color: rgba(226,232,240,.75) !important;
+  background: rgba(12,15,20,.9) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .leaflet-control-attribution a {
+  color: #F8FAFC !important;
+}
+
+/* Modals, privacy settings, alerts, and assistant use identical graphite surfaces. */
+.rodex-monochrome-theme [role="dialog"],
+.rodex-monochrome-theme [aria-modal="true"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-2xl"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-xl"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-lg"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-md"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-sm"] {
+  color: #F8FAFC !important;
+  background-color: #12161C !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-[#081224]"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-[#0a1426]"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-slate-900"] {
+  color: #F8FAFC !important;
+  background: linear-gradient(145deg,#171C23,#0D1015) !important;
+  border-color: var(--atmos-border) !important;
+}
+.rodex-monochrome-theme .fixed.inset-0.z-50 input,
+.rodex-monochrome-theme .fixed.inset-0.z-50 select,
+.rodex-monochrome-theme .fixed.inset-0.z-50 textarea {
+  color: #F8FAFC !important;
+  color-scheme: dark;
+  background: #0B0F14 !important;
+  border-color: var(--atmos-border-strong) !important;
+}
+.rodex-monochrome-theme .fixed.inset-0.z-50 input::placeholder,
+.rodex-monochrome-theme .fixed.inset-0.z-50 textarea::placeholder {
+  color: #98A2AE !important;
+}
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-sky-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-blue-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-teal-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-emerald-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-sky-"] {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#FFFFFF,#CBD2DA) !important;
+  border-color: rgba(255,255,255,.9) !important;
+}
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="bg-sky-"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="bg-blue-"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="bg-teal-"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="bg-emerald-"] svg {
+  color: #101318 !important;
+}
+
+/* Touch-first controls, safe areas, sensible tablet columns and compact phone flow. */
+.rodex-monochrome-theme button,
+.rodex-monochrome-theme a,
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select,
+.rodex-monochrome-theme textarea,
+.rodex-monochrome-theme [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+.rodex-monochrome-theme button,
+.rodex-monochrome-theme a,
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select {
+  touch-action: manipulation;
+}
+.rodex-monochrome-theme button:focus-visible,
+.rodex-monochrome-theme a:focus-visible,
+.rodex-monochrome-theme input:focus-visible,
+.rodex-monochrome-theme select:focus-visible,
+.rodex-monochrome-theme textarea:focus-visible {
+  outline: 2px solid #F8FAFC !important;
+  outline-offset: 3px;
+}
+@media (max-width: 1100px) {
+  .rodex-header-layout {
+    gap: 8px 9px !important;
+  }
+  .rodex-header-primary-nav {
+    justify-self: start;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  .wx-reference-shell {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+  .wx-reference-rail {
+    display: none !important;
+  }
+}
+@media (max-width: 820px) {
+  .wx-reference-aside {
+    display: grid !important;
+    grid-template-columns: repeat(2,minmax(0,1fr)) !important;
+    align-items: stretch !important;
+  }
+  .wx-dashboard-forecast-grid {
+    grid-template-columns: minmax(0,1fr) !important;
+  }
+  .wx-reference-content {
+    padding: clamp(13px,2.3vw,20px) !important;
+  }
+  .wx-map-card {
+    border-radius: 18px !important;
+  }
+}
+@media (max-width: 680px) {
+  #root > div > header.sticky {
+    padding-top: max(8px,env(safe-area-inset-top,0px)) !important;
+    padding-bottom: 9px !important;
+  }
+  .rodex-header-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto !important;
+    grid-template-areas:
+      "brand controls"
+      "shortcuts shortcuts"
+      "search search" !important;
+    align-items: center !important;
+    gap: 8px 9px !important;
+    width: 100%;
+  }
+  .rodex-header-brand { grid-area: brand; min-width: 0; }
+  .rodex-header-brand img {
+    width: clamp(104px,31vw,132px) !important;
+    max-width: 100%;
+  }
+  .rodex-header-controls {
+    grid-area: controls;
+    justify-self: end;
+    min-width: 0;
+    gap: 5px !important;
+  }
+  .rodex-header-shortcuts {
+    grid-area: shortcuts;
+    display: flex !important;
+    justify-self: end;
+    justify-content: flex-end;
+    width: 100%;
+    gap: 6px !important;
+  }
+  .rodex-header-search {
+    grid-area: search;
+    width: 100%;
+    max-width: none !important;
+  }
+  .rodex-header-search input {
+    min-height: 44px;
+    font-size: 14px !important;
+    border-radius: 14px !important;
+  }
+  .rodex-header-controls > button,
+  .rodex-header-shortcuts > button {
+    min-width: 40px;
+    min-height: 40px;
+  }
+  .wx-reference-shell { min-height: 0 !important; border-radius: 18px !important; }
+  .wx-reference-content { padding: 13px !important; }
+  .wx-reference-heading {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+  .wx-reference-heading-right {
+    width: 100%;
+    justify-content: space-between !important;
+    flex-wrap: wrap;
+  }
+  .wx-live-status { max-width: 100%; min-width: 0; white-space: normal; }
+  .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 68px !important;
+    gap: 8px !important;
+    padding: 14px !important;
+  }
+  .wx-dashboard-hero .wx-storm-title { font-size: clamp(42px,12vw,60px) !important; }
+  .wx-hero-weather-art { width: 68px; min-width: 0; }
+  .wx-hero-weather-icon { width: 58px !important; height: 58px !important; max-width: 100%; }
+  .wx-hero-metrics { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 7px !important; }
+  .wx-dashboard-forecast-grid { grid-template-columns: minmax(0,1fr) !important; }
+  .wx-dashboard-hourly-list { grid-template-columns: repeat(4,minmax(0,1fr)) !important; }
+  .wx-dashboard-daily-list { gap: 4px !important; }
+  .wx-map-toolbar { align-items: stretch !important; }
+  .wx-map-layer-controls { width: 100%; max-width: 100%; overflow-x: auto; }
+  .wx-map-search-controls {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: minmax(0,1fr) repeat(3,40px);
+    gap: 6px !important;
+  }
+  .wx-map-search,
+  .wx-map-search-input { min-width: 0 !important; }
+  .wx-map-search-input { min-height: 42px !important; }
+  .wx-map-search-controls > button {
+    width: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+  }
+  .wx-map-canvas-wrap,
+  .wx-map-canvas { min-height: clamp(320px,54dvh,470px) !important; }
+  .wx-map-footer {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 7px !important;
+  }
+  .wx-reference-aside { grid-template-columns: minmax(0,1fr) !important; }
+  .wx-hourly-temperatures,
+  .wx-weekly-days { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  .wx-live-weather-temp { font-size: clamp(42px,13vw,54px) !important; }
+  nav[aria-label="Mobile Navigation"] {
+    left: 50% !important;
+    bottom: max(8px,env(safe-area-inset-bottom,0px)) !important;
+    width: calc(100% - 16px) !important;
+    max-width: 520px !important;
+    padding: 5px 6px max(8px,env(safe-area-inset-bottom,0px)) !important;
+  }
+}
+@media (max-width: 390px) {
+  .rodex-header-shortcuts { gap: 5px !important; }
+  .header-account-shortcut,
+  .header-privacy-shortcut,
+  .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] {
+    width: 40px !important;
+    min-width: 40px !important;
+    padding: 0 !important;
+  }
+  .header-account-label,
+  .header-privacy-shortcut span {
+    display: none !important;
+  }
+  .header-account-icon { width: 23px !important; height: 23px !important; }
+  .rodex-header-controls > button:first-child {
+    min-width: 40px;
+    padding-left: 9px !important;
+    padding-right: 9px !important;
+  }
+  .wx-reference-content { padding: 11px !important; }
+  .wx-dashboard-hero { grid-template-columns: minmax(0,1fr) 58px !important; padding: 12px !important; }
+  .wx-hero-weather-art { width: 58px; }
+  .wx-hero-weather-icon { width: 52px !important; height: 52px !important; }
+  .wx-dashboard-panel { padding: 12px 9px !important; }
+  .wx-dashboard-hour { min-width: 0; padding: 7px 2px !important; }
+  .wx-dashboard-day { min-width: 0; }
+  .wx-map-canvas-wrap,
+  .wx-map-canvas { min-height: 310px !important; }
+  nav[aria-label="Mobile Navigation"] > div {
+    gap: 0 !important;
+  }
+  nav[aria-label="Mobile Navigation"] button {
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  nav[aria-label="Mobile Navigation"] button > span {
+    font-size: 9px !important;
+    white-space: nowrap;
+  }
+  nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
+@media (max-width: 350px) {
+  .rodex-header-brand img { width: 102px !important; }
+  .rodex-header-controls { gap: 4px !important; }
+  .wx-dashboard-hourly-list { grid-template-columns: repeat(3,minmax(0,1fr)) !important; }
+  .wx-dashboard-daily-list { overflow-x: auto; }
+  nav[aria-label="Mobile Navigation"] {
+    width: calc(100% - 10px) !important;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+  }
+  nav[aria-label="Mobile Navigation"] button > span {
+    font-size: 8px !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rodex-monochrome-theme *,
+  .rodex-monochrome-theme *::before,
+  .rodex-monochrome-theme *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

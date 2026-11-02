@@ -133,16 +133,32 @@ try {
   await page.locator('.wx-reference-shell').waitFor({ state: 'visible', timeout: 10000 });
 
   const moreWeather = page.locator('.wx-more-weather-toggle');
+  const moreWeatherContent = page.locator('#wx-more-weather-content');
   await moreWeather.waitFor({ state: 'visible', timeout: 5000 });
-  if (await moreWeather.getAttribute('aria-expanded') !== 'false') {
-    throw new Error('Additional weather information should be collapsed by default.');
-  }
-  await moreWeather.click();
-  await page.locator('#wx-more-weather-content').waitFor({ state: 'visible', timeout: 5000 });
   if (await moreWeather.getAttribute('aria-expanded') !== 'true') {
-    throw new Error('The additional weather information disclosure should expose its expanded state.');
+    throw new Error('Detailed weather information should be visible by default on every screen size.');
   }
+  await moreWeatherContent.waitFor({ state: 'visible', timeout: 5000 });
   await moreWeather.click();
+  if (await moreWeather.getAttribute('aria-expanded') !== 'false') {
+    throw new Error('The additional weather information control should be able to collapse its section.');
+  }
+  await moreWeatherContent.waitFor({ state: 'hidden', timeout: 5000 });
+  await moreWeather.click();
+  await moreWeatherContent.waitFor({ state: 'visible', timeout: 5000 });
+  if (await moreWeather.getAttribute('aria-expanded') !== 'true') {
+    throw new Error('The detailed weather information section should expand again after being collapsed.');
+  }
+  const privacyButton = mobileNav.getByRole('button', { name: 'Privacy and account controls' });
+  if (!(await privacyButton.isVisible())) {
+    throw new Error('Privacy and account controls must remain reachable from the phone navigation dock.');
+  }
+  await privacyButton.click();
+  const privacyDialog = page.getByRole('dialog', { name: 'Privacy and Account Portal' });
+  await privacyDialog.waitFor({ state: 'visible', timeout: 5000 });
+  await privacyDialog.getByRole('button').first().click();
+  await privacyDialog.waitFor({ state: 'detached', timeout: 5000 });
+  console.log('PASS phone navigation: Privacy opens the Account Portal and can be closed.');
 
   await page.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' }).click();
   await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });

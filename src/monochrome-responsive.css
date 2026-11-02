@@ -187,7 +187,7 @@ body {
 
 /* Header: black glass, white controls, and a clear search hierarchy. */
 .rodex-monochrome-theme > header.sticky {
-  z-index: 60;
+  z-index: 40; /* Keep dialogs and fullscreen tools above the sticky header. */
   padding-top: max(.6rem,env(safe-area-inset-top,0px));
   background: rgba(8,10,14,.94) !important;
   border-bottom: 1px solid rgba(255,255,255,.13) !important;
@@ -395,7 +395,7 @@ body {
   position: fixed;
   left: 50%;
   bottom: max(10px,env(safe-area-inset-bottom,0px));
-  z-index: 70;
+  z-index: 40; /* Modal overlays must cover the persistent navigation dock. */
   width: min(560px,calc(100% - 16px));
   max-width: 560px;
   /* Tailwind's -translate-x-1/2 already centres this fixed dock. */

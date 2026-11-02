@@ -10,7 +10,7 @@ export default defineConfig(() => {
       tailwindcss(),
       VitePWA({
         registerType: 'autoUpdate',
-        includeAssets: ['apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'rodex-emblem.png'],
+        includeAssets: ['apple-touch-icon.png', 'icon.svg', 'pwa-192x192.png', 'pwa-512x512.png', 'rodex-emblem.png', 'rodex-logo-full.png'],
         manifest: {
           id: '/',
           name: 'RODEX Atmos — Weather & Atmospheric Intelligence',

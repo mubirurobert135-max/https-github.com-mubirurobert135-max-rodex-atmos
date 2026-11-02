@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
+    "dev": "node scripts/generate-icons.js && tsx server.ts",
     "build": "node scripts/generate-icons.js && vite build && esbuild server.ts --bundle --platform=node --target=node20 --format=esm --outfile=server.js --external:@vitejs/devtools/config --external:vite --packages=external",
     "start": "node server.js",
     "clean": "rm -rf dist server.js",

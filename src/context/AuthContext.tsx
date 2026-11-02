@@ -16,7 +16,7 @@ import {
   setDoc,
   deleteDoc
 } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType, testFirestoreConnection } from '../lib/firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 import { NotificationPreferences } from '../types';
 import { resolveAuthProfileIdentity } from '../utils/accountProfile';
@@ -113,11 +113,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
     return true;
   });
-
-  // Test connection on boot
-  useEffect(() => {
-    testFirestoreConnection();
-  }, []);
 
   // Fetch or create profile document in /users/{uid}
   const fetchOrCreateProfile = useCallback(async (firebaseUser: User) => {
@@ -318,7 +313,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentUser = auth.currentUser;
     const uid = currentUser.uid;
     const userDocRef = doc(db, 'users', uid);
-    const profileBackup = userProfile ? { ...userProfile } : null;
+    let profileBackup: UserProfileData | null = userProfile ? { ...userProfile } : null;
+
+    try {
+      const profileSnapshot = await getDoc(userDocRef);
+      if (profileSnapshot.exists()) {
+        profileBackup = {
+          ...(profileBackup || {}),
+          ...(profileSnapshot.data() as UserProfileData)
+        };
+      }
+    } catch (err) {
+      console.error('[RODEX Account Deletion] Could not verify the Firestore profile before deletion:', err);
+      throw new Error('Unable to verify your account profile. Check your connection and try again. Your account has NOT been deleted.');
+    }
 
     // Helper to perform deleteUser with automatic re-authentication handling
     const executeAuthDeletion = async () => {
@@ -354,11 +362,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    // 1. Delete Firestore user document
+    // 1. Remove Firestore profile first. Never delete Auth if this step fails.
     try {
       await deleteDoc(userDocRef);
     } catch (err) {
-      console.warn('Firestore doc deletion notice:', err);
+      console.error('[RODEX Account Deletion] Firestore profile deletion failed:', err);
+      throw new Error('RODEX could not securely remove your account profile. Your Firebase sign-in account was NOT deleted. Please retry after checking your connection.');
     }
 
     // 2. Delete Firebase Auth User with re-authentication

@@ -1890,7 +1890,7 @@ Available Function Tools:
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          messages: newHistory.map((m) => ({ role: m.role, content: m.content })),
+          messages: newHistory.slice(-12).map((m) => ({ role: m.role, content: m.content })),
           weatherData,
           deviceLocationData,
           mapContextData,

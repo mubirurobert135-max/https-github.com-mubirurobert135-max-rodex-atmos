@@ -22,6 +22,7 @@ import {
 import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greetingUtils';
 import { buildWeatherWardrobeAdvice } from './src/utils/weatherWardrobe';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
+import { getVercelRequestGeo } from './src/utils/requestGeolocation';
 
 dotenv.config();
 
@@ -950,45 +951,43 @@ async function startServer() {
     }
   });
 
-  // IP Geolocation Endpoint (2nd priority fallback in progressive location strategy)
+  // Visitor-network fallback from Vercel's trusted incoming geolocation headers.
+  // Never geolocate the serverless function's outbound IP.
   app.get('/api/weather/ip-location', async (req, res) => {
+    res.setHeader('Cache-Control', 'private, no-store, max-age=0');
+    const geo = getVercelRequestGeo(req.headers);
+
+    if (!geo) {
+      return res.status(503).json({
+        error: 'IP_LOCATION_UNAVAILABLE',
+        message: 'Approximate network location is unavailable. Enable device location or search for a city.'
+      });
+    }
+
     try {
-      const ipRes = await fetchWithTimeout('http://ip-api.com/json/?fields=status,message,country,countryCode,regionName,city,district,lat,lon,timezone,query', {
-        headers: { 'User-Agent': 'RODEX-Atmos-WeatherApp/1.0' }
-      }, 4500);
-      if (!ipRes.ok) {
-        throw new Error('IP geolocation service unavailable');
-      }
-      const ipData = await ipRes.json();
-      if (ipData.status !== 'success' || !Number.isFinite(ipData.lat) || !Number.isFinite(ipData.lon)) {
-        throw new Error(ipData.message || 'Could not resolve network location from IP');
-      }
-
-      const lat = ipData.lat;
-      const lon = ipData.lon;
-      const cityName = ipData.city || 'Network Location';
-      const countryName = ipData.country || '';
-
+      const { latitude: lat, longitude: lon } = geo;
       const cacheKey = coordinateCacheKey(lat, lon);
       const result = await routeForecastRequest(async (provider) => {
-        if (provider.name === 'WeatherAPI.com') {
-          return await fetchWeatherAPI({ lat, lon });
-        } else if (provider.name === 'OpenWeather') {
-          return await fetchOpenWeather({ lat, lon }, `${cityName}, ${countryName}`);
-        } else {
-          return await fetchOpenMeteo({ lat, lon }, cityName);
-        }
+        if (provider.name === 'WeatherAPI.com') return await fetchWeatherAPI({ lat, lon });
+        if (provider.name === 'OpenWeather') return await fetchOpenWeather({ lat, lon }, geo.city);
+        return await fetchOpenMeteo({ lat, lon }, geo.city);
       }, cacheKey);
 
-      res.json({
+      return res.json({
         ...result,
-        location: { ...result.location, isApproximateNetwork: true, detectedIP: ipData.query }
+        location: {
+          ...result.location,
+          name: geo.city || result.location.name,
+          country: result.location.country || geo.countryCode,
+          timezone: geo.timezone || result.location.timezone,
+          isApproximateNetwork: true
+        }
       });
     } catch (error: any) {
-      console.warn('IP geolocation error, falling back:', error.message);
-      res.status(503).json({
+      console.warn('Vercel visitor geolocation weather fallback failed:', error?.message || error);
+      return res.status(503).json({
         error: 'IP_LOCATION_FAILED',
-        message: error.message || 'Unable to retrieve approximate network location'
+        message: 'Unable to retrieve weather for the approximate network location. Search for a city or retry device location.'
       });
     }
   });
@@ -1807,17 +1806,38 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
     let weatherFetchMs = 0;
     let aiGenMs = 0;
 
-    const { 
-      messages, 
-      weatherData, 
-      deviceLocationData, 
-      mapContextData, 
-      activeMapLayer, 
-      synthesizeVoice = false 
+    const {
+      messages,
+      weatherData,
+      deviceLocationData,
+      mapContextData,
+      activeMapLayer,
+      synthesizeVoice = false
     } = req.body || {};
 
+    const invalidMessages = !Array.isArray(messages) ||
+      messages.length === 0 ||
+      messages.length > 12 ||
+      messages.some((message: any) =>
+        !message ||
+        !['user', 'assistant'].includes(message.role) ||
+        typeof message.content !== 'string' ||
+        message.content.trim().length === 0 ||
+        message.content.length > 4000
+      ) ||
+      (Array.isArray(messages) && messages.length > 0 && messages[messages.length - 1]?.role !== 'user') ||
+      (Array.isArray(messages) && messages.reduce((total: number, message: any) =>
+        total + (typeof message?.content === 'string' ? message.content.length : 0), 0) > 24000);
+
+    if (invalidMessages || typeof synthesizeVoice !== 'boolean') {
+      return res.status(400).json({
+        error: 'INVALID_CHAT_REQUEST',
+        message: 'Send 1–12 recent chat messages with valid roles and non-empty text. Each message must be 4,000 characters or fewer.'
+      });
+    }
+
     try {
-      const lastUserMsg = (messages?.[messages.length - 1]?.content || '').trim();
+      const lastUserMsg = messages[messages.length - 1].content.trim();
 
       // Helper to respond with optional direct speech synthesis in a single round-trip
       const sendChatResponse = async (replyText: string, cityUpdate: any = null) => {

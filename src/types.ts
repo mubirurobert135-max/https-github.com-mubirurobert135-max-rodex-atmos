@@ -9,7 +9,6 @@ export interface WeatherLocation {
   timezone: string;
   timezoneOffsetSeconds?: number;
   isApproximateNetwork?: boolean;
-  detectedIP?: string;
 }
 
 export interface CurrentWeather {

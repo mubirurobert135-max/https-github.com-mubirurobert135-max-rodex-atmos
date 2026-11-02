@@ -64,7 +64,7 @@ async function resolveCurrentDevicePlace(latitude: number, longitude: number): P
 }
 
 export default function App() {
-  const { userPreferences, updateUserPreferences, notificationPreferences } = useAuth();
+  const { userPreferences, updateUserPreferences, notificationPreferences, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
   const [showMoreWeather, setShowMoreWeather] = useState(false);
   const [mapDisplayMode, setMapDisplayMode] = useState<'map' | 'globe'>('map');
@@ -243,8 +243,10 @@ export default function App() {
   };
 
   useEffect(() => {
-    initializeStartupLocation();
-  }, []);
+    if (!authLoading) {
+      void initializeStartupLocation();
+    }
+  }, [authLoading]);
 
   // Move to the selected place on the street map after a successful search.
   const openSelectedLocationOnMap = () => {

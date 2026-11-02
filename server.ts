@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 // into Vercel's ESM serverless bundle.
 const require = createRequire(import.meta.url);
 const express = require('express') as typeof import('express');
-import dotenv from 'dotenv';
+const dotenv = require('dotenv') as { config: typeof import('dotenv').config };
 import { GoogleGenAI } from '@google/genai';
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
 import {

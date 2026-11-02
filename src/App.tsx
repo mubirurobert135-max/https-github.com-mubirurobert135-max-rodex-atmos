@@ -66,7 +66,7 @@ async function resolveCurrentDevicePlace(latitude: number, longitude: number): P
 export default function App() {
   const { userPreferences, updateUserPreferences, notificationPreferences, loading: authLoading } = useAuth();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'map'>('dashboard');
-  const [showMoreWeather, setShowMoreWeather] = useState(false);
+  const [showMoreWeather, setShowMoreWeather] = useState(true);
   const [mapDisplayMode, setMapDisplayMode] = useState<'map' | 'globe'>('map');
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [deviceLocationData, setDeviceLocationData] = useState<WeatherData | null>(null);
@@ -710,6 +710,7 @@ export default function App() {
         onOpenAlerts={() => setIsAlertsModalOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
         activeAlertsCount={weatherData?.alerts?.length || 0}
+        onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
       />
     </div>
   );

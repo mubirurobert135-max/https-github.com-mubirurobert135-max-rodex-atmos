@@ -169,7 +169,7 @@ export const Header: React.FC<HeaderProps> = ({
             alt="RODEX Atmos — Understand your day"
             width="190"
             height="44"
-            className="h-auto w-[132px] sm:w-[174px] lg:w-[190px] object-contain drop-shadow-[0_2px_12px_rgba(91,63,190,0.28)] transition-transform duration-300 hover:scale-[1.025]"
+            className="h-auto w-[132px] sm:w-[174px] lg:w-[190px] object-contain drop-shadow-[0_2px_12px_rgba(255,255,255,0.10)] transition-transform duration-300 hover:scale-[1.025]"
           />
         </div>
 
@@ -337,7 +337,7 @@ export const Header: React.FC<HeaderProps> = ({
           type="button"
           onClick={onOpenAssistant}
           onPointerMove={updateNavPointer}
-          className="rodex-pointer-spotlight group inline-flex h-[39px] w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-violet-300/55 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-600 px-0 text-white shadow-lg shadow-violet-950/25 transition-all duration-200 hover:-translate-y-0.5 hover:from-violet-500 hover:via-purple-500 hover:to-indigo-500 hover:shadow-violet-500/30 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-200/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
+          className="rodex-pointer-spotlight group inline-flex h-[39px] min-w-[39px] shrink-0 items-center justify-center gap-2 rounded-[13px] border border-white/50 bg-gradient-to-br from-slate-100 via-white to-slate-300 px-0 text-slate-950 shadow-lg shadow-black/40 transition-all duration-200 hover:-translate-y-0.5 hover:from-white hover:to-slate-200 active:scale-[.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:w-auto sm:px-3"
           title="Open RODEX AI"
           aria-label="Open RODEX AI from header navigation"
         >

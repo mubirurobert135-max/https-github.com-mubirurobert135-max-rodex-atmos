@@ -280,7 +280,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
 
   return (
     <div 
-      className="relative w-full rounded-2xl bg-slate-900/80 border border-cyan-500/20 backdrop-blur-md p-4 overflow-hidden shadow-2xl transition-all duration-300 hover:border-cyan-400/40 group"
+      className="wx-globe-panel relative w-full rounded-2xl bg-slate-900/80 border border-cyan-500/20 backdrop-blur-md p-4 overflow-hidden shadow-2xl transition-all duration-300 hover:border-cyan-400/40 group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

@@ -73,7 +73,6 @@ export default defineConfig(() => {
                 },
               },
             },
-            {
               // Approximate IP location is visitor-specific: never cache this shared URL.
             {
               urlPattern: /\/api\/weather\/ip-location(?:\?.*)?$/i,

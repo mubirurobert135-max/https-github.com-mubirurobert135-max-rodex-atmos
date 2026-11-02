@@ -260,7 +260,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <Sparkles className="w-4 h-4" /> Guest Mode Active
                 </div>
                 <p className="leading-relaxed">
-                  You are currently using RODEX Atmos as a Guest. You have access to weather features and location controls, but personal account preferences and cloud data export require an authenticated session.
+                  You are using RODEX Atmos as a Guest. Privacy preferences are saved on this device; sign in to sync them with your account and access cloud data export.
                 </p>
                 {onOpenAuthModal && (
                   <button

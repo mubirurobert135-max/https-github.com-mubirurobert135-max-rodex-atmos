@@ -20,6 +20,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../lib/firebase';
 
 import { NotificationPreferences } from '../types';
 import { resolveAuthProfileIdentity } from '../utils/accountProfile';
+import { readGuestPrivacyPreferences, writeGuestPrivacyPreferences } from '../utils/privacyPreferences';
 
 export interface UserPrivacyPreferences {
   autoLocationEnabled: boolean;
@@ -107,6 +108,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [guestPreferences, setGuestPreferences] = useState<UserPrivacyPreferences>(
+    () => readGuestPrivacyPreferences(DEFAULT_PREFERENCES)
+  );
   const [isGuest, setIsGuest] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
       return localStorage.getItem('rodex_atmos_guest_session') === 'true';
@@ -124,6 +128,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (snap.exists()) {
         const profile = snap.data() as UserProfileData;
         const identityUpdates: Partial<UserProfileData> = {};
+
+        // Migrate device-only guest privacy choices to older profiles that lack preferences.
+        if (!profile.preferences) {
+          identityUpdates.preferences = readGuestPrivacyPreferences(DEFAULT_PREFERENCES);
+        }
 
         // Google is the source of truth for a linked Google profile photo.
         // Refresh existing Firestore profiles too, not only first-time accounts.
@@ -158,7 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           phoneVerified: !!firebaseUser.phoneNumber,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
-          preferences: DEFAULT_PREFERENCES,
+          preferences: readGuestPrivacyPreferences(DEFAULT_PREFERENCES),
           savedCities: []
         };
         if (providerEmail || firebaseUser.email) {
@@ -182,7 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emailVerified: firebaseUser.emailVerified,
         phoneVerified: !!firebaseUser.phoneNumber,
         createdAt: new Date().toISOString(),
-        preferences: DEFAULT_PREFERENCES,
+        preferences: readGuestPrivacyPreferences(DEFAULT_PREFERENCES),
         savedCities: []
       });
     }
@@ -221,9 +230,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Update privacy preferences
   const updateUserPreferences = async (newPrefs: Partial<UserPrivacyPreferences>) => {
-    const currentPrefs = userProfile?.preferences || DEFAULT_PREFERENCES;
+    const currentPrefs = userProfile?.preferences || guestPreferences;
     const mergedPrefs: UserPrivacyPreferences = { ...currentPrefs, ...newPrefs };
-    await syncUserProfile({ preferences: mergedPrefs });
+
+    if (auth.currentUser) {
+      await syncUserProfile({ preferences: mergedPrefs });
+    } else {
+      // Guest privacy controls must work even before sign-in.
+      writeGuestPrivacyPreferences(mergedPrefs);
+      setGuestPreferences(mergedPrefs);
+    }
   };
 
   // Update notification preferences (Firestore for users, localStorage for guests)
@@ -406,6 +422,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       localStorage.removeItem('rodex_atmos_preferences');
       localStorage.removeItem('rodex_atmos_last_location');
     }
+    setGuestPreferences(DEFAULT_PREFERENCES);
 
     // 4. Reset Local Context State & Return to Guest Mode
     setUser(null);
@@ -452,6 +469,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     await firebaseSignOut(auth);
+    // Preserve the signed-in user's current privacy choices for the next guest session.
+    const preferencesToKeep = userProfile?.preferences || guestPreferences;
+    try {
+      writeGuestPrivacyPreferences(preferencesToKeep);
+      setGuestPreferences(preferencesToKeep);
+    } catch (error) {
+      console.warn('[RODEX Guest Preferences] Could not preserve settings during sign-out:', error);
+    }
     if (typeof window !== 'undefined') {
       localStorage.removeItem('rodex_atmos_saved_cities');
       localStorage.removeItem('rodex_atmos_preferences');
@@ -465,7 +490,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isEmailVerified = user?.emailVerified ?? false;
   const isPhoneVerified = !!user?.phoneNumber || (userProfile?.phoneVerified ?? false);
   const isVerified = isEmailVerified || isPhoneVerified;
-  const userPreferences = userProfile?.preferences || DEFAULT_PREFERENCES;
+  const userPreferences = userProfile?.preferences || guestPreferences;
 
   const guestNotifPrefs = typeof window !== 'undefined'
     ? (() => {

@@ -1,0 +1,62 @@
+name: RODEX Atmos portable runtime and responsive checks
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'server.ts'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'bun.lock'
+      - 'Dockerfile'
+      - 'scripts/verify_node_production.mjs'
+      - '.github/workflows/portable-runtime.yml'
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'api/**'
+      - 'server.ts'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'bun.lock'
+      - 'Dockerfile'
+      - 'scripts/verify_node_production.mjs'
+      - '.github/workflows/portable-runtime.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  production-node-and-responsive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: TypeScript validation
+        run: bun run lint
+
+      - name: Build production app and server
+        run: bun run build
+
+      - name: Install Chromium for responsive checks
+        run: npx playwright install --with-deps chromium
+
+      - name: Verify standard Node production server and responsive viewports
+        run: node scripts/verify_node_production.mjs

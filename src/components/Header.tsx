@@ -165,7 +165,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo & Title */}
         <div className="rodex-header-brand flex items-center shrink-0">
           <img
-            src="/rodex-atmos-logo.png"
+            src="/rodex-atmos-logo.svg"
             alt="RODEX Atmos — Understand your day"
             width="190"
             height="44"

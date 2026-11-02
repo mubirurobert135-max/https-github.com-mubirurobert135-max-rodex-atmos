@@ -13,7 +13,7 @@ RODEX Atmos is a responsive weather and atmospheric-intelligence application for
 
 ## Requirements
 
-- Node.js 20 or newer.
+- Node.js 20.19+ or 22.12+ (Vite 8 requirement).
 - A supported package manager. Bun is used by the repository's CI workflow; npm can also install the declared dependencies.
 - Optional server-side environment variables:
   - `GEMINI_API_KEY` or `API_KEY`: enables Gemini-powered RODEX AI features.

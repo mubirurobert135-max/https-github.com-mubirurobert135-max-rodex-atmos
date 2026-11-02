@@ -38,7 +38,7 @@ async function generateIcons() {
       bottom: 51,
       left: 51,
       right: 51,
-      background: { r: 15, g: 23, b: 42, alpha: 1 } // #0f172a
+      background: { r: 8, g: 10, b: 14, alpha: 1 } // #080A0E
     })
     .png()
     .toFile(path.join(publicDir, 'pwa-maskable-512x512.png'));

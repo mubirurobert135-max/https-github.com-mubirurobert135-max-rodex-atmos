@@ -7336,3 +7336,44 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+
+/* Final neutralization for native controls, SVG utilities and scroll affordances. */
+.rodex-monochrome-theme,
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select,
+.rodex-monochrome-theme progress,
+.rodex-monochrome-theme meter {
+  accent-color: #E2E8F0 !important;
+}
+.rodex-monochrome-theme [class*="stroke-violet-"],
+.rodex-monochrome-theme [class*="stroke-purple-"],
+.rodex-monochrome-theme [class*="stroke-indigo-"],
+.rodex-monochrome-theme [class*="stroke-sky-"],
+.rodex-monochrome-theme [class*="stroke-cyan-"],
+.rodex-monochrome-theme [class*="stroke-blue-"],
+.rodex-monochrome-theme [class*="stroke-teal-"],
+.rodex-monochrome-theme [class*="stroke-emerald-"] {
+  stroke: #DCE2E9 !important;
+}
+.rodex-monochrome-theme [class*="fill-violet-"],
+.rodex-monochrome-theme [class*="fill-purple-"],
+.rodex-monochrome-theme [class*="fill-indigo-"],
+.rodex-monochrome-theme [class*="fill-sky-"],
+.rodex-monochrome-theme [class*="fill-cyan-"],
+.rodex-monochrome-theme [class*="fill-blue-"],
+.rodex-monochrome-theme [class*="fill-teal-"],
+.rodex-monochrome-theme [class*="fill-emerald-"] {
+  fill: #DCE2E9 !important;
+}
+.rodex-monochrome-theme ::selection {
+  color: #101318 !important;
+  background: #E2E8F0 !important;
+}
+.rodex-monochrome-theme ::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,.24);
+  border-radius: 999px;
+}
+.rodex-monochrome-theme ::-webkit-scrollbar-track {
+  background: rgba(255,255,255,.035);
+}

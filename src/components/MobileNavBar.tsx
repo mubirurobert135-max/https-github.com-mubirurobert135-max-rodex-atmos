@@ -16,6 +16,7 @@ interface MobileNavBarProps {
   onOpenAssistant: () => void;
   onOpenAlerts: () => void;
   onOpenAuth: () => void;
+  onOpenPrivacy: () => void;
   activeAlertsCount: number;
 }
 
@@ -25,6 +26,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   onOpenAssistant,
   onOpenAlerts,
   onOpenAuth,
+  onOpenPrivacy,
   activeAlertsCount
 }) => {
   const { user, userProfile, isVerified } = useAuth();
@@ -32,9 +34,9 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[420px] z-40 lg:hidden bg-[rgba(29,43,42,0.68)] backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[520px] z-40 lg:hidden bg-[rgba(29,43,42,0.68)] backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
     >
-      <div className="max-w-md mx-auto grid grid-cols-5 items-center justify-items-center">
+      <div className="max-w-md mx-auto grid grid-cols-6 items-center justify-items-center">
         
         {/* 1. Dashboard Tab */}
         <button
@@ -142,6 +144,18 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           <span className="text-[10px] font-semibold tracking-tight mt-1">
             Account
           </span>
+        </button>
+
+        {/* Privacy and personal-data controls remain one tap away on phones and tablets. */}
+        <button
+          onClick={onOpenPrivacy}
+          onPointerMove={updateNavPointer}
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-0.5 rounded-xl text-white/60 hover:text-white/90 transition-all"
+          aria-label="Privacy Portal and Preferences"
+          title="Privacy Portal"
+        >
+          <ShieldCheck className="w-5 h-5" />
+          <span className="text-[9px] sm:text-[10px] font-semibold tracking-tight mt-1">Privacy</span>
         </button>
 
       </div>

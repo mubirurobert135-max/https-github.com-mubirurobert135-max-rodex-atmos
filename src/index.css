@@ -7,13 +7,13 @@
     --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
     /* RODEX Atmos Design Tokens */
-    --color-obsidian: #9D91F7;
-    --color-midnight: #987FF3;
-    --color-ink-deep: #32164D;
-    --color-ink-surface: #C8C0F6;
-    --color-teal-glow: #844EE7;
-    --color-emerald-accent: #C8C0F6;
-    --color-champagne: #E8E5F5;
+    --color-obsidian: #080A0E;
+    --color-midnight: #11151B;
+    --color-ink-deep: #080A0E;
+    --color-ink-surface: #1B2028;
+    --color-teal-glow: #E2E8F0;
+    --color-emerald-accent: #CBD5E1;
+    --color-champagne: #F8FAFC;
     --color-ivory: #FFFFFF;
 
     --sat: env(safe-area-inset-top, 0px);
@@ -789,15 +789,19 @@
 :root {
   --font-heading: "Space Grotesk", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --color-teal-glow: #844EE7;
-  --color-emerald-accent: #C8C0F6;
-  --color-champagne: #E8E5F5;
-  --atmos-cyan: #844EE7;
-  --atmos-mint: #C8C0F6;
-  --atmos-lilac: #E8E5F5;
-  --atmos-glass: rgba(255, 255, 255, .88);
-  --atmos-stroke: rgba(146, 78, 249, .2);
-  --atmos-text-muted: #78668D;
+  --color-obsidian: #080A0E;
+  --color-midnight: #11151B;
+  --color-ink-deep: #080A0E;
+  --color-ink-surface: #1B2028;
+  --color-teal-glow: #E2E8F0;
+  --color-emerald-accent: #CBD5E1;
+  --color-champagne: #F8FAFC;
+  --atmos-cyan: #E2E8F0;
+  --atmos-mint: #CBD5E1;
+  --atmos-lilac: #F8FAFC;
+  --atmos-glass: rgba(17, 20, 26, .88);
+  --atmos-stroke: rgba(255, 255, 255, .18);
+  --atmos-text-muted: #A7AFB9;
 }
 html {
   scroll-behavior: smooth;
@@ -6463,3 +6467,157 @@ body {
 .rodex-monochrome-theme .leaflet-container {
   background: #11151b !important;
 }
+
+/* RODEX Atmos — final monochrome theme lock.
+   Keep weather imagery and data intact; all application chrome stays black,
+   charcoal, white and silver across dashboard, map, account and assistant views. */
+html,
+body {
+  color-scheme: dark;
+  background: #080A0E !important;
+  color: #F8FAFC;
+}
+
+.rodex-monochrome-theme {
+  color-scheme: dark;
+  isolation: isolate;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background-color: #080A0E !important;
+  color: #F8FAFC !important;
+  --color-obsidian: #080A0E;
+  --color-midnight: #11151B;
+  --color-ink-deep: #080A0E;
+  --color-ink-surface: #1B2028;
+  --color-teal-glow: #E2E8F0;
+  --color-emerald-accent: #CBD5E1;
+  --color-champagne: #F8FAFC;
+  --atmos-cyan: #E2E8F0;
+  --atmos-mint: #CBD5E1;
+  --atmos-lilac: #F8FAFC;
+  --atmos-glass: rgba(17, 20, 26, .88);
+  --atmos-stroke: rgba(255, 255, 255, .18);
+  --atmos-text-muted: #A7AFB9;
+}
+
+/* The background component uses inline styles, so override its canvas explicitly. */
+.rodex-monochrome-theme .atmos-reference-background {
+  background:
+    radial-gradient(ellipse at 14% 8%, rgba(255,255,255,.045), transparent 42%),
+    radial-gradient(ellipse at 88% 78%, rgba(255,255,255,.025), transparent 46%),
+    linear-gradient(132deg, #080A0E 0%, #11151B 52%, #090B10 100%) !important;
+  background-size: cover !important;
+  background-position: center !important;
+}
+
+.rodex-monochrome-theme .atmos-reference-background > div:first-child {
+  background: rgba(255,255,255,.035) !important;
+}
+
+.rodex-monochrome-theme .atmos-reference-background > div:nth-child(2) {
+  background: rgba(255,255,255,.022) !important;
+}
+
+/* Neutralize legacy accent utilities everywhere, including header and dialogs. */
+.rodex-monochrome-theme [class*="text-violet-"],
+.rodex-monochrome-theme [class*="text-purple-"],
+.rodex-monochrome-theme [class*="text-indigo-"],
+.rodex-monochrome-theme [class*="text-sky-"],
+.rodex-monochrome-theme [class*="text-cyan-"],
+.rodex-monochrome-theme [class*="text-blue-"],
+.rodex-monochrome-theme [class*="text-teal-"],
+.rodex-monochrome-theme [class*="text-emerald-"] {
+  color: #DCE2E9 !important;
+}
+
+.rodex-monochrome-theme [class^="border-violet-"],
+.rodex-monochrome-theme [class*=" border-violet-"],
+.rodex-monochrome-theme [class^="border-purple-"],
+.rodex-monochrome-theme [class*=" border-purple-"],
+.rodex-monochrome-theme [class^="border-indigo-"],
+.rodex-monochrome-theme [class*=" border-indigo-"],
+.rodex-monochrome-theme [class^="border-sky-"],
+.rodex-monochrome-theme [class*=" border-sky-"],
+.rodex-monochrome-theme [class^="border-cyan-"],
+.rodex-monochrome-theme [class*=" border-cyan-"],
+.rodex-monochrome-theme [class^="border-teal-"],
+.rodex-monochrome-theme [class*=" border-teal-"],
+.rodex-monochrome-theme [class^="border-emerald-"],
+.rodex-monochrome-theme [class*=" border-emerald-"] {
+  border-color: rgba(255,255,255,.18) !important;
+}
+
+.rodex-monochrome-theme [class^="bg-violet-"],
+.rodex-monochrome-theme [class*=" bg-violet-"],
+.rodex-monochrome-theme [class^="bg-purple-"],
+.rodex-monochrome-theme [class*=" bg-purple-"],
+.rodex-monochrome-theme [class^="bg-indigo-"],
+.rodex-monochrome-theme [class*=" bg-indigo-"],
+.rodex-monochrome-theme [class^="bg-sky-"],
+.rodex-monochrome-theme [class*=" bg-sky-"],
+.rodex-monochrome-theme [class^="bg-cyan-"],
+.rodex-monochrome-theme [class*=" bg-cyan-"],
+.rodex-monochrome-theme [class^="bg-teal-"],
+.rodex-monochrome-theme [class*=" bg-teal-"],
+.rodex-monochrome-theme [class^="bg-emerald-"],
+.rodex-monochrome-theme [class*=" bg-emerald-"] {
+  background-color: rgba(255,255,255,.075) !important;
+}
+
+.rodex-monochrome-theme [class*="from-violet-"],
+.rodex-monochrome-theme [class*="from-purple-"],
+.rodex-monochrome-theme [class*="from-indigo-"],
+.rodex-monochrome-theme [class*="from-sky-"],
+.rodex-monochrome-theme [class*="from-cyan-"],
+.rodex-monochrome-theme [class*="from-blue-"],
+.rodex-monochrome-theme [class*="from-teal-"],
+.rodex-monochrome-theme [class*="from-emerald-"] {
+  background-image: linear-gradient(135deg, rgba(255,255,255,.16), rgba(255,255,255,.045)) !important;
+}
+
+.rodex-monochrome-theme [class*="ring-violet-"],
+.rodex-monochrome-theme [class*="ring-purple-"],
+.rodex-monochrome-theme [class*="ring-indigo-"],
+.rodex-monochrome-theme [class*="ring-sky-"] {
+  --tw-ring-color: rgba(255,255,255,.28) !important;
+}
+
+.rodex-monochrome-theme [class*="shadow-violet-"],
+.rodex-monochrome-theme [class*="shadow-purple-"],
+.rodex-monochrome-theme [class*="shadow-indigo-"],
+.rodex-monochrome-theme [class*="shadow-sky-"] {
+  --tw-shadow-color: rgba(0,0,0,.42) !important;
+}
+
+/* Fullscreen map mode must not expose the old pale-lavender map surround. */
+.rodex-monochrome-theme .wx-map-root.fixed {
+  background: #080A0E !important;
+}
+
+/* Remove the old violet cast from brand marks without recolouring the logo itself. */
+.rodex-monochrome-theme header img {
+  filter: drop-shadow(0 2px 12px rgba(255,255,255,.10)) !important;
+}
+
+/* Account, settings and assistant surfaces use the same charcoal elevation system. */
+.rodex-monochrome-theme [role="dialog"],
+.rodex-monochrome-theme [aria-modal="true"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-2xl"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-xl"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="max-w-lg"] {
+  color: #F8FAFC !important;
+  background-color: #12161C !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-[#081224]"] {
+  background: linear-gradient(145deg, #171B22, #0D1015) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select,
+.rodex-monochrome-theme textarea {
+  color-scheme: dark;
+}
+

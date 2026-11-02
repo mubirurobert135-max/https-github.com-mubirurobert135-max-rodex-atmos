@@ -37,8 +37,11 @@ async function latestVercelPreviewUrl() {
 
 async function assertPreview(baseUrl) {
   const { response: pageResponse, body: html } = await get(baseUrl);
-  if (!pageResponse.ok) throw new Error(`Preview root returned HTTP ${pageResponse.status}.`);
-  if (!html.includes('id="root"') || !html.includes('RODEX Atmos')) {
+  const hasApplicationShell = pageResponse.ok &&
+    html.includes('id="root"') &&
+    html.includes('RODEX Atmos');
+
+  if (!hasApplicationShell) {
     const previewHost = new URL(baseUrl).hostname;
     const responseHost = new URL(pageResponse.url).hostname;
     const responseExcerpt = html.slice(0, 8000);
@@ -46,7 +49,7 @@ async function assertPreview(baseUrl) {
       pageResponse.status === 401 ||
       pageResponse.status === 403 ||
       responseHost !== previewHost ||
-      /vercel.{0,100}(?:sso|login|sign.?in|authentication|deployment protection)|single sign.?on|continue with vercel|protected by vercel/i.test(responseExcerpt);
+      /vercel.{0,100}(?:sso|login|sign.?in|authentication|deployment protection)|single sign.?on|continue with vercel|protected by vercel|authentication required|log in to continue/i.test(responseExcerpt);
 
     if (isVercelAccessGate) {
       console.log(
@@ -57,9 +60,13 @@ async function assertPreview(baseUrl) {
       return;
     }
 
+    if (!pageResponse.ok) {
+      throw new Error(\`Preview root returned HTTP \${pageResponse.status} at \${pageResponse.url}.\`);
+    }
+
     throw new Error(
       'Preview root does not contain the RODEX Atmos application shell. ' +
-      `HTTP ${pageResponse.status}; final URL ${pageResponse.url}; response: ${responseExcerpt.slice(0, 240).replace(/\\s+/g, ' ')}`
+      \`HTTP \${pageResponse.status}; final URL \${pageResponse.url}; response: \${responseExcerpt.slice(0, 240).replace(/\\s+/g, ' ')}\`
     );
   }
 

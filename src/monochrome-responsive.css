@@ -398,7 +398,8 @@ body {
   z-index: 70;
   width: min(560px,calc(100% - 16px));
   max-width: 560px;
-  transform: translateX(-50%);
+  /* Tailwind's -translate-x-1/2 already centres this fixed dock. */
+  transform: none !important;
   padding: 6px 7px max(8px,env(safe-area-inset-bottom,0px));
   color: #f8fafc;
   background: rgba(12,15,20,.95) !important;

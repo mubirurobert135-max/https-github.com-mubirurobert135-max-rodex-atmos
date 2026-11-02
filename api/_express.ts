@@ -1,8 +1,17 @@
 /**
- * Shared Express entrypoint for the explicit Vercel API routes.
+ * Shared serverless entrypoint for all explicit Vercel API routes.
  * Files beginning with an underscore are deployment support modules, not routes.
+ *
+ * Wait for the Express application to finish registering its routes before
+ * dispatching the request. The adapter also converts startup failures into
+ * a controlled JSON response rather than a platform-level invocation crash.
  */
-import { app } from '../server.ts';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { handleExpressRequest } from '../src/serverless/expressAdapter.ts';
 
-// Route registration is synchronous in production; the server never opens a port here.
-export default app;
+export default async function rodexAtmosApiHandler(
+  req: IncomingMessage,
+  res: ServerResponse
+): Promise<void> {
+  await handleExpressRequest(req, res);
+}

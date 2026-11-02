@@ -7377,3 +7377,14 @@ body {
 .rodex-monochrome-theme ::-webkit-scrollbar-track {
   background: rgba(255,255,255,.035);
 }
+
+
+/* Three.js renders colours directly into WebGL, so neutralize the canvas too. */
+.rodex-monochrome-theme .wx-globe-panel {
+  color: #F8FAFC !important;
+  background: linear-gradient(145deg,#171C23,#0D1015) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+.rodex-monochrome-theme .wx-globe-panel canvas {
+  filter: grayscale(1) contrast(1.08) brightness(1.06) !important;
+}

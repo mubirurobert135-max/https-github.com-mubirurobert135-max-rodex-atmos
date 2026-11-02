@@ -1,0 +1,15 @@
+.git
+.github
+.vercel
+node_modules
+dist
+server.js
+.env
+.env.*
+!.env.example
+*.log
+coverage
+playwright-report
+test-results
+screenshots
+.DS_Store

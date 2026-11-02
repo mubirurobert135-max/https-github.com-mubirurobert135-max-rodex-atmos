@@ -3,8 +3,8 @@
 
 @layer base {
   :root {
-    --font-heading: 'Space Grotesk', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-heading: 'Fraunces', Georgia, 'Times New Roman', serif;
+    --font-body: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
     /* RODEX Atmos Design Tokens */
     --color-obsidian: #0a0a0a;
@@ -7396,3 +7396,114 @@ body {
 .rodex-monochrome-theme [class*="text-purple-"],.rodex-monochrome-theme [class*="text-violet-"],.rodex-monochrome-theme [class*="text-indigo-"]{color:#e5e5e5!important}
 .rodex-monochrome-theme [class*="bg-purple-"],.rodex-monochrome-theme [class*="bg-violet-"],.rodex-monochrome-theme [class*="bg-indigo-"]{background-color:#242424!important}
 .rodex-monochrome-theme [class*="border-purple-"],.rodex-monochrome-theme [class*="border-violet-"],.rodex-monochrome-theme [class*="border-indigo-"]{border-color:#666!important}
+
+/* RODEX Atmos 2026: accessible editorial typography and the approved sun/cloud identity. */
+.rodex-monochrome-theme {
+  font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+.rodex-monochrome-theme :is(h1,h2,h3,h4,h5,h6,.font-heading) {
+  font-family: var(--font-heading) !important;
+  font-optical-sizing: auto;
+  letter-spacing: -0.025em;
+  line-height: 1.17;
+}
+.rodex-monochrome-theme :is(button,input,select,textarea,nav,.tabular-nums) {
+  font-family: var(--font-body) !important;
+}
+.rodex-monochrome-theme :is(button,input,select,textarea) { font-kerning: normal; }
+.rodex-monochrome-theme .tabular-nums {
+  font-variant-numeric: tabular-nums lining-nums;
+  letter-spacing: -0.035em;
+}
+.rodex-header-brand {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.rodex-header-brand img.rodex-brand-symbol {
+  display: block;
+  flex: 0 0 46px;
+  width: 46px !important;
+  height: 46px !important;
+  max-width: 46px !important;
+  max-height: 46px;
+  border-radius: 14px;
+  object-fit: cover;
+  border: 1px solid rgba(255,255,255,.22);
+  background: #edeae8;
+  filter: grayscale(1) contrast(1.06);
+  box-shadow: 0 4px 18px rgba(0,0,0,.3);
+}
+.rodex-brand-wordmark {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.rodex-brand-name {
+  display: block;
+  color: #fafafa;
+  font-family: var(--font-heading) !important;
+  font-size: clamp(1.05rem,1.55vw,1.42rem);
+  font-weight: 710;
+  line-height: 1.02;
+  letter-spacing: -.035em;
+}
+.rodex-brand-name span { color: #e0e0e0; }
+.rodex-brand-tagline {
+  color: #c6c6c6;
+  font-family: var(--font-body) !important;
+  font-size: .55rem;
+  font-weight: 750;
+  letter-spacing: .18em;
+  line-height: 1.2;
+}
+.rodex-monochrome-theme :is(.rodex-header-primary-nav,.rodex-header-controls,.rodex-header-shortcuts) button {
+  font-weight: 650;
+  letter-spacing: -.01em;
+}
+@media (max-width: 1100px) {
+  .rodex-header-brand { gap: 8px; }
+  .rodex-header-brand img.rodex-brand-symbol {
+    width: 42px !important;
+    height: 42px !important;
+    max-width: 42px !important;
+    max-height: 42px !important;
+    flex-basis: 42px;
+    border-radius: 12px;
+  }
+  .rodex-brand-name { font-size: 1.12rem; }
+}
+@media (max-width: 390px) {
+  .rodex-header-brand { gap: 6px; }
+  .rodex-header-brand img.rodex-brand-symbol {
+    width: 36px !important;
+    height: 36px !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    flex-basis: 36px;
+    border-radius: 10px;
+  }
+  .rodex-brand-name { font-size: .97rem; }
+  .rodex-brand-tagline { font-size: .46rem; letter-spacing: .11em; }
+}
+@media (max-width: 350px) {
+  .rodex-brand-tagline { display: none; }
+}
+@media (max-width: 680px) {
+  .rodex-monochrome-theme :is(.rodex-header-search input, .wx-map-search-input) {
+    font-size: 16px !important; /* Prevent automatic zoom on iOS */
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button > span {
+    font-size: max(9.5px,.59rem) !important;
+    font-weight: 650;
+  }
+}

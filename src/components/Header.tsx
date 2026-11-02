@@ -166,12 +166,18 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Brand Logo & Title */}
         <div className="rodex-header-brand flex items-center shrink-0">
           <img
-            src="/rodex-atmos-logo.svg"
-            alt="RODEX Atmos — Understand your day"
-            width="190"
-            height="44"
-            className="h-auto w-[132px] sm:w-[174px] lg:w-[190px] object-contain drop-shadow-[0_2px_12px_rgba(91,63,190,0.28)] transition-transform duration-300 hover:scale-[1.025]"
+            src="/rodex-emblem.png"
+            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/icon.svg'; }}
+            alt=""
+            aria-hidden="true"
+            width="46"
+            height="46"
+            className="rodex-brand-symbol"
           />
+          <div className="rodex-brand-wordmark" aria-label="RODEX Atmos — Understand your day">
+            <span className="rodex-brand-name">RODEX <span>ATMOS</span></span>
+            <span className="rodex-brand-tagline">UNDERSTAND YOUR DAY</span>
+          </div>
         </div>
 
         {/* Desktop Navigation Tabs */}

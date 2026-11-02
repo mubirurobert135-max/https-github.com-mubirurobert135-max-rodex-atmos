@@ -5624,3 +5624,783 @@ nav[aria-label="Mobile Navigation"] > div > div > span {
 @media (prefers-reduced-motion: reduce) {
   .wx-wardrobe-footer button { transition: none; }
 }
+
+
+/* ==========================================================================
+   RODEX Atmos — Obsidian monochrome interface
+   Presentation-only theme layer. Weather, location, AI and account logic
+   remain untouched. Weather illustrations and meaningful status colours
+   stay expressive; product surfaces and controls use black, charcoal,
+   silver and white.
+   ========================================================================== */
+
+:root {
+  --color-obsidian: #07090d;
+  --color-midnight: #0e1117;
+  --color-ink-deep: #f8fafc;
+  --color-ink-surface: #1a1e25;
+  --color-teal-glow: #e2e8f0;
+  --color-emerald-accent: #cbd5e1;
+  --color-champagne: #f1f5f9;
+  --color-ivory: #f8fafc;
+  --atmos-cyan: #e2e8f0;
+  --atmos-mint: #cbd5e1;
+  --atmos-lilac: #e5e7eb;
+  --atmos-glass: rgba(18, 21, 27, .9);
+  --atmos-stroke: rgba(255, 255, 255, .15);
+  --atmos-text-muted: #a7afb9;
+  --rodex-ink: #f8fafc;
+}
+
+body {
+  background-color: #07090d !important;
+  color: #f8fafc;
+}
+
+.rodex-monochrome-theme {
+  --rodex-mono-bg: #080a0e;
+  --rodex-mono-panel: #12161c;
+  --rodex-mono-panel-raised: #1b2028;
+  --rodex-mono-border: rgba(255, 255, 255, .14);
+  --rodex-mono-text: #f8fafc;
+  --rodex-mono-muted: #a7afb9;
+  --rodex-mono-silver: #e2e8f0;
+  color: var(--rodex-mono-text);
+}
+
+.rodex-monochrome-theme .glass-panel {
+  background: rgba(15, 18, 24, .76) !important;
+  border-color: rgba(255, 255, 255, .13) !important;
+  box-shadow: 0 16px 36px -10px rgba(0, 0, 0, .5), inset 0 1px rgba(255,255,255,.04) !important;
+}
+
+.rodex-monochrome-theme .glass-panel-elevated {
+  background: linear-gradient(145deg, rgba(27, 31, 39, .96), rgba(12, 15, 20, .97)) !important;
+  border-color: rgba(255, 255, 255, .17) !important;
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, .62), inset 0 1px rgba(255,255,255,.07) !important;
+}
+
+.rodex-monochrome-theme .glass-panel-interactive:hover {
+  border-color: rgba(255, 255, 255, .34) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, .62), 0 0 0 1px rgba(255,255,255,.05) !important;
+}
+
+.rodex-monochrome-theme :focus-visible {
+  outline-color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .animate-pulse-glow {
+  animation-name: rodexMonoPulseGlow;
+}
+
+@keyframes rodexMonoPulseGlow {
+  0%, 100% { box-shadow: 0 0 16px rgba(255,255,255,.10); }
+  50% { box-shadow: 0 0 28px rgba(255,255,255,.20); }
+}
+
+/* Desktop/mobile header, account shortcut and search controls. */
+.rodex-monochrome-theme header.sticky {
+  background-color: rgba(8, 10, 14, .88) !important;
+  border-bottom-color: rgba(255, 255, 255, .11) !important;
+  box-shadow: 0 12px 32px rgba(0,0,0,.22);
+}
+
+.rodex-monochrome-theme .rodex-header-primary-nav {
+  background: rgba(19, 22, 28, .86) !important;
+  border-color: rgba(255,255,255,.13) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.04) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-primary-nav button[aria-current="page"] {
+  color: #fff !important;
+  background: linear-gradient(135deg, rgba(255,255,255,.17), rgba(255,255,255,.07)) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.1) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-search input {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.16) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.035) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-search input:hover,
+.rodex-monochrome-theme .rodex-header-search input:focus {
+  background: rgba(255,255,255,.095) !important;
+  border-color: rgba(255,255,255,.42) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.07) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-search input::placeholder {
+  color: rgba(226,232,240,.56) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-search > form > svg,
+.rodex-monochrome-theme .rodex-header-search button,
+.rodex-monochrome-theme .rodex-header-controls > button:not([aria-label*="alerts"]) {
+  color: #d7dce3 !important;
+}
+
+.rodex-monochrome-theme .rodex-header-search > div.absolute {
+  color: #f8fafc !important;
+  background: rgba(17, 20, 26, .98) !important;
+  border-color: rgba(255,255,255,.16) !important;
+  box-shadow: 0 18px 40px rgba(0,0,0,.55) !important;
+}
+
+.rodex-monochrome-theme .header-account-shortcut {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.07) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.055), 0 6px 16px rgba(0,0,0,.2) !important;
+}
+
+.rodex-monochrome-theme .header-account-shortcut:hover {
+  background: rgba(255,255,255,.14) !important;
+  border-color: rgba(255,255,255,.38) !important;
+}
+
+.rodex-monochrome-theme .header-account-icon {
+  border-color: rgba(255,255,255,.48) !important;
+}
+
+.rodex-monochrome-theme .header-account-label {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #cbd2da 100%) !important;
+  border: 1px solid rgba(255,255,255,.94) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.42), inset 0 1px rgba(255,255,255,.82) !important;
+}
+
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] svg,
+.rodex-monochrome-theme .rodex-header-shortcuts > button[aria-label="Open RODEX AI from header navigation"] span {
+  color: #101318 !important;
+}
+
+/* Main dashboard shell and left navigation rail. */
+.rodex-monochrome-theme .wx-reference-shell {
+  --wx-edge: rgba(255,255,255,.16);
+  --wx-muted: rgba(226,232,240,.72);
+  --wx-text: #f8fafc;
+  --wx-accent: #e2e8f0;
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.16) !important;
+  background:
+    radial-gradient(ellipse at 82% -12%, rgba(255,255,255,.055), transparent 39%),
+    linear-gradient(125deg, #101319 0%, #171b22 54%, #0b0e13 100%) !important;
+  box-shadow: 0 28px 80px rgba(0,0,0,.56), inset 0 1px rgba(255,255,255,.08) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail {
+  border-right-color: rgba(255,255,255,.11) !important;
+  background: linear-gradient(180deg, #171b22, #0c0f14) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-mark {
+  color: #101318 !important;
+  border-color: rgba(255,255,255,.8) !important;
+  background: linear-gradient(145deg, #f8fafc, #aeb6c0) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.7) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-heading {
+  border-bottom-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-welcome-line,
+.rodex-monochrome-theme .wx-reference-kicker {
+  color: rgba(226,232,240,.78) !important;
+}
+
+.rodex-monochrome-theme .wx-welcome-line strong,
+.rodex-monochrome-theme .wx-story-copy strong {
+  color: #fff !important;
+}
+
+.rodex-monochrome-theme .wx-reference-kicker span {
+  color: #cbd5e1 !important;
+}
+
+.rodex-monochrome-theme .wx-live-status {
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.18) !important;
+  background: rgba(255,255,255,.065) !important;
+}
+
+.rodex-monochrome-theme .wx-live-pulse,
+.rodex-monochrome-theme .wx-status-dot.is-live {
+  background: #e5e7eb !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.11), 0 0 12px rgba(255,255,255,.26) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-quick-location {
+  color: #11151a !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.35) !important;
+}
+
+/* Black hero panel and balanced charcoal forecast cards. */
+.rodex-monochrome-theme .wx-dashboard-hero {
+  color: #fff !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  background:
+    radial-gradient(ellipse at 58% 0%, rgba(255,255,255,.09), transparent 43%),
+    linear-gradient(112deg, #0b0e13 0%, #20252d 48%, #101319 100%) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.48), inset 0 1px rgba(255,255,255,.13) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-hero::before {
+  background: rgba(255,255,255,.075) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-hero .wx-storm-title,
+.rodex-monochrome-theme .wx-hero-location,
+.rodex-monochrome-theme .wx-hero-condition,
+.rodex-monochrome-theme .wx-hero-metric-copy strong {
+  color: #fff !important;
+}
+
+.rodex-monochrome-theme .wx-hero-eyebrow,
+.rodex-monochrome-theme .wx-hero-feels,
+.rodex-monochrome-theme .wx-hero-weather-caption,
+.rodex-monochrome-theme .wx-hero-metric-copy small,
+.rodex-monochrome-theme .wx-hero-range span {
+  color: rgba(241,245,249,.82) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-eyebrow > span,
+.rodex-monochrome-theme .wx-hero-range svg {
+  color: #e2e8f0 !important;
+  background: #e2e8f0 !important;
+  box-shadow: 0 0 0 4px rgba(255,255,255,.08) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-weather-glow {
+  background: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-weather-icon {
+  color: #f8fafc !important;
+  filter: drop-shadow(0 10px 15px rgba(0,0,0,.45)) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-metrics {
+  border-left-color: rgba(255,255,255,.17) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-metric {
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.06) !important;
+}
+
+.rodex-monochrome-theme .wx-hero-metric-icon {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.1) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-panel {
+  color: #f8fafc !important;
+  background: linear-gradient(145deg, #1a1e25 0%, #11151b 100%) !important;
+  border: 1px solid rgba(255,255,255,.13) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.36), inset 0 1px rgba(255,255,255,.045) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-panel-heading h2,
+.rodex-monochrome-theme .wx-dashboard-hour strong,
+.rodex-monochrome-theme .wx-dashboard-day strong {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-panel-heading p,
+.rodex-monochrome-theme .wx-dashboard-hour-time,
+.rodex-monochrome-theme .wx-dashboard-hour small,
+.rodex-monochrome-theme .wx-dashboard-day-condition,
+.rodex-monochrome-theme .wx-dashboard-day-name,
+.rodex-monochrome-theme .wx-dashboard-hourly-foot,
+.rodex-monochrome-theme .wx-dashboard-daily-foot {
+  color: rgba(226,232,240,.69) !important;
+}
+
+.rodex-monochrome-theme .wx-panel-link,
+.rodex-monochrome-theme .wx-dashboard-hourly-foot strong,
+.rodex-monochrome-theme .wx-dashboard-daily-foot strong {
+  color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-hour,
+.rodex-monochrome-theme .wx-dashboard-day {
+  background: rgba(255,255,255,.035) !important;
+  border-color: rgba(255,255,255,.09) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-hour.is-current,
+.rodex-monochrome-theme .wx-dashboard-day.is-today {
+  background: linear-gradient(145deg, rgba(255,255,255,.17), rgba(255,255,255,.07)) !important;
+  border-color: rgba(255,255,255,.34) !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,.22), inset 0 1px rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-dashboard-hour-icon,
+.rodex-monochrome-theme .wx-dashboard-day-icon {
+  color: #e2e8f0 !important;
+  filter: drop-shadow(0 2px 5px rgba(0,0,0,.25)) !important;
+}
+
+/* Explore-area card, RODEX AI rail card and the high-contrast AI tab. */
+.rodex-monochrome-theme .wx-nearby-panel,
+.rodex-monochrome-theme .wx-regional-panel,
+.rodex-monochrome-theme .wx-map-discovery {
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.13) !important;
+  background: linear-gradient(145deg, rgba(28,32,40,.95), rgba(14,17,23,.98)) !important;
+  box-shadow: 0 14px 32px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.045) !important;
+}
+
+.rodex-monochrome-theme .wx-nearby-heading,
+.rodex-monochrome-theme .wx-nearby-city,
+.rodex-monochrome-theme .wx-nearby-city-name,
+.rodex-monochrome-theme .wx-nearby-city > strong,
+.rodex-monochrome-theme .wx-nearby-map-link {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-nearby-heading small,
+.rodex-monochrome-theme .wx-nearby-city-condition,
+.rodex-monochrome-theme .wx-nearby-loading,
+.rodex-monochrome-theme .wx-nearby-empty,
+.rodex-monochrome-theme .wx-map-discovery-copy {
+  color: rgba(226,232,240,.68) !important;
+}
+
+.rodex-monochrome-theme .wx-nearby-city,
+.rodex-monochrome-theme .wx-nearby-map-link {
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-nearby-city:hover,
+.rodex-monochrome-theme .wx-nearby-map-link:hover {
+  background: rgba(255,255,255,.08) !important;
+  color: #fff !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button {
+  color: rgba(226,232,240,.78) !important;
+  border-color: transparent !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button:hover:not(:disabled) {
+  color: #fff !important;
+  background: rgba(255,255,255,.085) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button.is-active {
+  color: #fff !important;
+  background: linear-gradient(105deg, rgba(255,255,255,.17), rgba(255,255,255,.065)) !important;
+  border-color: rgba(255,255,255,.26) !important;
+  box-shadow: inset 3px 0 #f8fafc, 0 5px 14px rgba(0,0,0,.28), inset 0 1px rgba(255,255,255,.08) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai {
+  color: #101318 !important;
+  border: 1px solid rgba(255,255,255,.94) !important;
+  background: linear-gradient(120deg, #f8fafc 0%, #cbd2da 100%) !important;
+  box-shadow: 0 7px 19px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.8) !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai svg,
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai span {
+  color: #101318 !important;
+}
+
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai:hover:not(:disabled) {
+  color: #05070a !important;
+  background: linear-gradient(120deg, #fff 0%, #e2e8f0 100%) !important;
+  border-color: #fff !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.46), inset 0 1px rgba(255,255,255,.92) !important;
+}
+
+.rodex-monochrome-theme .wx-rail-assistant-card {
+  color: #f8fafc !important;
+  background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(255,255,255,.045)) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+}
+
+.rodex-monochrome-theme .wx-rail-assistant-card strong,
+.rodex-monochrome-theme .wx-rail-assistant-card small {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-rail-assistant-orb {
+  color: #101318 !important;
+  background: linear-gradient(145deg, #f8fafc, #aeb6c0) !important;
+  border-color: rgba(255,255,255,.8) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.8) !important;
+}
+
+/* Wardrobe advice, more-weather disclosure and AI insights. */
+.rodex-monochrome-theme .wx-wardrobe-card {
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.15) !important;
+  background: radial-gradient(ellipse at 92% -12%, rgba(255,255,255,.06), transparent 42%),
+    linear-gradient(125deg, #191d24, #0d1015 58%, #171b22) !important;
+  box-shadow: 0 18px 44px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.055) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-icon {
+  color: #101318 !important;
+  border-color: rgba(255,255,255,.75) !important;
+  background: linear-gradient(145deg, #f8fafc, #aeb6c0) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-eyebrow,
+.rodex-monochrome-theme .wx-wardrobe-label,
+.rodex-monochrome-theme .wx-wardrobe-notes svg,
+.rodex-monochrome-theme .wx-wardrobe-footer > span svg {
+  color: #dbe1e8 !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-subtitle,
+.rodex-monochrome-theme .wx-wardrobe-main p,
+.rodex-monochrome-theme .wx-wardrobe-footer > span {
+  color: rgba(226,232,240,.72) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-item {
+  color: #f1f5f9 !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-item svg {
+  color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-notes,
+.rodex-monochrome-theme .wx-wardrobe-footer {
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-notes p {
+  color: rgba(226,232,240,.82) !important;
+}
+
+.rodex-monochrome-theme .wx-wardrobe-footer button {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.75) !important;
+}
+
+.rodex-monochrome-theme .wx-more-weather-toggle {
+  color: #f8fafc !important;
+  background: linear-gradient(140deg, #1c2027, #11151b) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.045) !important;
+}
+
+.rodex-monochrome-theme .wx-more-weather-toggle:hover {
+  border-color: rgba(255,255,255,.32) !important;
+  box-shadow: 0 11px 26px rgba(0,0,0,.4), inset 0 1px rgba(255,255,255,.07) !important;
+}
+
+.rodex-monochrome-theme .wx-more-weather-copy strong {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-more-weather-copy small {
+  color: rgba(226,232,240,.65) !important;
+}
+
+.rodex-monochrome-theme .wx-more-weather-chevron {
+  color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-summary {
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.14) !important;
+  background: linear-gradient(145deg, #1a1e25, #101319) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.045) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-icon {
+  color: #11151a !important;
+  background: linear-gradient(145deg, #f8fafc, #b8c0ca) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-heading h3,
+.rodex-monochrome-theme .wx-ai-neutral-copy {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-heading p,
+.rodex-monochrome-theme .wx-ai-neutral-footer > p,
+.rodex-monochrome-theme .wx-ai-neutral-loading {
+  color: rgba(226,232,240,.66) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-label {
+  color: #e2e8f0 !important;
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-loading svg {
+  color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-footer {
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-action {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+}
+
+.rodex-monochrome-theme .wx-ai-neutral-refresh {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.07) !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+/* Map frame and map controls are dark; map imagery itself remains unchanged. */
+.rodex-monochrome-theme .wx-map-card {
+  color: #f8fafc !important;
+  border-color: rgba(255,255,255,.14) !important;
+  background: #11151b !important;
+  box-shadow: 0 18px 45px rgba(0,0,0,.43) !important;
+}
+
+.rodex-monochrome-theme .wx-map-toolbar {
+  color: #f8fafc !important;
+  background: linear-gradient(110deg, #1a1e25, #101319 55%, #1a1e25) !important;
+  border-bottom-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-map-layer-controls > button[aria-pressed="true"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+}
+
+.rodex-monochrome-theme .wx-map-search-input {
+  color: #f8fafc !important;
+  background: #0c1015 !important;
+  border-color: rgba(255,255,255,.18) !important;
+}
+
+.rodex-monochrome-theme .wx-map-search-input::placeholder {
+  color: rgba(226,232,240,.48) !important;
+}
+
+.rodex-monochrome-theme .wx-map-search-input:focus {
+  background: #12161d !important;
+  border-color: rgba(255,255,255,.44) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.07) !important;
+}
+
+.rodex-monochrome-theme .wx-map-search > div.absolute,
+.rodex-monochrome-theme .wx-map-search-state,
+.rodex-monochrome-theme .wx-map-timeline-card,
+.rodex-monochrome-theme .wx-map-hint {
+  color: #f1f5f9 !important;
+  background: rgba(17,20,26,.97) !important;
+  border-color: rgba(255,255,255,.16) !important;
+  box-shadow: 0 13px 30px rgba(0,0,0,.46) !important;
+}
+
+.rodex-monochrome-theme .wx-map-timeline-card span,
+.rodex-monochrome-theme .wx-map-footer,
+.rodex-monochrome-theme .wx-map-footer span {
+  color: rgba(226,232,240,.76) !important;
+}
+
+.rodex-monochrome-theme .wx-map-timeline-toggle {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.42) !important;
+}
+
+.rodex-monochrome-theme .wx-map-timeline-card input[type="range"] {
+  accent-color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .wx-map-footer {
+  color: #e2e8f0 !important;
+  background: #101319 !important;
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+.rodex-monochrome-theme .wx-map-ai-link,
+.rodex-monochrome-theme .wx-map-ai-link:hover {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .leaflet-popup-content-wrapper,
+.rodex-monochrome-theme .leaflet-popup-tip {
+  color: #f8fafc !important;
+  background: rgba(15,18,24,.97) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.48) !important;
+}
+
+.rodex-monochrome-theme .leaflet-popup-content,
+.rodex-monochrome-theme .leaflet-popup-content strong {
+  color: #f8fafc !important;
+}
+
+.rodex-monochrome-theme .leaflet-popup-close-button {
+  color: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .leaflet-control-zoom a {
+  color: #f8fafc !important;
+  background: rgba(20,24,31,.96) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: 0 3px 10px rgba(0,0,0,.35) !important;
+}
+
+.rodex-monochrome-theme .leaflet-control-zoom a:hover {
+  color: #101318 !important;
+  background: #e2e8f0 !important;
+}
+
+.rodex-monochrome-theme .leaflet-control-attribution,
+.rodex-monochrome-theme .leaflet-control-scale-line {
+  color: rgba(226,232,240,.7) !important;
+  background: rgba(12,15,20,.86) !important;
+  border-color: rgba(255,255,255,.15) !important;
+}
+
+.rodex-monochrome-theme .leaflet-control-attribution a {
+  color: #f8fafc !important;
+}
+
+/* Mobile dock and floating assistant control. */
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+  color: #f8fafc !important;
+  background: rgba(15,18,24,.93) !important;
+  border-color: rgba(255,255,255,.18) !important;
+  box-shadow: 0 18px 42px rgba(0,0,0,.55), inset 0 1px rgba(255,255,255,.07) !important;
+}
+
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
+  color: #fff !important;
+  background: rgba(255,255,255,.09) !important;
+}
+
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-current="page"] svg,
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-current="page"] span {
+  color: #fff !important;
+}
+
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #aeb6c0) !important;
+  border: 2px solid rgba(255,255,255,.96) !important;
+  box-shadow: 0 6px 0 #656d77, 0 14px 25px rgba(0,0,0,.5), inset 0 2px rgba(255,255,255,.82) !important;
+}
+
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] svg,
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] span {
+  color: #101318 !important;
+}
+
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] > div > div > span {
+  color: #e2e8f0 !important;
+  text-shadow: none !important;
+}
+
+.rodex-monochrome-theme aside[aria-label="Quick Actions"] button {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #b7c0ca) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 12px 25px rgba(0,0,0,.42) !important;
+}
+
+.rodex-monochrome-theme aside[aria-label="Quick Actions"] button svg {
+  color: #101318 !important;
+}
+
+/* Dialog controls use silver for primary actions and charcoal for surfaces. */
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="text-sky-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="text-cyan-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="text-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="text-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="text-purple-"] {
+  color: #dbe1e8 !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="border-sky-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="border-cyan-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="border-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="border-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="border-purple-"] {
+  border-color: rgba(255,255,255,.16) !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-sky-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-cyan-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-purple-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="bg-teal-"] {
+  background-color: rgba(255,255,255,.075) !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="from-sky-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="from-cyan-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="from-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="from-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="from-purple-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="via-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="to-blue-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="to-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 [class*="to-purple-"] {
+  background-image: linear-gradient(135deg, rgba(255,255,255,.13), rgba(255,255,255,.045)) !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-sky-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-blue-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-teal-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-emerald-500"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-violet-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-indigo-"],
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-sky-"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg, #f8fafc, #cbd5e1) !important;
+  border-color: rgba(255,255,255,.9) !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.32), inset 0 1px rgba(255,255,255,.78) !important;
+}
+
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-sky-500"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-blue-500"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-teal-500"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class~="bg-emerald-500"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-violet-"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-indigo-"] svg,
+.rodex-monochrome-theme .fixed.inset-0.z-50 button[class*="from-sky-"] svg {
+  color: #101318 !important;
+}
+
+.rodex-monochrome-theme footer {
+  color: rgba(226,232,240,.58) !important;
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rodex-monochrome-theme .glass-panel-interactive:hover,
+  .rodex-monochrome-theme .wx-reference-rail-button:hover,
+  .rodex-monochrome-theme .wx-wardrobe-footer button:hover {
+    transform: none !important;
+  }
+}

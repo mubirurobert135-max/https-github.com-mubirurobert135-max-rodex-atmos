@@ -351,7 +351,7 @@ export default function App() {
   const inIframe = typeof window !== 'undefined' ? window.self !== window.top : false;
 
   return (
-    <div className="min-h-screen text-[#32164D] font-sans selection:bg-[#844EE7] selection:text-white pb-28 sm:pb-16 relative">
+    <div className="rodex-monochrome-theme min-h-screen text-white font-sans selection:bg-white selection:text-black pb-28 sm:pb-16 relative">
       {/* Offline Status Indicator Banner */}
       <OfflineIndicator />
 

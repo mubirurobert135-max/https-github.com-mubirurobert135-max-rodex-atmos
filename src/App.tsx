@@ -709,6 +709,7 @@ export default function App() {
         onOpenAssistant={() => handleOpenAssistant()}
         onOpenAlerts={() => setIsAlertsModalOpen(true)}
         onOpenAuth={() => setIsAuthOpen(true)}
+        onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
         activeAlertsCount={weatherData?.alerts?.length || 0}
       />
     </div>

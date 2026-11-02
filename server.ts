@@ -2,6 +2,7 @@ import { createRequire } from 'node:module';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { GoogleGenAI } from '@google/genai/node';
 
 // Load Express through Node's native CommonJS loader. Its dependency chain
 // (body-parser/depd) contains dynamic built-in requires that must not be folded
@@ -9,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const express = require('express') as typeof import('express');
 const dotenv = require('dotenv') as { config: typeof import('dotenv').config };
-const { GoogleGenAI } = require('@google/genai') as Pick<typeof import('@google/genai'), 'GoogleGenAI'>;
+
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
 import {
   findCurrentHourlyIndex,

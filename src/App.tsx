@@ -3,15 +3,9 @@ import { AtmosphericBackground } from './components/AtmosphericBackground';
 import { Header } from './components/Header';
 import { CurrentWeatherCard } from './components/CurrentWeatherCard';
 import { DailyBriefingCard } from './components/DailyBriefingCard';
-import { AiInsightsCard } from './components/AiInsightsCard';
-import { HourlyForecast } from './components/HourlyForecast';
-import { WeatherDetailsGrid } from './components/WeatherDetailsGrid';
-import { AssistantModal } from './components/AssistantModal';
 import { AuthModal } from './components/AuthModal';
 import { PrivacyPortalModal } from './components/PrivacyPortalModal';
 import { AlertCenterModal } from './components/AlertCenterModal';
-import { WeatherMap } from './components/WeatherMap';
-import { Interactive3DGlobe } from './components/Interactive3DGlobe';
 import { WeatherReferenceDashboard } from './components/WeatherReferenceDashboard';
 import { WeatherWardrobeCard } from './components/WeatherWardrobeCard';
 import { OfflineIndicator } from './components/OfflineIndicator';
@@ -20,6 +14,15 @@ import { WeatherData, LocationMode } from './types';
 import { getWeatherCondition, isWithinLocalSolarWindow } from './utils/weatherUtils';
 import { useAuth } from './context/AuthContext';
 import { AlertCircle, RefreshCw, ShieldCheck, KeyRound, Sparkles, Mic, Navigation, Globe, MapPin, ExternalLink, X, Map, ChevronDown } from 'lucide-react';
+
+
+// Load feature-heavy screens only when the user opens them, keeping first visit lighter.
+const AiInsightsCard = React.lazy(() => import('./components/AiInsightsCard').then((module) => ({ default: module.AiInsightsCard })));
+const HourlyForecast = React.lazy(() => import('./components/HourlyForecast').then((module) => ({ default: module.HourlyForecast })));
+const WeatherDetailsGrid = React.lazy(() => import('./components/WeatherDetailsGrid').then((module) => ({ default: module.WeatherDetailsGrid })));
+const AssistantModal = React.lazy(() => import('./components/AssistantModal').then((module) => ({ default: module.AssistantModal })));
+const WeatherMap = React.lazy(() => import('./components/WeatherMap').then((module) => ({ default: module.WeatherMap })));
+const Interactive3DGlobe = React.lazy(() => import('./components/Interactive3DGlobe').then((module) => ({ default: module.Interactive3DGlobe })));
 
 interface CurrentDevicePlace {
   name: string;
@@ -77,6 +80,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [setupRequired, setSetupRequired] = useState<boolean>(false);
   const [isAssistantOpen, setIsAssistantOpen] = useState<boolean>(false);
+  const [hasOpenedAssistant, setHasOpenedAssistant] = useState<boolean>(false);
   const [assistantPrompt, setAssistantPrompt] = useState<string>('');
   const [isAuthOpen, setIsAuthOpen] = useState<boolean>(false);
   const [isPrivacyPortalOpen, setIsPrivacyPortalOpen] = useState<boolean>(false);
@@ -87,6 +91,7 @@ export default function App() {
 
   const handleOpenAssistant = (prompt?: string) => {
     if (prompt) setAssistantPrompt(prompt);
+    setHasOpenedAssistant(true);
     setIsAssistantOpen(true);
   };
 
@@ -518,31 +523,35 @@ export default function App() {
                 </div>
 
                 {mapDisplayMode === 'map' ? (
-                  <WeatherMap
-                    currentWeatherData={weatherData}
-                    deviceLocationData={deviceLocationData}
-                    unit={unit}
-                    onSelectCoordinates={handleSelectCoordinates}
-                    onOpenAssistant={handleOpenAssistant}
-                    onGetCurrentLocation={handleGetCurrentLocation}
-                    locationMode={locationMode}
-                    onMapContextChange={(mapLoc, layer) => {
-                      if (mapLoc) setMapContextLocation(mapLoc);
-                      if (layer) setActiveMapLayer(layer);
-                    }}
-                  />
-                ) : (
-                  <div className="glass-panel-elevated rounded-3xl border border-white/15 overflow-hidden p-2 sm:p-4">
-                    <Interactive3DGlobe
-                      lat={weatherData.location.latitude}
-                      lon={weatherData.location.longitude}
-                      cityName={weatherData.location.name}
-                      country={weatherData.location.country}
-                      temperature={weatherData.weather.current.temperature_2m}
-                      condition={getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).label}
+                  <React.Suspense fallback={<div className="wx-map-card flex min-h-[clamp(320px,54dvh,470px)] items-center justify-center rounded-3xl border border-white/10 bg-[#11151B] p-6 text-sm text-white/70"><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Loading interactive weather map…</div>}>
+                    <WeatherMap
+                      currentWeatherData={weatherData}
+                      deviceLocationData={deviceLocationData}
                       unit={unit}
                       onSelectCoordinates={handleSelectCoordinates}
+                      onOpenAssistant={handleOpenAssistant}
+                      onGetCurrentLocation={handleGetCurrentLocation}
+                      locationMode={locationMode}
+                      onMapContextChange={(mapLoc, layer) => {
+                        if (mapLoc) setMapContextLocation(mapLoc);
+                        if (layer) setActiveMapLayer(layer);
+                      }}
                     />
+                  </React.Suspense>
+                ) : (
+                  <div className="glass-panel-elevated rounded-3xl border border-white/15 overflow-hidden p-2 sm:p-4">
+                    <React.Suspense fallback={<div className="flex min-h-[420px] items-center justify-center text-sm text-white/70"><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Preparing the 3D globe…</div>}>
+                      <Interactive3DGlobe
+                        lat={weatherData.location.latitude}
+                        lon={weatherData.location.longitude}
+                        cityName={weatherData.location.name}
+                        country={weatherData.location.country}
+                        temperature={weatherData.weather.current.temperature_2m}
+                        condition={getWeatherCondition(weatherData.weather.current.weather_code, weatherData.weather.current.is_day).label}
+                        unit={unit}
+                        onSelectCoordinates={handleSelectCoordinates}
+                      />
+                    </React.Suspense>
                   </div>
                 )}
 
@@ -599,19 +608,23 @@ export default function App() {
                         onOpenAssistant={handleOpenAssistant}
                         unit={unit}
                       />
-                      <AiInsightsCard
-                        data={weatherData}
-                        onOpenAssistant={() => handleOpenAssistant()}
-                      />
+                      <React.Suspense fallback={<div className="glass-panel-elevated flex min-h-28 items-center justify-center rounded-2xl p-4 text-sm text-white/65">Loading AI weather insights…</div>}>
+                        <AiInsightsCard
+                          data={weatherData}
+                          onOpenAssistant={() => handleOpenAssistant()}
+                        />
+                      </React.Suspense>
                     </div>
 
                     <div className="grid grid-cols-1 xl:grid-cols-[1.25fr_1fr] gap-4 sm:gap-5 items-start">
-                      <HourlyForecast
-                        hourly={weatherData.weather.hourly}
-                        unit={unit}
-                        currentTime={weatherData.weather.current.time}
-                      />
-                      <WeatherDetailsGrid data={weatherData} unit={unit} />
+                      <React.Suspense fallback={<div className="glass-panel-elevated flex min-h-40 items-center justify-center rounded-2xl p-4 text-sm text-white/65">Loading detailed forecast…</div>}>
+                        <HourlyForecast
+                          hourly={weatherData.weather.hourly}
+                          unit={unit}
+                          currentTime={weatherData.weather.current.time}
+                        />
+                        <WeatherDetailsGrid data={weatherData} unit={unit} />
+                      </React.Suspense>
                     </div>
                   </section>
                 )}
@@ -640,32 +653,36 @@ export default function App() {
       )}
 
       {/* RODEX AI Live Voice & Text Assistant Modal */}
-      <AssistantModal
-        isOpen={isAssistantOpen}
-        onClose={() => setIsAssistantOpen(false)}
-        weatherData={weatherData}
-        deviceLocationData={deviceLocationData}
-        mapContextData={mapContextLocation || weatherData}
-        activeMapLayer={activeMapLayer}
-        locationMode={locationMode}
-        onSelectCityWeather={(newWeather) => {
-          setWeatherData(newWeather);
-          setLocationMode('search');
-        }}
-        initialPrompt={assistantPrompt}
-        onExecuteAction={(action, payload) => {
-          if (action === 'SWITCH_TAB') {
-            setActiveTab(payload || 'map');
-          } else if (action === 'SET_MAP_LAYER') {
-            setActiveTab('map');
-            if (payload) setActiveMapLayer(payload);
-          } else if (action === 'RESET_GPS') {
-            handleGetCurrentLocation();
-          } else if (action === 'SEARCH_CITY') {
-            if (payload) handleSearch(payload);
-          }
-        }}
-      />
+      {hasOpenedAssistant && (
+        <React.Suspense fallback={<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 text-sm text-white"><div className="flex items-center rounded-2xl border border-white/15 bg-[#11151B] px-5 py-4 shadow-2xl"><RefreshCw className="mr-3 h-4 w-4 animate-spin" />Preparing RODEX AI…</div></div>}>
+          <AssistantModal
+            isOpen={isAssistantOpen}
+            onClose={() => setIsAssistantOpen(false)}
+            weatherData={weatherData}
+            deviceLocationData={deviceLocationData}
+            mapContextData={mapContextLocation || weatherData}
+            activeMapLayer={activeMapLayer}
+            locationMode={locationMode}
+            onSelectCityWeather={(newWeather) => {
+              setWeatherData(newWeather);
+              setLocationMode('search');
+            }}
+            initialPrompt={assistantPrompt}
+            onExecuteAction={(action, payload) => {
+              if (action === 'SWITCH_TAB') {
+                setActiveTab(payload || 'map');
+              } else if (action === 'SET_MAP_LAYER') {
+                setActiveTab('map');
+                if (payload) setActiveMapLayer(payload);
+              } else if (action === 'RESET_GPS') {
+                handleGetCurrentLocation();
+              } else if (action === 'SEARCH_CITY') {
+                if (payload) handleSearch(payload);
+              }
+            }}
+          />
+        </React.Suspense>
+      )}
 
       {/* Smart Weather Alerts & Preferences Modal */}
       <AlertCenterModal

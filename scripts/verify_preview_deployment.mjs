@@ -61,12 +61,13 @@ async function assertPreview(baseUrl) {
     }
 
     if (!pageResponse.ok) {
-      throw new Error(\`Preview root returned HTTP \${pageResponse.status} at \${pageResponse.url}.\`);
+      throw new Error('Preview root returned HTTP ' + pageResponse.status + ' at ' + pageResponse.url + '.');
     }
 
     throw new Error(
       'Preview root does not contain the RODEX Atmos application shell. ' +
-      \`HTTP \${pageResponse.status}; final URL \${pageResponse.url}; response: \${responseExcerpt.slice(0, 240).replace(/\\s+/g, ' ')}\`
+      'HTTP ' + pageResponse.status + '; final URL ' + pageResponse.url +
+      '; response: ' + responseExcerpt.slice(0, 240).replace(/\s+/g, ' ')
     );
   }
 

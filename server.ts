@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url';
 const require = createRequire(import.meta.url);
 const express = require('express') as typeof import('express');
 const dotenv = require('dotenv') as { config: typeof import('dotenv').config };
-import { GoogleGenAI } from '@google/genai';
+const { GoogleGenAI } = require('@google/genai') as Pick<typeof import('@google/genai'), 'GoogleGenAI'>;
 import { buildGroundedWeatherReply, isDirectCurrentWeatherQuery, boundConversationHistory } from './src/utils/weatherGrounding';
 import {
   findCurrentHourlyIndex,

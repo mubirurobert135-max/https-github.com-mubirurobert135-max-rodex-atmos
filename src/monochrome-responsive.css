@@ -778,3 +778,30 @@ body {
     transition-duration: .01ms !important;
   }
 }
+
+
+/* Map surface and map tiles follow the application's monochrome appearance. */
+.rodex-monochrome-theme .wx-map-card {
+  color: #f8fafc !important;
+  background: #10141a !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+.rodex-monochrome-theme .wx-map-toolbar {
+  color: #f8fafc !important;
+  background: #151a21 !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+.rodex-monochrome-theme .wx-map-search-input {
+  color: #f8fafc !important;
+  background: #0d1117 !important;
+  border-color: rgba(255,255,255,.2) !important;
+}
+.rodex-monochrome-theme .wx-map-search-input::placeholder { color: #9aa3af !important; }
+.rodex-monochrome-theme .leaflet-tile-pane { filter: grayscale(1) contrast(1.04); }
+.rodex-monochrome-theme .leaflet-control,
+.rodex-monochrome-theme .leaflet-bar a {
+  color: #f8fafc !important;
+  background: #151a21 !important;
+  border-color: rgba(255,255,255,.2) !important;
+}
+.rodex-monochrome-theme .leaflet-bar a:hover { background: #2a313b !important; }

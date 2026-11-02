@@ -2226,7 +2226,8 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       etag: true,
       lastModified: true,
       setHeaders: (response, filePath) => {
-        const isFingerprintAsset = /[/\\\\]assets[/\\\\].*[.-][a-f0-9]{8,}\\./i.test(filePath);
+        const normalizedPath = filePath.replaceAll(String.fromCharCode(92), '/');
+        const isFingerprintAsset = normalizedPath.includes('/assets/') && new RegExp('[.-][a-f0-9]{8,}[.]', 'i').test(normalizedPath);
         response.setHeader(
           'Cache-Control',
           isFingerprintAsset

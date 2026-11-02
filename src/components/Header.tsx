@@ -50,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   locationMode = 'gps',
   onOpenAssistant,
   onOpenAuth,
+  onOpenPrivacyPortal,
   onOpenAlertsModal,
   activeAlertsCount = 0,
   activeTab = 'dashboard',
@@ -177,7 +178,7 @@ export const Header: React.FC<HeaderProps> = ({
         {onSelectTab && (
           <nav
             aria-label="Primary Navigation"
-            className={`rodex-header-primary-nav ${activeTab === 'map' ? 'hidden lg:flex' : 'hidden'} items-center p-1 rounded-2xl bg-slate-950/30 backdrop-blur-xl border border-white/10 shadow-inner`}
+            className="rodex-header-primary-nav hidden lg:flex items-center p-1 rounded-2xl bg-slate-950/30 backdrop-blur-xl border border-white/10 shadow-inner"
           >
             <button
               aria-current={activeTab === 'dashboard' ? 'page' : undefined}
@@ -330,6 +331,19 @@ export const Header: React.FC<HeaderProps> = ({
               title={isVerified ? 'Verified account' : 'Account verification pending'}
             />
           )}
+        </button>
+
+        {/* Privacy stays available from every screen. */}
+        <button
+          type="button"
+          onClick={onOpenPrivacyPortal}
+          onPointerMove={updateNavPointer}
+          className="header-privacy-shortcut rodex-pointer-spotlight"
+          title="Open Privacy Portal and preferences"
+          aria-label="Open Privacy Portal"
+        >
+          <ShieldCheck className="h-4 w-4 shrink-0" />
+          <span className="hidden text-xs font-bold sm:inline">Privacy</span>
         </button>
 
         {/* RODEX AI tab — positioned immediately after Account for one-tap access. */}

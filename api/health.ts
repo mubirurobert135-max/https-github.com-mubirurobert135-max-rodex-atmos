@@ -31,9 +31,12 @@ export default async function healthHandler(
     }));
   } catch (error) {
     const failure = error instanceof Error ? error : new Error(String(error));
+    // Full diagnostics remain in private platform logs; never return stack or internals to callers.
     console.error('[RODEX Health Startup Diagnostic]', {
       name: failure.name,
-      code: (failure as NodeJS.ErrnoException).code || null
+      code: (failure as NodeJS.ErrnoException).code || null,
+      message: failure.message,
+      stack: failure.stack
     });
     res.statusCode = 503;
     res.end(JSON.stringify({

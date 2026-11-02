@@ -2,7 +2,7 @@ import { createRequire } from 'node:module';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GoogleGenAI } from '@google/genai/node';
+import { GoogleGenAI, ThinkingLevel } from '@google/genai/node';
 
 // Load Express through Node's native CommonJS loader. Its dependency chain
 // (body-parser/depd) contains dynamic built-in requires that must not be folded
@@ -196,7 +196,14 @@ async function startServer() {
 
   // Initialize Gemini API if key is available
   const geminiApiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-  const ai = geminiApiKey ? new GoogleGenAI({ apiKey: geminiApiKey }) : null;
+  const ai = geminiApiKey ? new GoogleGenAI({
+    apiKey: geminiApiKey,
+    httpOptions: {
+      headers: {
+        'User-Agent': 'aistudio-build'
+      }
+    }
+  }) : null;
 
   // Check eligible providers based on environment secrets, health, and budget
   const getEligibleProviders = (): ProviderConfig[] => {
@@ -1178,16 +1185,20 @@ Return ONLY valid JSON with keys: summary, clothing, activities, health. No mark
         response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.1-flash-lite',
           contents: prompt,
-          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
-        }), 3200, 'AI insights');
+          config: { responseMimeType: 'application/json', maxOutputTokens: 260 }
+        }), 6500, 'AI insights');
       } catch (liteErr: any) {
         // Do not stack a second slow request after a timeout; deterministic insights are faster and safer.
         if (String(liteErr?.message || liteErr).toLowerCase().includes('timed out')) throw liteErr;
         response = await withTimeout(ai.models.generateContent({
           model: 'gemini-3.8-flash',
           contents: prompt,
-          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 220 }
-        }), 2200, 'AI insights fallback');
+          config: {
+            responseMimeType: 'application/json',
+            thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+            maxOutputTokens: 260
+          }
+        }), 6500, 'AI insights fallback');
       }
 
       const text = response?.text;
@@ -1284,11 +1295,27 @@ Greeting: ${greetingTime}.
 Use only supplied facts. Do not invent missing numbers, weather conditions, or official warnings.
 Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (array of 2 short actionable recommendations).`;
 
-        const aiRes = await withTimeout(ai.models.generateContent({
-          model: 'gemini-3.1-flash-lite',
-          contents: prompt,
-          config: { responseMimeType: 'application/json', temperature: 0.2, maxOutputTokens: 160 }
-        }), 3200, 'Daily briefing AI');
+        let aiRes: any;
+        try {
+          aiRes = await withTimeout(ai.models.generateContent({
+            model: 'gemini-3.1-flash-lite',
+            contents: prompt,
+            config: { responseMimeType: 'application/json', maxOutputTokens: 240 }
+          }), 6500, 'Daily briefing AI');
+        } catch (liteErr: any) {
+          if (String(liteErr?.message || liteErr).toLowerCase().includes('timed out')) {
+            throw liteErr;
+          }
+          aiRes = await withTimeout(ai.models.generateContent({
+            model: 'gemini-3.8-flash',
+            contents: prompt,
+            config: {
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingLevel: ThinkingLevel.LOW },
+              maxOutputTokens: 240
+            }
+          }), 6500, 'Daily briefing AI fallback');
+        }
 
         const parsed = JSON.parse(aiRes.text || '{}');
         if (parsed.summary && Array.isArray(parsed.recommendations)) {
@@ -2116,20 +2143,23 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
           const generateWithTimeout = async () => {
             try {
               return await ai!.models.generateContent({
-                model: 'gemini-3.8-flash',
-                contents: conversationContents,
-                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
-              });
-            } catch (flashErr) {
-              return await ai!.models.generateContent({
                 model: 'gemini-3.1-flash-lite',
                 contents: conversationContents,
-                config: { systemInstruction, temperature: 0.2, maxOutputTokens: 180 }
+                config: { systemInstruction, maxOutputTokens: 240 }
+              });
+            } catch (liteErr) {
+              return await ai!.models.generateContent({
+                model: 'gemini-3.8-flash',
+                contents: conversationContents,
+                config: {
+                  systemInstruction,
+                  thinkingConfig: { thinkingLevel: ThinkingLevel.LOW }
+                }
               });
             }
           };
 
-          const response: any = await withTimeout(generateWithTimeout(), 3500, 'AI chat generation');
+          const response: any = await withTimeout(generateWithTimeout(), 7500, 'AI chat generation');
           aiGenMs = Date.now() - tAiStart;
 
           if (response?.text) {

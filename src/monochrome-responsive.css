@@ -62,6 +62,20 @@ body {
   --atmos-glass: rgba(18,21,27,.9);
   --atmos-stroke: rgba(255,255,255,.15);
   --atmos-text-muted: #a7afb9;
+  /* Legacy reference-page variables now resolve to monochrome values too. */
+  --atmos-reference-border: rgba(255,255,255,.16);
+  --atmos-reference-glass: rgba(20,24,31,.9);
+  --atmos-reference-ink: #f8fafc;
+  --atmos-reference-lavender: #aeb7c2;
+  --atmos-reference-lilac: #e2e8f0;
+  --atmos-reference-line: rgba(255,255,255,.16);
+  --atmos-reference-muted: #a7afb9;
+  --atmos-reference-panel: #1b2028;
+  --atmos-reference-panel-light: #252c35;
+  --atmos-reference-panel-soft: #141920;
+  --atmos-reference-violet: #f8fafc;
+  --atmos-reference-violet-bright: #e2e8f0;
+  --atmos-reference-violet-soft: #cbd5e1;
 }
 .rodex-monochrome-theme *,
 .rodex-monochrome-theme *::before,

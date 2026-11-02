@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'src/**'
+      - 'public/**'
       - 'api/**'
       - 'server.ts'
       - 'vite.config.ts'
@@ -13,6 +14,7 @@ on:
       - 'bun.lock'
       - 'Dockerfile'
       - 'scripts/verify_node_production.mjs'
+      - 'scripts/generate-icons.js'
       - '.github/workflows/portable-runtime.yml'
   pull_request:
     paths:

@@ -47,6 +47,33 @@ jobs:
       - name: Production build
         run: bun run build
 
+      - name: Verify standalone Node production server
+        shell: bash
+        run: |
+          set -euo pipefail
+          NODE_ENV=production PORT=3101 node server.js > /tmp/rodex-node-production.log 2>&1 &
+          SERVER_PID=$!
+          trap 'kill "$SERVER_PID" 2>/dev/null || true; wait "$SERVER_PID" 2>/dev/null || true' EXIT
+
+          READY=0
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:3101 >/tmp/rodex-node-index.html; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+
+          if [ "$READY" -ne 1 ]; then
+            cat /tmp/rodex-node-production.log
+            exit 1
+          fi
+
+          grep -q 'id="root"' /tmp/rodex-node-index.html
+          curl --fail --silent http://127.0.0.1:3101/api/health >/tmp/rodex-node-health.json
+          node --input-type=module -e "import fs from 'node:fs'; const health = JSON.parse(fs.readFileSync('/tmp/rodex-node-health.json', 'utf8')); if (health.ok !== true || health.runtime !== 'node') throw new Error('Standalone Node health check failed: ' + JSON.stringify(health));"
+          echo "PASS standalone Node deployment: SPA shell and Node API health are reachable."
+
       - name: Install Playwright Chromium
         run: bunx playwright install --with-deps chromium
 

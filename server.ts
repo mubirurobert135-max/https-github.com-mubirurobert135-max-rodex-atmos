@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
-import { dirname } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GoogleGenAI } from '@google/genai/node';
 
@@ -2188,6 +2188,29 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
     });
   });
 
+  // Standard Node hosts serve the compiled Vite client from dist/. Vercel
+  // continues serving static assets itself and dispatches /api through adapters.
+  if (!isVercelRuntime && !shouldRunLocalDevServer) {
+    const clientBuildDirectory = resolve(__dirname, 'dist');
+    app.use(express.static(clientBuildDirectory, {
+      index: false,
+      maxAge: '1y',
+      immutable: true,
+      setHeaders(response, filePath) {
+        if (filePath.endsWith('index.html')) {
+          response.setHeader('Cache-Control', 'no-cache');
+        }
+      }
+    }));
+
+    // Return the SPA shell for browser routes; unmatched /api requests stay JSON 404s.
+    app.get('*', (_req, res, next) => {
+      res.sendFile(resolve(clientBuildDirectory, 'index.html'), (error) => {
+        if (error) next(error);
+      });
+    });
+  }
+
   // Normalize malformed/oversized JSON requests without exposing stack traces.
   app.use((error: any, _req: ExpressRequest, res: ExpressResponse, next: ExpressNextFunction) => {
     if (res.headersSent) return next(error);
@@ -2234,7 +2257,9 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       });
   }
 
-  if (shouldRunLocalDevServer) {
+  // Persistent Node hosts listen in both development and production. Serverless
+  // platforms invoke the exported Express application without opening a port.
+  if (!isVercelRuntime) {
     app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`RODEX Atmos server running on http://localhost:${PORT}`);
     });

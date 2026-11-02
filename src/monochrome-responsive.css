@@ -1,0 +1,807 @@
+/* ==========================================================================
+   RODEX Atmos — unified monochrome design and cross-device layout.
+   Loaded after index.css to remove legacy purple styles without changing
+   weather, map, account, privacy or assistant behaviour.
+   ========================================================================== */
+
+:root {
+  color-scheme: dark;
+  --rodex-black: #080a0e;
+  --rodex-deep: #0e1117;
+  --rodex-panel: #151a21;
+  --rodex-panel-raised: #1c222b;
+  --rodex-border: rgba(255,255,255,.15);
+  --rodex-border-strong: rgba(255,255,255,.28);
+  --rodex-white: #f8fafc;
+  --rodex-silver: #d2d8e0;
+  --rodex-muted: #9aa3af;
+}
+
+html, body, #root {
+  width: 100%;
+  min-width: 320px;
+  min-height: 100%;
+  background: var(--rodex-black) !important;
+}
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  overflow-x: clip;
+  color: var(--rodex-white);
+  color-scheme: dark;
+  background: var(--rodex-black) !important;
+}
+#root { min-height: 100vh; min-height: 100dvh; }
+
+.rodex-monochrome-theme {
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: clip;
+  color: var(--rodex-white) !important;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(255,255,255,.045), transparent 34%),
+    linear-gradient(145deg,#080a0e 0%,#10141a 52%,#080a0e 100%) !important;
+  --color-obsidian: #080a0e;
+  --color-midnight: #11151b;
+  --color-ink-deep: #f8fafc;
+  --color-ink-surface: #1b2028;
+  --color-teal-glow: #e2e8f0;
+  --color-emerald-accent: #cbd5e1;
+  --color-champagne: #f8fafc;
+  --color-ivory: #f8fafc;
+  --atmos-cyan: #e2e8f0;
+  --atmos-mint: #cbd5e1;
+  --atmos-lilac: #f8fafc;
+  --atmos-violet: #dce2e9;
+  --atmos-violet-bright: #f8fafc;
+  --atmos-violet-deep: #dce2e9;
+  --atmos-plum: #dce2e9;
+  --atmos-ink: #f8fafc;
+  --atmos-muted: #a7afb9;
+  --atmos-outline: rgba(255,255,255,.18);
+  --atmos-glass: rgba(18,21,27,.9);
+  --atmos-stroke: rgba(255,255,255,.15);
+  --atmos-text-muted: #a7afb9;
+  /* Legacy reference-page variables now resolve to monochrome values too. */
+  --atmos-reference-border: rgba(255,255,255,.16);
+  --atmos-reference-glass: rgba(20,24,31,.9);
+  --atmos-reference-ink: #f8fafc;
+  --atmos-reference-lavender: #aeb7c2;
+  --atmos-reference-lilac: #e2e8f0;
+  --atmos-reference-line: rgba(255,255,255,.16);
+  --atmos-reference-muted: #a7afb9;
+  --atmos-reference-panel: #1b2028;
+  --atmos-reference-panel-light: #252c35;
+  --atmos-reference-panel-soft: #141920;
+  --atmos-reference-violet: #f8fafc;
+  --atmos-reference-violet-bright: #e2e8f0;
+  --atmos-reference-violet-soft: #cbd5e1;
+}
+.rodex-monochrome-theme *,
+.rodex-monochrome-theme *::before,
+.rodex-monochrome-theme *::after {
+  scrollbar-color: #626b77 #10141a;
+}
+.rodex-monochrome-theme button,
+.rodex-monochrome-theme a,
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select,
+.rodex-monochrome-theme textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+.rodex-monochrome-theme :is(button,a,input,select,textarea):focus-visible {
+  outline: 2px solid #f8fafc !important;
+  outline-offset: 3px;
+}
+
+/* Flatten old utility palette accents to silver/charcoal throughout every view. */
+.rodex-monochrome-theme [class*="text-violet-"],
+.rodex-monochrome-theme [class*="text-purple-"],
+.rodex-monochrome-theme [class*="text-indigo-"],
+.rodex-monochrome-theme [class*="text-sky-"],
+.rodex-monochrome-theme [class*="text-cyan-"],
+.rodex-monochrome-theme [class*="text-blue-"],
+.rodex-monochrome-theme [class*="text-teal-"],
+.rodex-monochrome-theme [class*="text-emerald-"],
+.rodex-monochrome-theme [class*="text-green-"],
+.rodex-monochrome-theme [class*="text-amber-"],
+.rodex-monochrome-theme [class*="text-orange-"],
+.rodex-monochrome-theme [class*="text-rose-"],
+.rodex-monochrome-theme [class*="text-red-"] {
+  color: #dce2e9 !important;
+}
+.rodex-monochrome-theme [class*="border-violet-"],
+.rodex-monochrome-theme [class*="border-purple-"],
+.rodex-monochrome-theme [class*="border-indigo-"],
+.rodex-monochrome-theme [class*="border-sky-"],
+.rodex-monochrome-theme [class*="border-cyan-"],
+.rodex-monochrome-theme [class*="border-blue-"],
+.rodex-monochrome-theme [class*="border-teal-"],
+.rodex-monochrome-theme [class*="border-emerald-"],
+.rodex-monochrome-theme [class*="border-green-"],
+.rodex-monochrome-theme [class*="border-amber-"],
+.rodex-monochrome-theme [class*="border-orange-"],
+.rodex-monochrome-theme [class*="border-rose-"],
+.rodex-monochrome-theme [class*="border-red-"] {
+  border-color: rgba(255,255,255,.18) !important;
+}
+.rodex-monochrome-theme [class*="bg-violet-"],
+.rodex-monochrome-theme [class*="bg-purple-"],
+.rodex-monochrome-theme [class*="bg-indigo-"],
+.rodex-monochrome-theme [class*="bg-sky-"],
+.rodex-monochrome-theme [class*="bg-cyan-"],
+.rodex-monochrome-theme [class*="bg-blue-"],
+.rodex-monochrome-theme [class*="bg-teal-"],
+.rodex-monochrome-theme [class*="bg-emerald-"],
+.rodex-monochrome-theme [class*="bg-green-"],
+.rodex-monochrome-theme [class*="bg-amber-"],
+.rodex-monochrome-theme [class*="bg-orange-"],
+.rodex-monochrome-theme [class*="bg-rose-"],
+.rodex-monochrome-theme [class*="bg-red-"] {
+  background-color: rgba(255,255,255,.075) !important;
+}
+.rodex-monochrome-theme [class*="from-violet-"],
+.rodex-monochrome-theme [class*="from-purple-"],
+.rodex-monochrome-theme [class*="from-indigo-"],
+.rodex-monochrome-theme [class*="from-sky-"],
+.rodex-monochrome-theme [class*="from-cyan-"],
+.rodex-monochrome-theme [class*="from-blue-"],
+.rodex-monochrome-theme [class*="from-teal-"],
+.rodex-monochrome-theme [class*="from-emerald-"],
+.rodex-monochrome-theme [class*="from-green-"],
+.rodex-monochrome-theme [class*="from-amber-"],
+.rodex-monochrome-theme [class*="from-orange-"],
+.rodex-monochrome-theme [class*="from-rose-"],
+.rodex-monochrome-theme [class*="from-red-"],
+.rodex-monochrome-theme [class*="via-violet-"],
+.rodex-monochrome-theme [class*="via-purple-"],
+.rodex-monochrome-theme [class*="via-indigo-"],
+.rodex-monochrome-theme [class*="via-sky-"],
+.rodex-monochrome-theme [class*="via-cyan-"],
+.rodex-monochrome-theme [class*="via-blue-"],
+.rodex-monochrome-theme [class*="to-violet-"],
+.rodex-monochrome-theme [class*="to-purple-"],
+.rodex-monochrome-theme [class*="to-indigo-"],
+.rodex-monochrome-theme [class*="to-sky-"],
+.rodex-monochrome-theme [class*="to-cyan-"],
+.rodex-monochrome-theme [class*="to-blue-"] {
+  background-image: linear-gradient(135deg,#f8fafc 0%,#aeb7c2 100%) !important;
+}
+.rodex-monochrome-theme button[class*="bg-violet-"],
+.rodex-monochrome-theme button[class*="bg-purple-"],
+.rodex-monochrome-theme button[class*="bg-indigo-"],
+.rodex-monochrome-theme button[class*="bg-sky-"],
+.rodex-monochrome-theme button[class*="bg-cyan-"],
+.rodex-monochrome-theme button[class*="bg-blue-"],
+.rodex-monochrome-theme button[class*="bg-teal-"],
+.rodex-monochrome-theme button[class*="bg-emerald-"],
+.rodex-monochrome-theme button[class*="from-violet-"],
+.rodex-monochrome-theme button[class*="from-purple-"],
+.rodex-monochrome-theme button[class*="from-indigo-"],
+.rodex-monochrome-theme button[class*="from-sky-"],
+.rodex-monochrome-theme button[class*="from-cyan-"] {
+  color: #101318 !important;
+  border-color: rgba(255,255,255,.82) !important;
+  box-shadow: 0 8px 20px rgba(0,0,0,.3), inset 0 1px rgba(255,255,255,.6) !important;
+}
+.rodex-monochrome-theme [class*="ring-violet-"],
+.rodex-monochrome-theme [class*="ring-purple-"],
+.rodex-monochrome-theme [class*="ring-indigo-"],
+.rodex-monochrome-theme [class*="ring-sky-"],
+.rodex-monochrome-theme [class*="ring-cyan-"] {
+  --tw-ring-color: rgba(255,255,255,.28) !important;
+}
+.rodex-monochrome-theme [class*="shadow-violet-"],
+.rodex-monochrome-theme [class*="shadow-purple-"],
+.rodex-monochrome-theme [class*="shadow-indigo-"],
+.rodex-monochrome-theme [class*="shadow-sky-"],
+.rodex-monochrome-theme [class*="shadow-cyan-"] {
+  --tw-shadow-color: rgba(0,0,0,.4) !important;
+}
+
+/* Header: black glass, white controls, and a clear search hierarchy. */
+.rodex-monochrome-theme > header.sticky {
+  z-index: 40; /* Keep dialogs and fullscreen tools above the sticky header. */
+  padding-top: max(.6rem,env(safe-area-inset-top,0px));
+  background: rgba(8,10,14,.94) !important;
+  border-bottom: 1px solid rgba(255,255,255,.13) !important;
+  box-shadow: 0 10px 32px rgba(0,0,0,.36);
+  -webkit-backdrop-filter: blur(24px) saturate(1.05);
+  backdrop-filter: blur(24px) saturate(1.05);
+}
+.rodex-monochrome-theme .rodex-header-layout { width: 100%; }
+.rodex-monochrome-theme .rodex-header-brand img {
+  max-width: 100%;
+  filter: drop-shadow(0 2px 12px rgba(255,255,255,.1)) !important;
+}
+.rodex-monochrome-theme .rodex-header-search input {
+  min-width: 0;
+  color: #f8fafc !important;
+  background: #11161d !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,.3);
+}
+.rodex-monochrome-theme .rodex-header-search input:focus {
+  background: #171d25 !important;
+  border-color: rgba(255,255,255,.65) !important;
+  box-shadow: 0 0 0 3px rgba(255,255,255,.08) !important;
+}
+.rodex-monochrome-theme .rodex-header-search > form > svg,
+.rodex-monochrome-theme .rodex-header-search [aria-label="Submit search"],
+.rodex-monochrome-theme .rodex-header-search [aria-label="Submit search"] svg {
+  color: #f1f5f9 !important;
+}
+.rodex-monochrome-theme .rodex-header-shortcuts {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.rodex-monochrome-theme .header-account-shortcut {
+  min-height: 40px;
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.055) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 13px;
+}
+.rodex-monochrome-theme .header-account-shortcut:hover {
+  background: rgba(255,255,255,.12) !important;
+  border-color: rgba(255,255,255,.42) !important;
+}
+.rodex-monochrome-theme .header-account-label { color: #e2e8f0 !important; }
+.rodex-monochrome-theme .rodex-header-shortcuts button[aria-label*="RODEX AI"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg,#f8fafc,#aeb7c2) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.8) !important;
+}
+.rodex-monochrome-theme .rodex-header-shortcuts button[aria-label*="RODEX AI"] :is(svg,span) {
+  color: #101318 !important;
+}
+.rodex-monochrome-theme .rodex-header-controls > button {
+  min-height: 40px;
+  border-color: rgba(255,255,255,.18) !important;
+}
+.rodex-monochrome-theme .rodex-header-controls button[title="Toggle temperature unit"] {
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.065) !important;
+}
+
+/* Desktop reference dashboard shell and component surfaces. */
+.rodex-monochrome-theme .wx-reference-shell {
+  display: grid;
+  grid-template-columns: 224px minmax(0,1fr);
+  width: 100%;
+  max-width: 100%;
+  min-height: 650px;
+  overflow: hidden;
+  color: #f8fafc !important;
+  background: #10141a !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  border-radius: 24px;
+  box-shadow: 0 24px 72px rgba(0,0,0,.38), inset 0 1px rgba(255,255,255,.035) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: linear-gradient(180deg,#11161d,#0a0d12) !important;
+  border-right: 1px solid rgba(255,255,255,.12) !important;
+}
+.rodex-monochrome-theme .wx-reference-mark {
+  color: #101318 !important;
+  background: linear-gradient(145deg,#f8fafc,#aeb7c2) !important;
+  border: 1px solid rgba(255,255,255,.8) !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,.3) !important;
+}
+.rodex-monochrome-theme .wx-brand-copy :is(strong,small),
+.rodex-monochrome-theme .wx-reference-heading,
+.rodex-monochrome-theme .wx-reference-kicker,
+.rodex-monochrome-theme .wx-reference-title-group {
+  color: #f8fafc !important;
+}
+.rodex-monochrome-theme .wx-reference-content {
+  min-width: 0;
+  color: #f8fafc !important;
+  background: linear-gradient(150deg,#171c24 0%,#0e1218 58%,#151a22 100%) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail-button {
+  color: #b9c1cb !important;
+  background: transparent !important;
+  border: 1px solid transparent;
+}
+.rodex-monochrome-theme .wx-reference-rail-button.is-active,
+.rodex-monochrome-theme .wx-reference-rail-button:hover:not(:disabled) {
+  color: #11151b !important;
+  background: linear-gradient(135deg,#f8fafc,#b9c1cb) !important;
+  border-color: rgba(255,255,255,.76) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail-button.is-active svg,
+.rodex-monochrome-theme .wx-reference-rail-button:hover:not(:disabled) svg { color: #11151b !important; }
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai,
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai:hover:not(:disabled) {
+  color: #11151b !important;
+  background: linear-gradient(135deg,#f8fafc,#9fa9b5) !important;
+  border: 1px solid rgba(255,255,255,.82) !important;
+  box-shadow: 0 7px 18px rgba(0,0,0,.34), inset 0 1px rgba(255,255,255,.7) !important;
+}
+.rodex-monochrome-theme .wx-reference-rail-button.is-ai :is(svg,span) { color: #11151b !important; }
+.rodex-monochrome-theme .wx-rail-assistant-card {
+  color: #f8fafc !important;
+  background: linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.04)) !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+}
+.rodex-monochrome-theme .wx-rail-assistant-card * { color: inherit; }
+.rodex-monochrome-theme .wx-reference-rail-status { color: #a7afb9 !important; }
+
+.rodex-monochrome-theme .wx-dashboard-hero {
+  color: #f8fafc !important;
+  background:
+    radial-gradient(ellipse at 88% 10%,rgba(255,255,255,.11),transparent 38%),
+    linear-gradient(130deg,#252b34 0%,#151a22 58%,#0d1117 100%) !important;
+  border: 1px solid rgba(255,255,255,.18) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.06), 0 18px 36px rgba(0,0,0,.23) !important;
+}
+.rodex-monochrome-theme .wx-dashboard-hero::before { opacity: .12 !important; }
+.rodex-monochrome-theme .wx-hero-eyebrow,
+.rodex-monochrome-theme .wx-hero-location,
+.rodex-monochrome-theme .wx-hero-condition,
+.rodex-monochrome-theme .wx-hero-feels,
+.rodex-monochrome-theme .wx-hero-range { color: #f1f5f9 !important; }
+.rodex-monochrome-theme .wx-hero-metric {
+  color: #e2e8f0 !important;
+  background: rgba(255,255,255,.055) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+}
+.rodex-monochrome-theme .wx-hero-metric-icon { color: #f8fafc !important; }
+
+.rodex-monochrome-theme .wx-dashboard-panel,
+.rodex-monochrome-theme .wx-nearby-panel,
+.rodex-monochrome-theme .wx-reference-support-grid > div,
+.rodex-monochrome-theme .wx-wardrobe-card,
+.rodex-monochrome-theme .wx-map-toolbar,
+.rodex-monochrome-theme .wx-map-card,
+.rodex-monochrome-theme .wx-map-info-panel {
+  min-width: 0;
+  color: #f8fafc !important;
+  background: linear-gradient(145deg,#1a2028,#10141a) !important;
+  border: 1px solid rgba(255,255,255,.14) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.23), inset 0 1px rgba(255,255,255,.025) !important;
+}
+.rodex-monochrome-theme .wx-dashboard-panel :is(h2,p,strong,span),
+.rodex-monochrome-theme .wx-nearby-panel,
+.rodex-monochrome-theme .wx-wardrobe-card :is(h2,h3,p) { color: #f1f5f9 !important; }
+.rodex-monochrome-theme .wx-dashboard-hour {
+  min-width: 0;
+  color: #f8fafc !important;
+  background: rgba(255,255,255,.045) !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+}
+.rodex-monochrome-theme .wx-dashboard-hour.is-current,
+.rodex-monochrome-theme .wx-dashboard-day.is-today {
+  background: rgba(255,255,255,.13) !important;
+  border-color: rgba(255,255,255,.34) !important;
+}
+.rodex-monochrome-theme .wx-dashboard-day {
+  color: #e2e8f0 !important;
+  border-bottom-color: rgba(255,255,255,.1) !important;
+}
+.rodex-monochrome-theme .wx-dashboard-day-condition,
+.rodex-monochrome-theme .wx-dashboard-hour small,
+.rodex-monochrome-theme .wx-dashboard-daily-foot,
+.rodex-monochrome-theme .wx-dashboard-hourly-foot { color: #aeb7c2 !important; }
+.rodex-monochrome-theme .wx-nearby-map-link,
+.rodex-monochrome-theme .wx-wardrobe-footer button {
+  color: #101318 !important;
+  background: linear-gradient(135deg,#f8fafc,#aeb7c2) !important;
+  border: 1px solid rgba(255,255,255,.78) !important;
+}
+.rodex-monochrome-theme .wx-wardrobe-status,
+.rodex-monochrome-theme .wx-wardrobe-item,
+.rodex-monochrome-theme .wx-wardrobe-notes {
+  color: #e2e8f0 !important;
+  background: rgba(255,255,255,.055) !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+
+/* Complete, equivalent navigation actions on phone and tablet. */
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+  display: none;
+  position: fixed;
+  left: 50%;
+  bottom: max(10px,env(safe-area-inset-bottom,0px));
+  z-index: 40; /* Modal overlays must cover the persistent navigation dock. */
+  width: min(560px,calc(100% - 16px));
+  max-width: 560px;
+  /* Tailwind's -translate-x-1/2 already centres this fixed dock. */
+  transform: none !important;
+  padding: 6px 7px max(8px,env(safe-area-inset-bottom,0px));
+  color: #f8fafc;
+  background: rgba(12,15,20,.95) !important;
+  border: 1px solid rgba(255,255,255,.2) !important;
+  border-radius: 22px;
+  box-shadow: 0 18px 44px rgba(0,0,0,.6), inset 0 1px rgba(255,255,255,.09) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(1.05);
+  backdrop-filter: blur(26px) saturate(1.05);
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] > div {
+  display: grid !important;
+  width: 100%;
+  max-width: none;
+  grid-template-columns: repeat(6,minmax(0,1fr)) !important;
+  align-items: center;
+  justify-items: center;
+  gap: 2px;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button {
+  display: flex;
+  min-width: 0;
+  min-height: 48px;
+  padding: 5px 2px;
+  align-items: center;
+  justify-content: center;
+  color: #aeb7c2 !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  border-radius: 13px;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-current="page"] {
+  color: #101318 !important;
+  background: linear-gradient(135deg,#f8fafc,#bac3cd) !important;
+  border-color: rgba(255,255,255,.75) !important;
+  box-shadow: inset 0 1px rgba(255,255,255,.86) !important;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-current="page"] :is(svg,span) {
+  color: #101318 !important;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button > div.relative {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] > div > div {
+  margin-top: 0 !important;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label*="RODEX AI"] {
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 0;
+  color: #101318 !important;
+  background: linear-gradient(145deg,#f8fafc,#9fa9b5) !important;
+  border: 2px solid rgba(255,255,255,.85) !important;
+  border-radius: 50%;
+  box-shadow: 0 8px 22px rgba(0,0,0,.45), inset 0 1px rgba(255,255,255,.8) !important;
+}
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label*="RODEX AI"] svg { color: #101318 !important; }
+.rodex-monochrome-theme nav[aria-label="Mobile Navigation"] span {
+  overflow: hidden;
+  max-width: 100%;
+  font-size: 9px !important;
+  line-height: 1.15;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Neutral surfaces in maps, details, account, privacy and AI overlays. */
+.rodex-monochrome-theme .glass-panel,
+.rodex-monochrome-theme .glass-panel-elevated,
+.rodex-monochrome-theme .glass-panel-interactive {
+  color: #f8fafc !important;
+  background: linear-gradient(145deg,rgba(28,34,43,.96),rgba(12,15,20,.96)) !important;
+  border-color: rgba(255,255,255,.15) !important;
+  box-shadow: 0 14px 36px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.035) !important;
+}
+.rodex-monochrome-theme [role="dialog"],
+.rodex-monochrome-theme [aria-modal="true"] {
+  color: #f8fafc !important;
+  background-color: #12161c !important;
+  border-color: rgba(255,255,255,.17) !important;
+}
+.rodex-monochrome-theme input,
+.rodex-monochrome-theme select,
+.rodex-monochrome-theme textarea { color-scheme: dark; }
+.rodex-monochrome-theme .leaflet-container,
+.rodex-monochrome-theme .wx-map-root.fixed { background: #10141a !important; }
+.rodex-monochrome-theme .atmos-reference-background {
+  background:
+    radial-gradient(ellipse at 14% 8%,rgba(255,255,255,.04),transparent 42%),
+    radial-gradient(ellipse at 88% 78%,rgba(255,255,255,.025),transparent 46%),
+    linear-gradient(132deg,#080a0e 0%,#11151b 52%,#090b10 100%) !important;
+}
+.rodex-monochrome-theme footer {
+  color: rgba(226,232,240,.65) !important;
+  border-top-color: rgba(255,255,255,.12) !important;
+}
+
+/* Tablet: the desktop rail is replaced by the full six-action dock. */
+@media (max-width: 1100px) {
+  .rodex-monochrome-theme > header.sticky {
+    padding: max(.55rem,env(safe-area-inset-top,0px)) 12px 10px !important;
+  }
+  .rodex-monochrome-theme .rodex-header-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0,1fr) auto;
+    grid-template-areas:
+      "brand controls"
+      "search search"
+      "shortcuts shortcuts";
+    align-items: center;
+    gap: 9px 10px !important;
+    max-width: 100%;
+  }
+  .rodex-monochrome-theme .rodex-header-brand { grid-area: brand; }
+  .rodex-monochrome-theme .rodex-header-search {
+    grid-area: search;
+    width: 100%;
+    max-width: none !important;
+  }
+  .rodex-monochrome-theme .rodex-header-shortcuts {
+    grid-area: shortcuts;
+    justify-self: end;
+    gap: 7px;
+  }
+  .rodex-monochrome-theme .rodex-header-controls {
+    grid-area: controls;
+    justify-self: end;
+    gap: 7px !important;
+  }
+  .rodex-monochrome-theme .rodex-header-primary-nav { display: none !important; }
+  .rodex-monochrome-theme .rodex-header-search input {
+    min-height: 46px;
+    font-size: 16px !important;
+  }
+  .rodex-monochrome-theme .wx-reference-shell {
+    display: block;
+    min-height: 0;
+    border-radius: 20px;
+  }
+  .rodex-monochrome-theme .wx-reference-rail { display: none !important; }
+  .rodex-monochrome-theme .wx-reference-content {
+    padding: clamp(15px,2.4vw,24px) !important;
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] { display: flex !important; }
+  .rodex-monochrome-theme { padding-bottom: calc(122px + env(safe-area-inset-bottom,0px)) !important; }
+  .rodex-monochrome-theme .wx-dashboard-forecast-grid {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 13px;
+  }
+  .rodex-monochrome-theme .wx-dashboard-hourly-list {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+  }
+  .rodex-monochrome-theme .wx-map-toolbar { flex-wrap: wrap; }
+  .rodex-monochrome-theme .wx-map-canvas-wrap,
+  .rodex-monochrome-theme .wx-map-canvas { min-height: clamp(360px,52dvh,560px); }
+}
+@media (min-width: 681px) and (max-width: 900px) {
+  .rodex-monochrome-theme .wx-reference-content { padding: 17px !important; }
+  .rodex-monochrome-theme .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 110px;
+    gap: 12px;
+  }
+  .rodex-monochrome-theme .wx-hero-metrics {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4,minmax(0,1fr));
+  }
+  .rodex-monochrome-theme .wx-dashboard-forecast-grid { grid-template-columns: minmax(0,1fr); }
+  .rodex-monochrome-theme .wx-dashboard-day {
+    grid-template-columns: 62px 24px minmax(0,1fr) auto auto;
+    gap: 8px;
+  }
+}
+@media (min-width: 901px) and (max-width: 1100px) {
+  .rodex-monochrome-theme .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 128px;
+  }
+  .rodex-monochrome-theme .wx-dashboard-forecast-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}
+
+/* Phones: preserve forecast content while using a single readable column. */
+@media (max-width: 680px) {
+  .rodex-monochrome-theme > header.sticky {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  .rodex-monochrome-theme .rodex-header-layout { gap: 8px 6px !important; }
+  .rodex-monochrome-theme .rodex-header-brand img { width: 132px !important; max-width: 100%; }
+  .rodex-monochrome-theme .rodex-header-shortcuts { justify-self: end; gap: 5px; }
+  .rodex-monochrome-theme .rodex-header-controls { gap: 5px !important; }
+  .rodex-monochrome-theme .rodex-header-controls > button,
+  .rodex-monochrome-theme .rodex-header-shortcuts > button { min-width: 39px; min-height: 40px; }
+  .rodex-monochrome-theme .rodex-header-search input {
+    min-height: 48px;
+    padding-left: 40px;
+    padding-right: 42px;
+    border-radius: 15px !important;
+    font-size: 16px !important;
+  }
+  .rodex-monochrome-theme .wx-reference-shell { border-radius: 18px; }
+  .rodex-monochrome-theme .wx-reference-content { padding: 12px !important; }
+  .rodex-monochrome-theme .wx-reference-heading {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+  .rodex-monochrome-theme .wx-reference-heading-right {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .rodex-monochrome-theme .wx-live-status {
+    max-width: 100%;
+    min-width: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+  .rodex-monochrome-theme .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 76px !important;
+    gap: 8px;
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+  .rodex-monochrome-theme .wx-dashboard-hero .wx-storm-title {
+    font-size: clamp(42px,12vw,58px) !important;
+    line-height: 1;
+  }
+  .rodex-monochrome-theme .wx-hero-location { overflow-wrap: anywhere; }
+  .rodex-monochrome-theme .wx-hero-weather-art { width: 76px; max-width: 100%; }
+  .rodex-monochrome-theme .wx-hero-weather-icon { width: 64px !important; height: 64px !important; }
+  .rodex-monochrome-theme .wx-hero-metrics { grid-template-columns: repeat(2,minmax(0,1fr)) !important; gap: 7px; }
+  .rodex-monochrome-theme .wx-hero-metric { padding: 8px !important; }
+  .rodex-monochrome-theme .wx-dashboard-forecast-grid {
+    grid-template-columns: minmax(0,1fr) !important;
+    gap: 11px;
+  }
+  .rodex-monochrome-theme .wx-dashboard-panel { padding: 13px 11px !important; }
+  .rodex-monochrome-theme .wx-dashboard-hourly-list {
+    grid-template-columns: repeat(3,minmax(0,1fr)) !important;
+    gap: 6px;
+  }
+  .rodex-monochrome-theme .wx-dashboard-hour { min-height: 100px; padding: 8px 3px; }
+  .rodex-monochrome-theme .wx-dashboard-hour small {
+    white-space: normal;
+    line-height: 1.25;
+    text-align: center;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day {
+    display: grid;
+    grid-template-columns: 48px 21px minmax(0,1fr) auto auto !important;
+    gap: 5px !important;
+    min-height: 40px;
+    padding: 7px 4px;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day-condition {
+    display: block !important;
+    min-width: 0;
+    overflow: hidden;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day strong,
+  .rodex-monochrome-theme .wx-dashboard-day small { font-size: 10px; }
+  .rodex-monochrome-theme .wx-map-toolbar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch !important;
+    gap: 9px !important;
+    padding: 10px !important;
+  }
+  .rodex-monochrome-theme .wx-map-layer-controls {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    padding-bottom: 3px;
+  }
+  .rodex-monochrome-theme .wx-map-search-controls {
+    display: grid !important;
+    width: 100%;
+    grid-template-columns: minmax(0,1fr) repeat(3,40px);
+    gap: 6px !important;
+  }
+  .rodex-monochrome-theme .wx-map-search,
+  .rodex-monochrome-theme .wx-map-search-input { min-width: 0 !important; }
+  .rodex-monochrome-theme .wx-map-search-input { min-height: 44px !important; font-size: 16px !important; }
+  .rodex-monochrome-theme .wx-map-search-controls > button {
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+  }
+  .rodex-monochrome-theme .wx-map-canvas-wrap,
+  .rodex-monochrome-theme .wx-map-canvas { min-height: clamp(320px,54dvh,480px) !important; }
+  .rodex-monochrome-theme .wx-map-footer {
+    align-items: flex-start !important;
+    flex-direction: column;
+    gap: 7px !important;
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+    width: calc(100% - 12px);
+    bottom: max(7px,env(safe-area-inset-bottom,0px));
+    border-radius: 19px;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button { min-height: 50px; }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button[aria-label*="RODEX AI"] {
+    width: 42px;
+    height: 42px;
+    min-height: 42px;
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] span { font-size: 8px !important; }
+}
+@media (max-width: 390px) {
+  .rodex-monochrome-theme .rodex-header-brand img { width: 120px !important; }
+  .rodex-monochrome-theme .rodex-header-controls { gap: 4px !important; }
+  .rodex-monochrome-theme .rodex-header-controls > button,
+  .rodex-monochrome-theme .rodex-header-shortcuts > button { min-width: 36px; min-height: 38px; }
+  .rodex-monochrome-theme .wx-reference-content { padding: 10px !important; }
+  .rodex-monochrome-theme .wx-dashboard-hero {
+    grid-template-columns: minmax(0,1fr) 66px !important;
+    padding: 11px !important;
+  }
+  .rodex-monochrome-theme .wx-hero-weather-art { width: 66px; }
+  .rodex-monochrome-theme .wx-hero-weather-icon { width: 56px !important; height: 56px !important; }
+  .rodex-monochrome-theme .wx-dashboard-day {
+    grid-template-columns: 43px 19px minmax(0,1fr) auto auto !important;
+    gap: 4px !important;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day-condition { font-size: 9px; }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button { min-height: 48px; }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] span { font-size: 7.5px !important; }
+}
+@media (max-width: 680px) and (orientation: landscape) {
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] { bottom: 4px; }
+  .rodex-monochrome-theme .wx-map-canvas-wrap,
+  .rodex-monochrome-theme .wx-map-canvas { min-height: 56dvh !important; }
+}
+@media (hover: none) {
+  .rodex-monochrome-theme .rodex-pointer-spotlight::after { display: none; }
+  .rodex-monochrome-theme button:hover { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto !important; }
+  .rodex-monochrome-theme *,
+  .rodex-monochrome-theme *::before,
+  .rodex-monochrome-theme *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
+
+
+/* Map surface and map tiles follow the application's monochrome appearance. */
+.rodex-monochrome-theme .wx-map-card {
+  color: #f8fafc !important;
+  background: #10141a !important;
+  border-color: rgba(255,255,255,.16) !important;
+}
+.rodex-monochrome-theme .wx-map-toolbar {
+  color: #f8fafc !important;
+  background: #151a21 !important;
+  border-color: rgba(255,255,255,.14) !important;
+}
+.rodex-monochrome-theme .wx-map-search-input {
+  color: #f8fafc !important;
+  background: #0d1117 !important;
+  border-color: rgba(255,255,255,.2) !important;
+}
+.rodex-monochrome-theme .wx-map-search-input::placeholder { color: #9aa3af !important; }
+.rodex-monochrome-theme .leaflet-tile-pane { filter: grayscale(1) contrast(1.04); }
+.rodex-monochrome-theme .leaflet-control,
+.rodex-monochrome-theme .leaflet-bar a {
+  color: #f8fafc !important;
+  background: #151a21 !important;
+  border-color: rgba(255,255,255,.2) !important;
+}
+.rodex-monochrome-theme .leaflet-bar a:hover { background: #2a313b !important; }

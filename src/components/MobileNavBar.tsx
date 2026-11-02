@@ -16,6 +16,7 @@ interface MobileNavBarProps {
   onOpenAssistant: () => void;
   onOpenAlerts: () => void;
   onOpenAuth: () => void;
+  onOpenPrivacy: () => void;
   activeAlertsCount: number;
 }
 
@@ -25,6 +26,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   onOpenAssistant,
   onOpenAlerts,
   onOpenAuth,
+  onOpenPrivacy,
   activeAlertsCount
 }) => {
   const { user, userProfile, isVerified } = useAuth();
@@ -83,16 +85,16 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           <button
             onClick={onOpenAssistant}
             onPointerMove={updateNavPointer}
-            className="rodex-pointer-spotlight w-13 h-13 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-white shadow-xl shadow-cyan-500/25 border-2 border-white/45 flex items-center justify-center transition-transform active:scale-95 group"
+            className="rodex-pointer-spotlight w-13 h-13 rounded-full bg-gradient-to-br from-slate-100 via-white to-slate-300 hover:from-white hover:to-slate-200 text-slate-950 shadow-xl shadow-black/40 border-2 border-white/70 flex items-center justify-center transition-transform active:scale-95 group"
             aria-label="Open RODEX AI Voice and Chat Assistant"
             title="Open RODEX AI Assistant"
           >
             <div className="relative flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
-              <Mic className="w-3 h-3 text-amber-300 absolute -bottom-1 -right-1" />
+              <Sparkles className="w-5 h-5 text-slate-950 group-hover:rotate-12 transition-transform" />
+              <Mic className="w-3 h-3 text-slate-600 absolute -bottom-1 -right-1" />
             </div>
           </button>
-          <span className="text-[9px] font-extrabold tracking-wider text-sky-200 uppercase mt-1">RODEX AI</span>
+          <span className="text-[9px] font-extrabold tracking-wider text-slate-200 uppercase mt-1">RODEX AI</span>
         </div>
 
         {/* 4. Weather Alerts Tab */}
@@ -142,6 +144,18 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           <span className="text-[10px] font-semibold tracking-tight mt-1">
             Account
           </span>
+        </button>
+
+        {/* Privacy controls remain reachable on phone and tablet. */}
+        <button
+          onClick={onOpenPrivacy}
+          onPointerMove={updateNavPointer}
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all"
+          aria-label="Privacy and account controls"
+          title="Privacy and account controls"
+        >
+          <ShieldCheck className="w-5 h-5" />
+          <span className="text-[10px] font-semibold tracking-tight mt-1">Privacy</span>
         </button>
 
       </div>

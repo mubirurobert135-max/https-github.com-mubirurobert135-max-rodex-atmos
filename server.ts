@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 import type { Request as ExpressRequest, Response as ExpressResponse, NextFunction as ExpressNextFunction } from 'express';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { GoogleGenAI } from '@google/genai/node';
 
@@ -2207,8 +2207,8 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
     });
   });
 
-  // Vite middleware is only for local development. Vercel serves the built dist/ assets
-  // and routes /api/* through api/[...path].ts.
+  // Local development uses Vite middleware. Vercel serves static assets itself,
+  // while ordinary Node/Docker hosts serve the same built assets from dist/.
   if (shouldRunLocalDevServer) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
@@ -2219,6 +2219,40 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       appType: 'spa',
     });
     app.use(vite.middlewares);
+  } else if (!isVercelRuntime) {
+    const staticDirectory = join(__dirname, 'dist');
+    app.use(express.static(staticDirectory, {
+      index: false,
+      etag: true,
+      lastModified: true,
+      setHeaders: (response, filePath) => {
+        const isFingerprintAsset = /[/\\\\]assets[/\\\\].*[.-][a-f0-9]{8,}\\./i.test(filePath);
+        response.setHeader(
+          'Cache-Control',
+          isFingerprintAsset
+            ? 'public, max-age=31536000, immutable'
+            : 'public, max-age=3600'
+        );
+      }
+    }));
+
+    // Client-side routes such as /map or /account must resolve to the SPA shell.
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) {
+        res.status(404).json({
+          error: 'API_ROUTE_NOT_FOUND',
+          message: 'The requested RODEX Atmos API route does not exist.'
+        });
+        return;
+      }
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.sendFile(join(staticDirectory, 'index.html'), (error) => {
+        if (error && !res.headersSent) {
+          console.error('[RODEX Static Web] Could not serve the application shell:', error.message);
+          res.status(500).send('RODEX Atmos could not load. Please retry.');
+        }
+      });
+    });
   }
 
   // Avoid remote TTS prewarming on serverless cold starts.
@@ -2234,7 +2268,7 @@ REAL VERIFIED FORECAST DATA FOR ${location?.name || 'Selected Location'}:
       });
   }
 
-  if (shouldRunLocalDevServer) {
+  if (!isVercelRuntime) {
     app.listen(Number(PORT), '0.0.0.0', () => {
       console.log(`RODEX Atmos server running on http://localhost:${PORT}`);
     });

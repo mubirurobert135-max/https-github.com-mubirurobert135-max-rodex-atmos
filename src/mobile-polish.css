@@ -1,0 +1,74 @@
+/* RODEX Atmos — compact mobile layout corrections, 2026-11-03 */
+@media (max-width: 767px) {
+  html, body, #root { max-width:100%; overflow-x:clip; }
+  .rodex-monochrome-theme { overflow-x:clip; }
+  .rodex-monochrome-theme header.sticky {
+    position:relative !important; top:auto !important;
+    padding:12px 14px 14px !important;
+    background:#171717 !important;
+    border-bottom:1px solid rgba(255,255,255,.14) !important;
+  }
+  .rodex-header-layout {
+    display:grid !important;
+    grid-template-columns:minmax(0,1fr) auto !important;
+    grid-template-areas:"brand controls" "search search" !important;
+    align-items:center !important;
+    gap:12px 8px !important;
+    min-width:0 !important;
+  }
+  .rodex-header-brand {grid-area:brand !important; min-width:0 !important; overflow:hidden;}
+  .rodex-brand-name {font-size:clamp(14px,4vw,18px) !important;}
+  .rodex-brand-tagline {font-size:8px !important; letter-spacing:.08em !important;}
+  .rodex-header-controls {grid-area:controls !important; justify-self:end !important; display:flex !important; gap:6px !important;}
+  .rodex-header-shortcuts {display:none !important;}
+  .rodex-header-primary-nav {display:none !important;}
+  .rodex-header-search {
+    grid-area:search !important; display:block !important;
+    width:100% !important; min-width:0 !important; max-width:none !important;
+  }
+  .rodex-header-search form {width:100% !important;}
+  .rodex-header-search input {
+    width:100% !important; height:48px !important; min-height:48px !important;
+    border-radius:15px !important; background:#292929 !important;
+    border:1px solid #555 !important; color:#fff !important;
+    font-size:16px !important;
+  }
+  .rodex-header-search form > span {color:#c8c8c8 !important; max-width:calc(100% - 78px);}
+  .rodex-monochrome-theme main {min-width:0 !important; padding-bottom:112px !important;}
+  .wx-reference-shell {width:100% !important; max-width:100% !important; min-width:0 !important;}
+  .wx-reference-content {padding:16px !important; min-width:0 !important;}
+  .wx-reference-heading {gap:12px !important;}
+  .wx-reference-heading-right {display:flex !important; flex-wrap:wrap !important; gap:8px !important;}
+  .wx-live-status {font-size:12px !important; line-height:1.4 !important;}
+  .wx-dashboard-hero {min-width:0 !important; overflow:hidden !important;}
+  .wx-dashboard-hero .wx-storm-title {font-size:clamp(38px,11vw,54px) !important;}
+  .wx-reference-kicker,.wx-story-label {font-size:11px !important; line-height:1.5 !important;}
+  .wx-reference-content :is(button,input) {max-width:100%;}
+  .wx-dashboard-forecast-grid,.wx-reference-layout,.wx-reference-aside {min-width:0 !important; grid-template-columns:minmax(0,1fr) !important;}
+  nav[aria-label="Mobile Navigation"] {
+    position:fixed !important; left:50% !important;
+    bottom:max(8px,env(safe-area-inset-bottom)) !important;
+    width:calc(100% - 20px) !important; max-width:480px !important;
+    padding:8px 6px !important;
+    border-radius:20px !important;
+    background:rgba(15,15,15,.96) !important;
+    border:1px solid rgba(255,255,255,.23) !important;
+    box-shadow:0 12px 35px rgba(0,0,0,.6) !important;
+    backdrop-filter:blur(18px) !important;
+  }
+  nav[aria-label="Mobile Navigation"] > div {display:grid !important;grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:1px !important;}
+  nav[aria-label="Mobile Navigation"] button {min-width:0 !important; min-height:48px !important; color:#c9c9c9 !important;}
+  nav[aria-label="Mobile Navigation"] button[aria-current="page"] {color:#fff !important;background:#333 !important;}
+  nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] {
+    width:48px !important; height:48px !important; min-height:48px !important;
+    background:linear-gradient(145deg,#fff,#aaa) !important; color:#111 !important;
+    border-color:#fff !important; box-shadow:0 3px 16px rgba(255,255,255,.16) !important;
+  }
+  nav[aria-label="Mobile Navigation"] button[aria-label="Open RODEX AI Voice and Chat Assistant"] svg {color:#111 !important;}
+  nav[aria-label="Mobile Navigation"] span {overflow:hidden; text-overflow:ellipsis; max-width:100%;}
+}
+@media (min-width:768px) and (max-width:1023px) {
+ .rodex-header-layout {flex-wrap:wrap !important;}
+ .rodex-header-search {min-width:220px !important; flex:1 1 280px !important;}
+ .wx-reference-layout {grid-template-columns:minmax(0,1fr) !important;}
+}

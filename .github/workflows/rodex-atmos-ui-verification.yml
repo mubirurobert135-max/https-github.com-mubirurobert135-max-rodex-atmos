@@ -84,6 +84,8 @@ jobs:
         env:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          # Optional: allows HTTP probes for Vercel-authenticated previews.
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/verify_preview_deployment.mjs
 
       - name: Verify deployed Vercel website, API, and live weather

@@ -45,7 +45,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'dashboard'
               ? 'text-white'
-              : 'text-white/60 hover:text-white/90'
+              : 'text-white/85 hover:text-white/90'
           }`}
           aria-current={activeTab === 'dashboard' ? 'page' : undefined}
           aria-label="Weather Dashboard"
@@ -66,7 +66,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'map'
               ? 'text-white'
-              : 'text-white/60 hover:text-white/90'
+              : 'text-white/85 hover:text-white/90'
           }`}
           aria-current={activeTab === 'map' ? 'page' : undefined}
           aria-label="Interactive Weather Map"
@@ -94,20 +94,20 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
               <Mic className="w-3 h-3 text-neutral-800 absolute -bottom-1 -right-1" />
             </div>
           </button>
-          <span className="text-[9px] font-extrabold tracking-wider text-white/85 uppercase mt-1">RODEX AI</span>
+          <span className="text-[10px] font-extrabold tracking-wider text-white/85 uppercase mt-1">RODEX AI</span>
         </div>
 
         {/* 4. Weather Alerts Tab */}
         <button
           onClick={onOpenAlerts}
           onPointerMove={updateNavPointer}
-          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all relative"
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/85 hover:text-white/90 transition-all relative"
           aria-label={`Weather Alerts (${activeAlertsCount} active)`}
         >
           <div className="relative">
             <Bell className="w-5 h-5" />
             {activeAlertsCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-neutral-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-neutral-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
                 {activeAlertsCount}
               </span>
             )}
@@ -119,7 +119,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         <button
           onClick={onOpenAuth}
           onPointerMove={updateNavPointer}
-          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/60 hover:text-white/90 transition-all"
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl text-white/85 hover:text-white/90 transition-all"
           aria-label={user ? 'Account and Privacy' : 'Sign In'}
         >
           <div className="relative">
@@ -150,12 +150,12 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
         <button
           onClick={onOpenPrivacy}
           onPointerMove={updateNavPointer}
-          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-0.5 rounded-xl text-white/60 hover:text-white/90 transition-all"
+          className="rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-0.5 rounded-xl text-white/85 hover:text-white/90 transition-all"
           aria-label="Privacy Portal and Preferences"
           title="Privacy Portal"
         >
           <ShieldCheck className="w-5 h-5" />
-          <span className="text-[9px] sm:text-[10px] font-semibold tracking-tight mt-1">Privacy</span>
+          <span className="text-[10px] sm:text-[10px] font-semibold tracking-tight mt-1">Privacy</span>
         </button>
 
       </div>

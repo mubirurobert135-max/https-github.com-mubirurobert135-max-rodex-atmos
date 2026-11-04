@@ -953,21 +953,28 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
                 browserFallbackStarted = true;
                 activeAudioElementRef.current = null;
 
-                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-                  window.speechSynthesis.cancel();
-                  const utterance = await createAtmosBrowserUtterance(replyText, window.speechSynthesis);
-                  if (currentTurnIdRef.current !== currentTurnId) return;
-
-                  setVoiceState('speaking');
-                  utterance.onstart = () => {
+                try {
+                  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    const utterance = await createAtmosBrowserUtterance(replyText, window.speechSynthesis);
                     if (currentTurnIdRef.current !== currentTurnId) return;
-                    turnTimer.markAudioPlaybackStarted();
-                    console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
-                  };
-                  utterance.onend = onPlaybackFinished;
-                  utterance.onerror = onPlaybackFinished;
-                  window.speechSynthesis.speak(utterance);
-                } else {
+
+                    setVoiceState('speaking');
+                    utterance.onstart = () => {
+                      if (currentTurnIdRef.current !== currentTurnId) return;
+                      turnTimer.markAudioPlaybackStarted();
+                      console.log(formatDiagnosticTiming(turnTimer.getMetrics()));
+                    };
+                    utterance.onend = onPlaybackFinished;
+                    utterance.onerror = onPlaybackFinished;
+                    window.speechSynthesis.speak(utterance);
+                  } else {
+                    onPlaybackFinished();
+                  }
+                } catch (browserVoiceError) {
+                  // Text already arrived; a missing or broken browser voice
+                  // must not strand the microphone in the 'speaking' state.
+                  console.warn('[RODEX Voice] Browser voice fallback unavailable:', browserVoiceError);
                   onPlaybackFinished();
                 }
               };
@@ -1025,6 +1032,12 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
           isCompatModeRef.current = false;
           setPermissionStatus('denied');
           setVoiceError('Microphone permission was denied. Please allow microphone access in your browser settings.');
+          setVoiceState('error');
+        } else {
+          // Network and audio-capture failures must not trigger endless
+          // automatic recognition restarts with no usable microphone.
+          isCompatModeRef.current = false;
+          setVoiceError('Speech recognition was interrupted. Tap Retry Voice to reconnect.');
           setVoiceState('error');
         }
       };
@@ -2081,7 +2094,7 @@ Available Function Tools:
                 <span className="text-xs font-medium text-white capitalize">
                   {voiceState === 'requesting_permission' && 'Requesting microphone permission...'}
                   {voiceState === 'connecting' && (isAutoRecovering ? 'Reconnecting Atmos voice...' : 'Connecting Atmos voice...')}
-                  {voiceState === 'listening' && 'Listening to your speech...'}
+                  {voiceState === 'listening' && (isMuted ? 'Microphone muted' : 'Listening to your speech...')}
                   {voiceState === 'speaking' && 'RODEX Atmos is speaking...'}
                   {voiceState === 'thinking' && 'Analyzing atmospheric data...'}
                   {voiceState === 'ended' && 'Voice ended • Tap orb to resume'}
@@ -2190,7 +2203,7 @@ Available Function Tools:
                     : voiceState === 'connecting'
                     ? (isAutoRecovering ? 'Reconnecting Atmos voice...' : 'Connecting Atmos voice...')
                     : voiceState === 'listening'
-                    ? 'Speak naturally: ask about any city or forecast'
+                    ? (isMuted ? 'Microphone is muted. Tap Unmute to resume.' : 'Speak naturally: ask about any city or forecast')
                     : voiceState === 'speaking'
                     ? 'Speaking live meteorological answer'
                     : voiceState === 'ended'

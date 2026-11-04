@@ -7892,7 +7892,7 @@ html, body, #root { background-color: #090909; }
   color: #fafafa !important;
 }
 .rodex-monochrome-theme :is(
-  .wx-hero-condition,.wx-live-weather-condition,.wx-ai-neutral-copy,
+  .wx-live-weather-condition,.wx-ai-neutral-copy,
   .wx-story-copy,.wx-wardrobe-notes p
 ) {
   font-size: 13px !important;
@@ -7930,6 +7930,12 @@ html, body, #root { background-color: #090909; }
 }
 .rodex-monochrome-theme .wx-hero-metric {
   min-height: 58px;
+}
+.rodex-monochrome-theme .wx-hero-condition {
+  font-size: 17px !important;
+  font-weight: 750 !important;
+  line-height: 1.35 !important;
+  color: #fafafa !important;
 }
 .rodex-monochrome-theme .wx-ai-neutral-footer {
   flex-wrap: wrap;

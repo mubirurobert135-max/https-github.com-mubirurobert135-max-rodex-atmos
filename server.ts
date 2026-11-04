@@ -24,6 +24,7 @@ import { isGreetingQuery, buildNaturalGreetingResponse } from './src/utils/greet
 import { buildWeatherWardrobeAdvice } from './src/utils/weatherWardrobe';
 import { ATMOS_SIGNATURE_LIVE_VOICE, ATMOS_SIGNATURE_STYLE, ATMOS_SIGNATURE_TTS_MODEL, ATMOS_SIGNATURE_VOICE_ID as DEFAULT_ATMOS_SIGNATURE_VOICE_ID } from './src/utils/voiceSignature';
 import { getVercelRequestGeo } from './src/utils/requestGeolocation';
+import { createFixedWindowRateLimiter } from './src/utils/rateLimiter';
 
 dotenv.config();
 
@@ -182,6 +183,35 @@ async function startServer() {
 
   app.disable('x-powered-by');
   app.use(express.json({ limit: '1mb' }));
+
+  // Protect quota-consuming AI services from accidental request storms.
+  // This is per-instance protection; multi-instance deployments should also
+  // enforce a shared quota at the platform edge.
+  const aiRequestLimiter = createFixedWindowRateLimiter(45, 60_000);
+  const voiceTokenLimiter = createFixedWindowRateLimiter(8, 10 * 60_000);
+  app.use('/api/ai', (req, res, next) => {
+    if (req.method !== 'POST') return next();
+    const vercelForwarded = isVercelRuntime ? req.headers['x-vercel-forwarded-for'] : undefined;
+    const forwardedAddress = typeof vercelForwarded === 'string'
+      ? vercelForwarded.split(',')[0].trim().slice(0, 120)
+      : '';
+    const clientAddress = forwardedAddress || req.socket.remoteAddress || 'unknown';
+    const generalDecision = aiRequestLimiter(clientAddress + ':' + req.path);
+    const tokenDecision = req.path === '/live-token'
+      ? voiceTokenLimiter(clientAddress)
+      : { allowed: true, retryAfterSeconds: 0 };
+    if (!generalDecision.allowed || !tokenDecision.allowed) {
+      const waitSeconds = Math.max(generalDecision.retryAfterSeconds, tokenDecision.retryAfterSeconds);
+      res.setHeader('Retry-After', String(waitSeconds));
+      res.setHeader('Cache-Control', 'no-store');
+      return res.status(429).json({
+        error: 'RATE_LIMITED',
+        message: 'Too many AI requests. Please retry in a moment.',
+        retryAfterSeconds: waitSeconds
+      });
+    }
+    next();
+  });
 
   // Lightweight deployment/runtime probe. Never exposes credentials or environment values.
   app.get('/api/health', (_req, res) => {
@@ -935,7 +965,10 @@ async function startServer() {
   // Geocoding Autocomplete Search Endpoint for Header
   app.get('/api/weather/geocoding-search', async (req, res) => {
     try {
-      const q = ((req.query.q as string) || '').trim();
+      const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
+      if (q.length > 120) {
+        return res.status(400).json({ error: 'INVALID_QUERY', message: 'Search text must be 120 characters or fewer.' });
+      }
       if (q.length < 2) {
         return res.json({ results: [] });
       }
@@ -963,7 +996,8 @@ async function startServer() {
   // Never geolocate the serverless function's outbound IP.
   app.get('/api/weather/ip-location', async (req, res) => {
     res.setHeader('Cache-Control', 'private, no-store, max-age=0');
-    const geo = getVercelRequestGeo(req.headers);
+    // These headers are meaningful only when supplied by the hosting edge.
+    const geo = isVercelRuntime ? getVercelRequestGeo(req.headers) : null;
 
     if (!geo) {
       return res.status(503).json({
@@ -1003,9 +1037,12 @@ async function startServer() {
   // Search Endpoint
   app.get('/api/weather/search', async (req, res) => {
     try {
-      const query = req.query.query as string;
-      if (!query || query.trim().length === 0) {
+      const query = req.query.query;
+      if (typeof query !== 'string' || query.trim().length === 0) {
         return res.status(400).json({ error: 'Query parameter is required' });
+      }
+      if (query.length > 120) {
+        return res.status(400).json({ error: 'INVALID_QUERY', message: 'City searches must be 120 characters or fewer.' });
       }
 
       const cacheKey = `search:${normalizeWeatherQuery(query)}`;
@@ -1037,7 +1074,9 @@ async function startServer() {
     try {
       const lat = Number(req.query.lat);
       const lon = Number(req.query.lon);
-      const cityName = (req.query.name as string) || 'Selected map point';
+      const cityName = typeof req.query.name === 'string' && req.query.name.trim()
+        ? req.query.name.trim().slice(0, 120)
+        : 'Selected map point';
 
       if (req.query.lat == null || req.query.lon == null ||
           !Number.isFinite(lat) || !Number.isFinite(lon) ||
@@ -1685,6 +1724,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
 
   // Short-lived ephemeral token endpoint for browser-based Live API voice sessions
   app.post('/api/ai/live-token', async (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, max-age=0');
     try {
       if (!ai) {
         return res.status(503).json({
@@ -1710,7 +1750,7 @@ Format: Return strict JSON with keys: "greeting", "summary", "recommendations" (
       console.error('Live token generation error:', err);
       res.status(500).json({
         error: 'TOKEN_CREATION_FAILED',
-        message: err.message || 'Failed to generate ephemeral session token for Gemini Live.'
+        message: 'Could not create a live voice session. Please retry shortly.'
       });
     }
   });

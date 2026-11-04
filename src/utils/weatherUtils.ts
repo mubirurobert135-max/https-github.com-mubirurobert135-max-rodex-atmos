@@ -295,16 +295,10 @@ function formatClockFromInstant(
   timezone?: string,
   timezoneOffsetSeconds?: number
 ): string {
-  if (Number.isFinite(timezoneOffsetSeconds)) {
-    const shifted = new Date(instant.getTime() + (timezoneOffsetSeconds as number) * 1000);
-    return new Intl.DateTimeFormat(undefined, {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true,
-      timeZone: 'UTC'
-    }).format(shifted);
-  }
-  if (timezone && timezone !== 'auto') {
+  // A named regional timezone handles daylight-saving transitions; a numeric
+  // UTC offset is only a fallback. Some providers use "UTC" as a placeholder
+  // alongside the actual local offset, so preserve that compatibility.
+  if (timezone && timezone !== 'auto' && (timezone.toUpperCase() !== 'UTC' || !Number.isFinite(timezoneOffsetSeconds))) {
     try {
       return new Intl.DateTimeFormat(undefined, {
         hour: 'numeric',
@@ -313,8 +307,17 @@ function formatClockFromInstant(
         timeZone: timezone
       }).format(instant);
     } catch {
-      // Fall through to the browser's local time only when no usable location zone exists.
+      // An invalid IANA timezone should fall back to the supplied numeric offset.
     }
+  }
+  if (Number.isFinite(timezoneOffsetSeconds)) {
+    const shifted = new Date(instant.getTime() + (timezoneOffsetSeconds as number) * 1000);
+    return new Intl.DateTimeFormat(undefined, {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'UTC'
+    }).format(shifted);
   }
   return instant.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
 }
@@ -366,7 +369,9 @@ export function isWithinLocalSolarWindow(
   if (sunriseMinutes == null && sunsetMinutes == null) return false;
 
   let currentMinutes: number;
-  if (Number.isFinite(timezoneOffsetSeconds)) {
+  const useOffset = Number.isFinite(timezoneOffsetSeconds) &&
+    (!timezone || timezone === 'auto' || timezone.toUpperCase() === 'UTC');
+  if (useOffset) {
     const shifted = new Date(now.getTime() + (timezoneOffsetSeconds as number) * 1000);
     currentMinutes = shifted.getUTCHours() * 60 + shifted.getUTCMinutes();
   } else {
@@ -383,7 +388,9 @@ export function isWithinLocalSolarWindow(
       if (!Number.isFinite(hour) || !Number.isFinite(minute)) return false;
       currentMinutes = hour * 60 + minute;
     } catch {
-      return false;
+      if (!Number.isFinite(timezoneOffsetSeconds)) return false;
+      const shifted = new Date(now.getTime() + (timezoneOffsetSeconds as number) * 1000);
+      currentMinutes = shifted.getUTCHours() * 60 + shifted.getUTCMinutes();
     }
   }
 

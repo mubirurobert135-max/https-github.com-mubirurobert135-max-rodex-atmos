@@ -7436,7 +7436,7 @@ body {
   border-radius: 14px;
   object-fit: cover;
   border: 1px solid rgba(255,255,255,.22);
-  background: #edeae8;
+  background: #ebebeb;
   filter: grayscale(1) contrast(1.06);
   box-shadow: 0 4px 18px rgba(0,0,0,.3);
 }

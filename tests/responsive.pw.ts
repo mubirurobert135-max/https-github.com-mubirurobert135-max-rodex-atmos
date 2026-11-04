@@ -18,12 +18,12 @@ for (const { width, height, device } of viewports) {
     const header = page.locator('header.sticky');
     await expect(header).toBeVisible();
     await expect(header.getByRole('textbox', { name: 'Search city or country' })).toBeVisible();
-    await expect(header.getByRole('button', { name: 'Open RODEX AI from header navigation' })).toBeVisible();
 
     const mobileNav = page.getByRole('navigation', { name: 'Mobile Navigation' });
     if (width < 1024) {
       await expect(mobileNav).toBeVisible();
       await expect(mobileNav.locator('button')).toHaveCount(6);
+      await expect(mobileNav.getByRole('button', { name: 'Open RODEX AI Voice and Chat Assistant' })).toBeVisible();
 
       const mapButton = mobileNav.getByRole('button', { name: 'Interactive Weather Map' });
       await mapButton.click();
@@ -35,6 +35,7 @@ for (const { width, height, device } of viewports) {
     } else {
       await expect(mobileNav).toBeHidden();
       await expect(page.getByRole('navigation', { name: 'Primary Navigation' })).toBeVisible();
+      await expect(header.getByRole('button', { name: 'Open RODEX AI from header navigation' })).toBeVisible();
     }
 
     const diagnostics = await page.evaluate(() => {

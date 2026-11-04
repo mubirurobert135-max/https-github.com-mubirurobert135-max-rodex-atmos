@@ -195,7 +195,7 @@ export const AlertCenterModal: React.FC<AlertCenterModalProps> = ({
                   >
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${getSeverityBadgeClass(alert.severity, alert.type)}`}>
+                        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border uppercase tracking-wider ${getSeverityBadgeClass(alert.severity, alert.type)}`}>
                           {alert.type === 'official' ? 'Official Warning' : `${alert.severity} Alert`}
                         </span>
                         <span className="text-xs text-neutral-200/70 font-medium">
@@ -209,7 +209,7 @@ export const AlertCenterModal: React.FC<AlertCenterModalProps> = ({
                             onClose();
                             onOpenAssistant(`Why did Atmos issue the notification "${alert.title}" for ${alert.locationName}?`);
                           }}
-                          className="flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-xl bg-gradient-to-r from-neutral-500 to-neutral-600 hover:from-neutral-400 hover:to-neutral-500 text-white shadow-sm transition active:scale-95"
+                          className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-xl bg-gradient-to-r from-neutral-500 to-neutral-600 hover:from-neutral-400 hover:to-neutral-500 text-white shadow-sm transition active:scale-95"
                           title="Ask RODEX AI for natural language explanation"
                         >
                           <Sparkles className="w-3 h-3" />
@@ -228,7 +228,7 @@ export const AlertCenterModal: React.FC<AlertCenterModalProps> = ({
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between text-[11px] text-neutral-200/60 pt-2 border-t border-white/10 flex-wrap gap-2">
+                    <div className="flex items-center justify-between text-xs text-neutral-200/60 pt-2 border-t border-white/10 flex-wrap gap-2">
                       <span>Source: {alert.issuingAuthority || 'Meteorological Service'}</span>
                       {alert.expires && (
                         <span>Valid until: {new Date(alert.expires).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -388,7 +388,7 @@ export const AlertCenterModal: React.FC<AlertCenterModalProps> = ({
                   </button>
                 </div>
 
-                <p className="text-[11px] text-neutral-200/60 leading-normal">
+                <p className="text-xs text-neutral-200/60 leading-normal">
                   Status: {browserPermission === 'granted' ? 'Active in browser tab.' : browserPermission === 'denied' ? 'Blocked in browser permissions setting.' : 'Permission required.'} On-screen alerts remain active regardless.
                 </p>
               </div>

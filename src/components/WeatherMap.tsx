@@ -248,7 +248,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           <div class="px-3 py-1.5 rounded-2xl bg-gradient-to-r ${getTempColor(val.temp)} border-2 shadow-2xl flex items-center gap-2 transform transition duration-300 hover:scale-110">
             <span class="w-2.5 h-2.5 rounded-full bg-neutral-300 animate-ping"></span>
             <div class="flex flex-col text-left leading-tight">
-              <span class="text-[10px] uppercase font-black tracking-wider opacity-90">${safeName}</span>
+              <span class="text-xs uppercase font-black tracking-wider opacity-90">${safeName}</span>
               <span class="text-xs font-black tabular-nums">${metricBadge}</span>
             </div>
             <span class="text-sm">${cond.icon}</span>
@@ -270,7 +270,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <div>
               <div class="text-sm font-black text-white">${safeName}</div>
-              <div class="text-[11px] text-neutral-200">${safeCountry}</div>
+              <div class="text-xs text-neutral-200">${safeCountry}</div>
             </div>
             <span class="text-xl">${cond.icon}</span>
           </div>
@@ -280,7 +280,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             <div class="flex justify-between"><span>Rain Chance:</span><strong class="text-white">${val.precipProb}%</strong></div>
             <div class="flex justify-between"><span>Wind:</span><strong class="text-white">${formatWind(val.windSpeed, unit)}</strong></div>
           </div>
-          <div class="text-[10px] px-2 py-1 rounded bg-neutral-500/20 text-neutral-300 border border-neutral-400/30 font-semibold text-center mt-2">
+          <div class="text-xs px-2 py-1 rounded bg-neutral-500/20 text-neutral-300 border border-neutral-400/30 font-semibold text-center mt-2">
             ★ Active Selected Weather Location
           </div>
         </div>
@@ -390,7 +390,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             <button id="btn-select-inspected" class="w-full mt-2 py-1.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-neutral-950 font-bold text-xs transition shadow">
               Set as Active Weather Location
             </button>
-            <button id="btn-ai-inspected" class="w-full py-1 rounded-xl bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-200 font-semibold text-[11px] border border-neutral-400/30 flex items-center justify-center gap-1 transition">
+            <button id="btn-ai-inspected" class="w-full py-1 rounded-xl bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-200 font-semibold text-xs border border-neutral-400/30 flex items-center justify-center gap-1 transition">
               <span>Ask RODEX AI about this spot</span>
             </button>
           </div>
@@ -566,7 +566,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                       className="w-full text-left px-3 py-2.5 text-xs hover:bg-white/10 text-[#E5E5E5] flex justify-between items-center border-b border-neutral-100 last:border-0"
                     >
                       <span className="font-semibold text-neutral-900">{city.name}</span>
-                      <span className="text-[10px] text-neutral-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
+                      <span className="text-xs text-neutral-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
                     </button>
                   ))}
                 </div>
@@ -650,7 +650,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 aria-label="Forecast offset in hours"
               />
 
-              <div className="flex justify-between text-[10px] text-white/50 font-medium">
+              <div className="flex justify-between text-xs text-white/70 font-medium">
                 <span>Now</span>
                 <span>+6h</span>
                 <span>+12h</span>
@@ -668,7 +668,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         </div>
 
         {/* Footer info bar */}
-        <div className="wx-map-footer px-3 py-2 border-t flex flex-col sm:flex-row items-center justify-between text-[11px] gap-1.5 z-10">
+        <div className="wx-map-footer px-3 py-2 border-t flex flex-col sm:flex-row items-center justify-between text-xs gap-1.5 z-10">
           <div className="flex items-center gap-2">
             <Globe className="w-3.5 h-3.5 text-neutral-400" />
             <span>Map data © OpenStreetMap contributors</span>

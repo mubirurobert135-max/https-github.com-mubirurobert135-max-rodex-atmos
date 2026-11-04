@@ -2003,6 +2003,16 @@ Available Function Tools:
     }
   };
 
+  // Cancel pending chat synchronously before the modal is hidden, avoiding
+  // a response arriving between the click and the React effect cleanup.
+  const handleCloseAssistant = () => {
+    chatAbortControllerRef.current?.abort();
+    chatAbortControllerRef.current = null;
+    chatInFlightRef.current = false;
+    setIsChatLoading(false);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -2063,7 +2073,7 @@ Available Function Tools:
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleCloseAssistant}
               className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 transition"
               title="Close Assistant"
             >

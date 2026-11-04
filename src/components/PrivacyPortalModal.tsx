@@ -301,7 +301,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <div className="min-w-0">
                     <div className="text-sm font-bold text-white truncate">{user?.displayName || userProfile?.displayName || 'RODEX User'}</div>
                     <div className="text-xs text-white/60 break-all">{user?.email || user?.phoneNumber || 'Guest Session'}</div>
-                    <div className="text-[10px] text-neutral-200/75 mt-0.5">
+                    <div className="text-xs text-neutral-200/75 mt-0.5">
                       {user?.providerData.some((provider) => provider.providerId === 'google.com') ? 'Synced from your Google account' : 'RODEX account profile'}
                     </div>
                   </div>
@@ -309,44 +309,44 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Authenticated Identity</span>
+                    <span className="text-white/70 block font-semibold">Authenticated Identity</span>
                     <span className="font-bold text-white break-all">{user ? user.email || user.phoneNumber || user.uid : 'Guest Session'}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Account Status</span>
+                    <span className="text-white/70 block font-semibold">Account Status</span>
                     <span className={`inline-block px-2 py-0.5 rounded-full font-bold uppercase ${isVerified ? 'bg-neutral-500/20 text-neutral-300 border border-neutral-400/30' : 'bg-neutral-500/20 text-neutral-300 border border-neutral-400/30'}`}>
                       {isGuest ? 'Guest' : isVerified ? 'Verified Account' : 'Pending Verification'}
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Firebase UID</span>
+                    <span className="text-white/70 block font-semibold">Firebase UID</span>
                     <span className="font-mono text-neutral-300 break-all">{user?.uid || 'N/A (Guest)'}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Sign-In Providers</span>
+                    <span className="text-white/70 block font-semibold">Sign-In Providers</span>
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {user?.providerData && user.providerData.length > 0 ? (
                         user.providerData.map((p) => (
-                          <span key={p.providerId} className="px-2 py-0.5 rounded-lg bg-neutral-500/20 text-neutral-200 border border-neutral-400/30 text-[10px] font-semibold">
+                          <span key={p.providerId} className="px-2 py-0.5 rounded-lg bg-neutral-500/20 text-neutral-200 border border-neutral-400/30 text-xs font-semibold">
                             {p.providerId === 'google.com' ? 'Google' : p.providerId === 'password' ? 'Email/Password' : p.providerId === 'phone' ? 'Phone SMS' : p.providerId}
                           </span>
                         ))
                       ) : (
-                        <span className="text-white/40">None (Guest)</span>
+                        <span className="text-white/75">None (Guest)</span>
                       )}
                     </div>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Account Creation Date</span>
+                    <span className="text-white/70 block font-semibold">Account Creation Date</span>
                     <span className="text-white/80">{userProfile?.createdAt ? new Date(userProfile.createdAt).toLocaleDateString() : user?.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString() : 'Session duration only'}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
-                    <span className="text-white/50 block font-semibold">Last Sign-In</span>
+                    <span className="text-white/70 block font-semibold">Last Sign-In</span>
                     <span className="text-white/80">{user?.metadata.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleString() : 'Active session'}</span>
                   </div>
                 </div>
@@ -366,7 +366,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       <label className="text-xs font-semibold text-neutral-200 block">Display Name</label>
                       <span className="text-sm font-bold text-white">{userProfile?.displayName || user?.displayName || 'Not specified'}</span>
                       {user?.providerData.some((provider) => provider.providerId === 'google.com') && (
-                        <span className="block text-[10px] text-neutral-300 mt-0.5">Synced from your Google account</span>
+                        <span className="block text-xs text-neutral-300 mt-0.5">Synced from your Google account</span>
                       )}
                     </div>
 
@@ -417,22 +417,22 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-bold text-white">Profile picture</div>
-                      <div className="text-[11px] text-white/55 break-all">{user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL ? 'Using the profile photo supplied by your sign-in provider.' : 'Connect Google to use your Google account profile picture in RODEX.'}</div>
+                      <div className="text-xs text-white/55 break-all">{user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL ? 'Using the profile photo supplied by your sign-in provider.' : 'Connect Google to use your Google account profile picture in RODEX.'}</div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
                     <div className="space-y-1">
-                      <span className="text-white/50 block font-semibold">Registered Email</span>
+                      <span className="text-white/70 block font-semibold">Registered Email</span>
                       <span className="text-white font-mono break-all">{user?.email || 'None'}</span>
                     </div>
                     <div className="space-y-1">
-                      <span className="text-white/50 block font-semibold">Registered Phone</span>
+                      <span className="text-white/70 block font-semibold">Registered Phone</span>
                       <span className="text-white font-mono">{user?.phoneNumber || userProfile?.phoneNumber || 'None'}</span>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-black/20 border border-white/10 text-[11px] text-white/60 leading-relaxed">
+                  <div className="p-3 rounded-xl bg-black/20 border border-white/10 text-xs text-white/60 leading-relaxed">
                     <strong>Data Integrity Disclosure:</strong> RODEX Atmos stores basic account profile details (`uid`, `displayName`, `photoURL`, `email`, `phoneNumber`, `createdAt`) and the preferences you choose in Firestore. Passwords, secret keys, or authentication tokens are managed securely by Firebase Auth and are never exposed or saved to Firestore.
                   </div>
                 </div>

@@ -202,23 +202,32 @@ export default function App() {
         try {
           // Run place-name resolution and the weather request together to avoid adding latency.
           const placePromise = resolveCurrentDevicePlace(latitude, longitude);
-          const weatherPromise = fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
-          const [place, res] = await Promise.all([placePromise, weatherPromise]);
+          // Show weather as soon as the weather API responds. A slow third-party
+          // reverse-geocoder must never hold the forecast screen hostage.
+          const res = await fetch(`/api/weather/coordinates?lat=${latitude}&lon=${longitude}&name=My%20Location`);
           if (requestId !== weatherRequestIdRef.current) return;
           if (res.ok) {
             const data: WeatherData = await res.json();
-            if (place) {
-              data.location = {
-                ...data.location,
-                name: place.name,
-                country: place.country || data.location.country,
-                admin1: place.admin1 || data.location.admin1
-              };
-            }
+            if (requestId !== weatherRequestIdRef.current) return;
             setWeatherData(data);
             setDeviceLocationData(data);
             setLocationMode('gps');
             setLocationNotice(null);
+
+            void placePromise.then((place) => {
+              if (!place || requestId !== weatherRequestIdRef.current) return;
+              const namedData: WeatherData = {
+                ...data,
+                location: {
+                  ...data.location,
+                  name: place.name,
+                  country: place.country || data.location.country,
+                  admin1: place.admin1 || data.location.admin1
+                }
+              };
+              setWeatherData(namedData);
+              setDeviceLocationData(namedData);
+            });
           } else {
             await tryNetworkIpLocation('Unable to resolve GPS coordinates.');
           }
@@ -470,9 +479,9 @@ export default function App() {
               To view live weather forecasts, please configure a server-side API key in your environment secrets.
             </p>
             <div className="bg-black/30 rounded-2xl p-4 max-w-md mx-auto text-left text-xs font-mono text-neutral-200 space-y-1 border border-white/10">
-              <div className="text-neutral-300 font-bold mb-1">Required Server Secret:</div>
+              <div className="text-neutral-300 font-bold mb-1">Optional additional weather provider:</div>
               <div>WEATHERAPI_KEY="your_api_key_here"</div>
-              <div className="text-white/50 text-[10px] mt-2">Get a free key at https://www.weatherapi.com/</div>
+              <div className="text-white/70 text-[10px] mt-2">Open-Meteo also works without a key. Check backend connectivity before adding a provider.</div>
             </div>
             <button
               onClick={() => handleSearch('Kampala')}

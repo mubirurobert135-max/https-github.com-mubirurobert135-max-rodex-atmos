@@ -119,3 +119,11 @@ test('converts an eight-hour wardrobe window to three samples for a 3-hour provi
   const probabilities = [5, 10, 25, 95, 20, 10, 0, 0, 0, 0, 0, 0];
   assert.equal(getMaxUpcomingPrecipitationProbability(times, probabilities, '2026-10-31T00:20', 3, 8), 25);
 });
+
+test('regional timezone overrides stale fixed offset during daylight saving', () => {
+  const summer = new Date('2026-07-01T12:00:00.000Z');
+  assert.equal(formatLocationLocalTime(summer, 'America/New_York', -18000), '8:00 AM');
+  assert.equal(formatLocationLocalTime(summer, 'UTC', -18000), '7:00 AM');
+  assert.equal(isWithinLocalSolarWindow('08:00', '20:00', 'America/New_York', -18000, 40, summer), true);
+  assert.equal(isWithinLocalSolarWindow('08:00', '20:00', 'UTC', -18000, 40, summer), false);
+});

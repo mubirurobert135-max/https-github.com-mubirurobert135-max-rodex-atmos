@@ -1,7 +1,19 @@
 const repository = process.env.GITHUB_REPOSITORY || '';
 const pullRequestNumber = process.env.PR_NUMBER || '';
+// Optional: a Vercel Automation Bypass secret configured in GitHub Actions.
+const previewBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '';
 if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('GITHUB_REPOSITORY is missing or invalid.');
 if (!/^\d+$/.test(pullRequestNumber)) throw new Error('PR_NUMBER is missing or invalid.');
+
+// This repository intentionally protects all Vercel preview deployments with
+// Vercel Authentication. Anonymous GitHub runners cannot perform HTTP checks.
+// Never weaken deployment security for CI: emit an explicit skipped check until
+// an optional, restricted automation bypass secret is configured.
+if (process.env.VERCEL_PREVIEW_PROTECTED === 'true' && !previewBypassSecret) {
+  console.warn('::warning::SKIP live preview probes: Vercel Authentication is enabled and no automation bypass secret is configured. Local tests remain required.');
+  console.log('SKIP protected preview. To enable full live checks, configure VERCEL_AUTOMATION_BYPASS_SECRET in repository Actions secrets.');
+  process.exit(0);
+}
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const headers = {
@@ -10,10 +22,16 @@ const headers = {
 };
 
 async function get(url, timeoutMs = 10000) {
+  const parsedUrl = new URL(url);
+  // Never send a Vercel bypass secret to GitHub or unrelated domains.
+  const isVercelPreview = parsedUrl.protocol === 'https:' && parsedUrl.hostname.endsWith('.vercel.app');
+  const requestHeaders = isVercelPreview && previewBypassSecret
+    ? { ...headers, 'x-vercel-protection-bypass': previewBypassSecret }
+    : headers;
   const response = await fetch(url, {
     redirect: 'follow',
     cache: 'no-store',
-    headers,
+    headers: requestHeaders,
     signal: AbortSignal.timeout(timeoutMs)
   });
   return { response, body: await response.text() };
@@ -36,7 +54,25 @@ async function latestVercelPreviewUrl() {
 }
 
 async function assertPreview(baseUrl) {
+  const preview = new URL(baseUrl);
+  if (preview.protocol !== 'https:' || !preview.hostname.endsWith('.vercel.app')) {
+    throw new Error('Vercel returned an unrecognized preview hostname.');
+  }
   const { response: pageResponse, body: html } = await get(baseUrl);
+  const isProtected = [401, 403].includes(pageResponse.status) ||
+    /(?:Authentication Required|Vercel Authentication|Deployment Protection|This deployment is protected|Sign in to Vercel|auth[.]vercel[.]com|vercel[.]com[/]sso)/i.test(html);
+  if (isProtected && (!html.includes('id="root"') || !html.includes('RODEX Atmos'))) {
+    if (previewBypassSecret) {
+      throw new Error('Preview is still protected despite configured automation bypass. Check the preview secret.');
+    }
+    // Vercel Authentication is intentionally enabled for this project.
+    // Never disable protection just to pass CI. Local API/voice/browser and
+    // Node production checks run separately, and Vercel owner can verify
+    // the live preview using authenticated access.
+    console.warn('::warning::SKIP protected Vercel preview: configure VERCEL_AUTOMATION_BYPASS_SECRET in GitHub Actions to enable unauthenticated CI verification.');
+    console.log('SKIP live preview HTTP probes: Vercel Authentication blocks anonymous GitHub runners.');
+    return;
+  }
   if (!pageResponse.ok) throw new Error(`Preview root returned HTTP ${pageResponse.status}.`);
   if (!html.includes('id="root"') || !html.includes('RODEX Atmos')) {
     throw new Error('Preview root does not contain the RODEX Atmos application shell.');

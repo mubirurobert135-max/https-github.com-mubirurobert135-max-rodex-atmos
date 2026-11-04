@@ -41,7 +41,7 @@ export interface FirestoreErrorInfo {
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
+    error: 'Operation failed',
     authInfo: {
       userId: auth.currentUser?.uid,
       email: auth.currentUser?.email,
@@ -56,7 +56,12 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
     operationType,
     path
   };
-  console.error('[RODEX Firestore Error Diagnostic]', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
+  // Firebase error details can contain a user's email, UID or provider identity.
+  // Keep those out of client-facing error strings and production diagnostics.
+  console.error('[RODEX Firestore Error Diagnostic]', {
+    operationType,
+    code: error && typeof error === 'object' && 'code' in error ? String(error.code) : 'unknown'
+  });
+  throw new Error('Your account data request could not be completed. Check your connection and retry.');
 }
 

@@ -423,7 +423,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <h2 className="text-base sm:text-lg font-black tracking-wide text-white">
                 RODEX <span className="text-neutral-300 font-light">Account Portal</span>
               </h2>
-              <p className="text-[11px] sm:text-xs text-neutral-200/70 font-medium">
+              <p className="text-xs sm:text-xs text-neutral-200/70 font-medium">
                 Phase One — Secure Auth & Verification
               </p>
             </div>
@@ -437,7 +437,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Selection */}
-        <div className="grid grid-cols-4 p-1.5 sm:p-2 gap-1 bg-white/5 border-b border-white/10 text-[11px] sm:text-xs font-semibold text-center shrink-0">
+        <div className="grid grid-cols-4 p-1.5 sm:p-2 gap-1 bg-white/5 border-b border-white/10 text-xs sm:text-xs font-semibold text-center shrink-0">
           <button
             onClick={() => { setActiveTab('signin'); setErrorMessage(null); setSuccessMessage(null); }}
             className={`py-2 px-1 rounded-xl transition ${activeTab === 'signin' ? 'bg-neutral-500 text-white font-bold shadow' : 'text-white/60 hover:text-white'}`}
@@ -514,7 +514,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     {user.email || user.phoneNumber || 'Signed in'}
                   </div>
                   {user.providerData.some((provider) => provider.providerId === 'google.com') && (
-                    <div className="mt-1 text-[10px] font-semibold text-neutral-300">Google profile connected</div>
+                    <div className="mt-1 text-xs font-semibold text-neutral-300">Google profile connected</div>
                   )}
                 </div>
               </div>
@@ -555,7 +555,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   Link the Google provider explicitly to securely sync the exact account photo. */}
               {user && !user.providerData?.some((p) => p.providerId === 'google.com') && (
                 <div className="pt-2 border-t border-white/10 space-y-2">
-                  <p className="text-[11px] text-white/60 leading-relaxed">
+                  <p className="text-xs text-white/60 leading-relaxed">
                     To use your exact Google profile picture in RODEX, connect the Google account for this email. Gmail/password sign-in alone does not share your Google profile photo.
                   </p>
                   <button
@@ -632,7 +632,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="relative flex items-center justify-center">
                 <div className="border-t border-white/10 w-full"></div>
-                <span className="bg-neutral-900 px-3 text-[11px] font-semibold text-white/50 uppercase tracking-wider absolute">or email</span>
+                <span className="bg-neutral-900 px-3 text-xs font-semibold text-white/70 uppercase tracking-wider absolute">or email</span>
               </div>
 
               <form onSubmit={handleEmailSignIn} className="space-y-4">
@@ -658,7 +658,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <button
                       type="button"
                       onClick={handleForgotPassword}
-                      className="text-[11px] text-neutral-400 hover:underline"
+                      className="text-xs text-neutral-400 hover:underline"
                     >
                       Forgot Password?
                     </button>
@@ -675,7 +675,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-white/50 hover:text-white"
+                      className="absolute right-3 top-2.5 text-white/70 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -727,7 +727,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
               <div className="relative flex items-center justify-center">
                 <div className="border-t border-white/10 w-full"></div>
-                <span className="bg-neutral-900 px-3 text-[11px] font-semibold text-white/50 uppercase tracking-wider absolute">or register email</span>
+                <span className="bg-neutral-900 px-3 text-xs font-semibold text-white/70 uppercase tracking-wider absolute">or register email</span>
               </div>
 
               <form onSubmit={handleEmailRegister} className="space-y-4">
@@ -761,7 +761,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-2.5 text-white/50 hover:text-white"
+                      className="absolute right-3 top-2.5 text-white/70 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -782,7 +782,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                   />
                 </div>
 
-                <div className="text-[11px] text-white/60 bg-black/20 p-2.5 rounded-xl border border-white/10 space-y-1">
+                <div className="text-xs text-white/60 bg-black/20 p-2.5 rounded-xl border border-white/10 space-y-1">
                   <div className="font-semibold text-neutral-300">Verification Policy:</div>
                   <div>A verification link will be sent to your email. Verifying either email or phone completes account verification.</div>
                 </div>
@@ -930,7 +930,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           )}
 
           {/* Privacy Notice Notice */}
-          <div className="pt-4 border-t border-white/10 text-[11px] text-white/50 text-center leading-relaxed">
+          <div className="pt-4 border-t border-white/10 text-xs text-white/70 text-center leading-relaxed">
             RODEX Atmos respects your privacy. Account registration is optional. Email or phone verification is used strictly to establish ownership of your contact method.
           </div>
 

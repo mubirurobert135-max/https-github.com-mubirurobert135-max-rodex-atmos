@@ -1959,7 +1959,7 @@ Available Function Tools:
                 <h3 className="text-base font-bold text-white tracking-wide">
                   RODEX AI Assistant
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-neutral-500/20 text-neutral-300 text-[10px] font-semibold uppercase tracking-wider border border-neutral-400/30">
+                <span className="px-2 py-0.5 rounded-full bg-neutral-500/20 text-neutral-300 text-xs font-semibold uppercase tracking-wider border border-neutral-400/30">
                   Live & Grounded
                 </span>
               </div>
@@ -2046,7 +2046,7 @@ Available Function Tools:
                     <p>{serverVoiceStatus.message || 'GEMINI_API_KEY is not configured in server secrets. Please add your key to server secrets to enable live voice conversation.'}</p>
                     <button
                       onClick={() => setActiveTab('chat')}
-                      className="mt-2 text-[11px] font-bold text-neutral-300 underline hover:text-white"
+                      className="mt-2 text-xs font-bold text-neutral-300 underline hover:text-white"
                     >
                       Use Text Chat instead →
                     </button>
@@ -2063,7 +2063,7 @@ Available Function Tools:
                     <p>{audioSupport.reason || 'Audio capture is not supported in this browser context.'}</p>
                     <button
                       onClick={() => setActiveTab('chat')}
-                      className="mt-2 text-[11px] font-bold text-neutral-300 underline hover:text-white"
+                      className="mt-2 text-xs font-bold text-neutral-300 underline hover:text-white"
                     >
                       Use Text Chat instead →
                     </button>
@@ -2120,7 +2120,7 @@ Available Function Tools:
                   ) : (
                     <Mic className="w-10 h-10" />
                   )}
-                  <span className="text-[11px] font-bold mt-1 tracking-wide">
+                  <span className="text-xs font-bold mt-1 tracking-wide">
                     {voiceState === 'requesting_permission'
                       ? 'Prompting...'
                       : voiceState === 'connecting'
@@ -2131,7 +2131,7 @@ Available Function Tools:
                   </span>
                 </button>
 
-                <p className="text-[11px] text-white/50 mt-3 max-w-xs">
+                <p className="text-xs text-white/70 mt-3 max-w-xs">
                   {voiceState === 'requesting_permission'
                     ? 'Please allow microphone access in your browser prompt'
                     : voiceState === 'connecting'
@@ -2173,12 +2173,12 @@ Available Function Tools:
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
-                      <span className="text-[11px] font-bold text-white tracking-wide">RODEX Atmos Signature</span>
-                      <span className="px-1.5 py-0.5 rounded bg-neutral-400/20 text-neutral-300 text-[9px] font-semibold border border-neutral-400/30">
+                      <span className="text-xs font-bold text-white tracking-wide">RODEX Atmos Signature</span>
+                      <span className="px-1.5 py-0.5 rounded bg-neutral-400/20 text-neutral-300 text-xs font-semibold border border-neutral-400/30">
                         Original Voice
                       </span>
                     </div>
-                    <p className="text-[10px] text-neutral-200/70 leading-tight">
+                    <p className="text-xs text-neutral-200/70 leading-tight">
                       Warm, confident feminine voice • Gemini TTS Engine
                     </p>
                   </div>
@@ -2187,7 +2187,7 @@ Available Function Tools:
                 <button
                   type="button"
                   onClick={handleAuditionSignatureVoice}
-                  className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
                     isAuditioning
                       ? 'bg-neutral-500 text-white shadow-neutral-500/30 animate-pulse'
                       : 'bg-white/10 hover:bg-white/20 text-neutral-200 hover:text-white border border-white/15'
@@ -2201,22 +2201,22 @@ Available Function Tools:
 
               {/* Real-Time Live Transcripts & Spoken Captions */}
               <div aria-live="polite" aria-relevant="additions text" className="w-full max-w-lg bg-neutral-950/70 border border-neutral-300/20 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
-                <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider flex items-center justify-between">
+                <div className="text-xs uppercase font-bold text-neutral-400 tracking-wider flex items-center justify-between">
                   <span>Live Spoken Conversation</span>
                   {voiceState === 'speaking' && (
-                    <span className="text-[9px] text-neutral-300 font-medium animate-pulse flex items-center gap-1">
+                    <span className="text-xs text-neutral-300 font-medium animate-pulse flex items-center gap-1">
                       <Volume2 className="w-3 h-3" /> Atmos is speaking
                     </span>
                   )}
                   {voiceState === 'listening' && (
-                    <span className="text-[9px] text-neutral-400 font-medium flex items-center gap-1">
+                    <span className="text-xs text-neutral-400 font-medium flex items-center gap-1">
                       <Mic className="w-3 h-3 animate-pulse" /> Microphone active
                     </span>
                   )}
                 </div>
 
                 {liveTranscripts.length === 0 && !currentAssistantSpoken && !interimUserSpeech && (
-                  <p className="text-white/40 italic my-auto text-center leading-relaxed">
+                  <p className="text-white/75 italic my-auto text-center leading-relaxed">
                     Click <strong className="text-white/70">"Start Voice"</strong> to talk with RODEX Atmos.<br />
                     Ask: <em>"What's the weather in Kampala?"</em>, <em>"Is it raining in Tokyo?"</em>, or <em>"What should I wear?"</em>
                   </p>
@@ -2284,7 +2284,7 @@ Available Function Tools:
                   </button>
                 </div>
               )}
-              <p className="mt-2 max-w-md text-center text-[11px] leading-relaxed text-neutral-300/85">
+              <p className="mt-2 max-w-md text-center text-xs leading-relaxed text-neutral-300/85">
                 Speak naturally, even while Atmos is answering, to interrupt. Use Mute Mic whenever you need privacy.
               </p>
             </div>
@@ -2316,7 +2316,7 @@ Available Function Tools:
                           <button
                             type="button"
                             onClick={() => handleSpeakChatMessage(m.content)}
-                            className="text-[11px] text-neutral-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer font-medium"
+                            className="text-xs text-neutral-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer font-medium"
                             title="Listen with RODEX Atmos Signature Voice"
                           >
                             <Volume2 className="w-3.5 h-3.5 text-neutral-400" />
@@ -2344,7 +2344,7 @@ Available Function Tools:
                         </div>
                       )}
                     </div>
-                    <span className="text-[10px] text-white/40 mt-1 px-1">
+                    <span className="text-xs text-white/75 mt-1 px-1">
                       {m.timestamp}
                     </span>
                   </div>
@@ -2362,7 +2362,7 @@ Available Function Tools:
               {/* In-App Interactive Action Triggers */}
               {onExecuteAction && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-xs border-b border-white/10 mb-2">
-                  <span className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider shrink-0 self-center mr-1">
+                  <span className="text-xs font-bold text-neutral-300 uppercase tracking-wider shrink-0 self-center mr-1">
                     In-App Actions:
                   </span>
                   <button
@@ -2440,7 +2440,7 @@ Available Function Tools:
                   onChange={(e) => setInputQuery(e.target.value)}
                   placeholder={`Ask anything about ${weatherData?.location.name || 'weather'}...`}
                   disabled={isChatLoading}
-                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-neutral-400/50 backdrop-blur-md transition disabled:opacity-50 min-h-[44px]"
+                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/70 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-neutral-400/50 backdrop-blur-md transition disabled:opacity-50 min-h-[44px]"
                   aria-label="Ask assistant message"
                 />
                 <button
@@ -2460,7 +2460,7 @@ Available Function Tools:
         </div>
 
         {/* Modal Footer Note */}
-        <div className="px-4 sm:px-6 py-2.5 border-t border-white/10 bg-black/40 hidden sm:flex items-center justify-between text-[11px] text-white/50 shrink-0">
+        <div className="px-4 sm:px-6 py-2.5 border-t border-white/10 bg-black/40 hidden sm:flex items-center justify-between text-xs text-white/70 shrink-0">
           <span>Grounded in live atmospheric data from Open-Meteo & WeatherAPI</span>
           <span>RODEX Atmos Signature Voice</span>
         </div>

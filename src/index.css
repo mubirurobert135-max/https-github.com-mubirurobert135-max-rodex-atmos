@@ -7651,3 +7651,17 @@ body {
     grid-auto-columns: minmax(76px, 1fr);
   }
 }
+
+/* 1024–1100px has desktop tabs but a two-column tablet header.
+   Give the desktop navigation an explicit full-width row. */
+@media (min-width: 1024px) and (max-width: 1100px) {
+  .rodex-monochrome-theme .rodex-header-layout {
+    grid-template-areas: "brand controls" "search shortcuts" "nav nav" !important;
+  }
+  .rodex-monochrome-theme .rodex-header-primary-nav {
+    grid-area: nav;
+    justify-self: center;
+    width: fit-content;
+    max-width: 100%;
+  }
+}

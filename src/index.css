@@ -7762,3 +7762,10 @@ html, body, #root { background-color: #090909; }
 @media (prefers-reduced-motion: reduce) {
   .rodex-monochrome-theme { scroll-behavior: auto; }
 }
+
+/* At desktop navigation breakpoint, use one navigation system, not two. */
+@media (min-width: 1024px) {
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+    display: none !important;
+  }
+}

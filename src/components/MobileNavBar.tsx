@@ -107,7 +107,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           <div className="relative">
             <Bell className="w-5 h-5" />
             {activeAlertsCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-rose-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-1 bg-neutral-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center animate-pulse">
                 {activeAlertsCount}
               </span>
             )}
@@ -135,8 +135,8 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
             )}
             {user && (
               <span
-                className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-slate-950 ${
-                  isVerified ? 'bg-emerald-400' : 'bg-amber-400'
+                className={`absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full border border-neutral-950 ${
+                  isVerified ? 'bg-neutral-400' : 'bg-neutral-400'
                 }`}
               />
             )}

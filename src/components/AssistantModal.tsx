@@ -1944,14 +1944,14 @@ Available Function Tools:
       role="dialog"
       aria-modal="true"
       aria-labelledby="assistant-modal-title"
-      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-slate-950/80 backdrop-blur-2xl animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 md:p-6 bg-neutral-950/80 backdrop-blur-2xl animate-fade-in"
     >
-      <div className="w-full max-w-2xl bg-[#081224]/95 border-0 sm:border border-sky-400/30 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[750px] relative transition-all">
+      <div className="w-full max-w-2xl bg-[#111111]/95 border-0 sm:border border-neutral-400/30 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[100dvh] sm:h-[85vh] sm:max-h-[750px] relative transition-all">
         
         {/* Modal Header */}
         <div className="px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 bg-white/5 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center shadow-md shadow-sky-500/30 text-white">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-neutral-400 to-neutral-500 flex items-center justify-center shadow-md shadow-neutral-500/30 text-white">
               <Sparkles className="w-5 h-5 animate-pulse" />
             </div>
             <div>
@@ -1959,11 +1959,11 @@ Available Function Tools:
                 <h3 className="text-base font-bold text-white tracking-wide">
                   RODEX AI Assistant
                 </h3>
-                <span className="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 text-[10px] font-semibold uppercase tracking-wider border border-sky-400/30">
+                <span className="px-2 py-0.5 rounded-full bg-neutral-500/20 text-neutral-300 text-[10px] font-semibold uppercase tracking-wider border border-neutral-400/30">
                   Live & Grounded
                 </span>
               </div>
-              <p className="text-xs text-sky-200/70">
+              <p className="text-xs text-neutral-200/70">
                 Atmospheric intelligence for <span className="text-white font-medium">{weatherData?.location.name || 'Selected City'}</span>
               </p>
             </div>
@@ -1976,7 +1976,7 @@ Available Function Tools:
                 onClick={() => setActiveTab('voice')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === 'voice'
-                    ? 'bg-sky-500 text-white shadow'
+                    ? 'bg-neutral-500 text-white shadow'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
@@ -1987,7 +1987,7 @@ Available Function Tools:
                 onClick={() => setActiveTab('chat')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
                   activeTab === 'chat'
-                    ? 'bg-sky-500 text-white shadow'
+                    ? 'bg-neutral-500 text-white shadow'
                     : 'text-white/70 hover:text-white'
                 }`}
               >
@@ -2014,16 +2014,16 @@ Available Function Tools:
             <div className="flex-1 flex flex-col justify-between items-center text-center py-4">
               
               {/* Voice State Badge */}
-              <div role="status" aria-live="polite" className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-950/70 border border-violet-300/25 backdrop-blur-md">
+              <div role="status" aria-live="polite" className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-neutral-950/70 border border-neutral-300/25 backdrop-blur-md">
                 <span className={`w-2.5 h-2.5 rounded-full ${
-                  voiceState === 'listening' ? 'bg-emerald-400 animate-ping' :
-                  voiceState === 'speaking' ? 'bg-sky-400 animate-pulse' :
-                  voiceState === 'thinking' ? 'bg-amber-400 animate-spin' :
-                  voiceState === 'connecting' ? 'bg-indigo-400 animate-pulse' :
-                  voiceState === 'requesting_permission' ? 'bg-amber-400 animate-pulse' :
-                  voiceState === 'ended' ? 'bg-slate-400' :
-                  voiceState === 'error' ? 'bg-rose-400' :
-                  'bg-sky-400'
+                  voiceState === 'listening' ? 'bg-neutral-400 animate-ping' :
+                  voiceState === 'speaking' ? 'bg-neutral-400 animate-pulse' :
+                  voiceState === 'thinking' ? 'bg-neutral-400 animate-spin' :
+                  voiceState === 'connecting' ? 'bg-neutral-400 animate-pulse' :
+                  voiceState === 'requesting_permission' ? 'bg-neutral-400 animate-pulse' :
+                  voiceState === 'ended' ? 'bg-neutral-400' :
+                  voiceState === 'error' ? 'bg-neutral-400' :
+                  'bg-neutral-400'
                 }`} />
                 <span className="text-xs font-medium text-white capitalize">
                   {voiceState === 'requesting_permission' && 'Requesting microphone permission...'}
@@ -2039,14 +2039,14 @@ Available Function Tools:
 
               {/* Server Setup Notice if GEMINI_API_KEY is not configured on server */}
               {serverVoiceStatus.checked && !serverVoiceStatus.supported && (
-                <div className="w-full max-w-md p-3.5 mt-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs text-left flex items-start gap-2.5 animate-fade-in">
-                  <AlertCircle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                <div className="w-full max-w-md p-3.5 mt-3 rounded-2xl bg-neutral-500/20 border border-neutral-500/40 text-neutral-200 text-xs text-left flex items-start gap-2.5 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-semibold text-white mb-0.5">GEMINI_API_KEY Setup Needed</p>
                     <p>{serverVoiceStatus.message || 'GEMINI_API_KEY is not configured in server secrets. Please add your key to server secrets to enable live voice conversation.'}</p>
                     <button
                       onClick={() => setActiveTab('chat')}
-                      className="mt-2 text-[11px] font-bold text-amber-300 underline hover:text-white"
+                      className="mt-2 text-[11px] font-bold text-neutral-300 underline hover:text-white"
                     >
                       Use Text Chat instead →
                     </button>
@@ -2056,14 +2056,14 @@ Available Function Tools:
 
               {/* Browser Audio Support Notice if Web Audio or MediaDevices is unavailable */}
               {audioSupport.checked && !audioSupport.supported && (
-                <div className="w-full max-w-md p-3.5 mt-3 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-200 text-xs text-left flex items-start gap-2.5 animate-fade-in">
-                  <AlertCircle className="w-4 h-4 text-amber-300 shrink-0 mt-0.5" />
+                <div className="w-full max-w-md p-3.5 mt-3 rounded-2xl bg-neutral-500/20 border border-neutral-500/40 text-neutral-200 text-xs text-left flex items-start gap-2.5 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-semibold text-white mb-0.5">Browser Audio Notice</p>
                     <p>{audioSupport.reason || 'Audio capture is not supported in this browser context.'}</p>
                     <button
                       onClick={() => setActiveTab('chat')}
-                      className="mt-2 text-[11px] font-bold text-amber-300 underline hover:text-white"
+                      className="mt-2 text-[11px] font-bold text-neutral-300 underline hover:text-white"
                     >
                       Use Text Chat instead →
                     </button>
@@ -2076,14 +2076,14 @@ Available Function Tools:
                 {/* Ambient glowing wave ripples */}
                 {voiceState === 'listening' && (
                   <>
-                    <div className="absolute w-44 h-44 rounded-full bg-emerald-500/20 animate-ping duration-1000" />
-                    <div className="absolute w-36 h-36 rounded-full bg-sky-500/20 animate-pulse duration-700" />
+                    <div className="absolute w-44 h-44 rounded-full bg-neutral-500/20 animate-ping duration-1000" />
+                    <div className="absolute w-36 h-36 rounded-full bg-neutral-500/20 animate-pulse duration-700" />
                   </>
                 )}
                 {voiceState === 'speaking' && (
                   <>
-                    <div className="absolute w-48 h-48 rounded-full bg-sky-400/25 animate-pulse duration-500" />
-                    <div className="absolute w-40 h-40 rounded-full bg-indigo-500/30 animate-ping duration-1000" />
+                    <div className="absolute w-48 h-48 rounded-full bg-neutral-400/25 animate-pulse duration-500" />
+                    <div className="absolute w-40 h-40 rounded-full bg-neutral-500/30 animate-ping duration-1000" />
                   </>
                 )}
 
@@ -2094,18 +2094,18 @@ Available Function Tools:
                    aria-label={voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended' ? 'Start Atmos voice conversation' : 'End Atmos voice conversation'}
                   className={`w-28 h-28 rounded-full flex flex-col items-center justify-center shadow-2xl transition-all duration-300 z-10 ${
                     voiceState === 'listening'
-                      ? 'bg-gradient-to-tr from-violet-500 to-indigo-600 text-white shadow-violet-500/45 scale-105 ring-4 ring-violet-300/45'
+                      ? 'bg-gradient-to-tr from-neutral-500 to-neutral-600 text-white shadow-neutral-500/45 scale-105 ring-4 ring-neutral-300/45'
                       : voiceState === 'speaking'
-                      ? 'bg-gradient-to-tr from-indigo-500 to-blue-600 text-white shadow-indigo-500/45 scale-105 ring-4 ring-indigo-300/45'
+                      ? 'bg-gradient-to-tr from-neutral-500 to-neutral-600 text-white shadow-neutral-500/45 scale-105 ring-4 ring-neutral-300/45'
                       : voiceState === 'thinking'
-                      ? 'bg-gradient-to-tr from-amber-500 to-orange-500 text-white shadow-amber-500/50 scale-95'
+                      ? 'bg-gradient-to-tr from-neutral-500 to-neutral-500 text-white shadow-neutral-500/50 scale-95'
                       : voiceState === 'connecting'
-                      ? 'bg-slate-700 text-slate-300 animate-pulse'
+                      ? 'bg-neutral-700 text-neutral-300 animate-pulse'
                       : voiceState === 'requesting_permission'
-                      ? 'bg-amber-600/80 text-amber-100 animate-pulse ring-4 ring-amber-400/40'
+                      ? 'bg-neutral-600/80 text-neutral-100 animate-pulse ring-4 ring-neutral-400/40'
                       : voiceState === 'ended'
-                      ? 'bg-slate-700 hover:bg-slate-600 text-white shadow-slate-700/40 hover:scale-105 cursor-pointer ring-2 ring-white/20'
-                      : 'bg-gradient-to-tr from-violet-600 via-indigo-600 to-blue-600 hover:from-violet-500 hover:to-indigo-500 text-white shadow-violet-500/35 hover:scale-105 cursor-pointer'
+                      ? 'bg-neutral-700 hover:bg-neutral-600 text-white shadow-neutral-700/40 hover:scale-105 cursor-pointer ring-2 ring-white/20'
+                      : 'bg-gradient-to-tr from-neutral-600 via-neutral-600 to-neutral-600 hover:from-neutral-500 hover:to-neutral-500 text-white shadow-neutral-500/35 hover:scale-105 cursor-pointer'
                   }`}
                   title={
                     voiceState === 'idle' || voiceState === 'error' || voiceState === 'ended'
@@ -2148,15 +2148,15 @@ Available Function Tools:
 
               {/* Error Message if all voice paths fail or microphone permission is denied */}
               {voiceError && (
-                <div className="w-full max-w-md p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/30 text-rose-200 text-xs text-left flex items-start gap-2.5 mb-3 animate-fade-in">
-                  <AlertCircle className="w-4 h-4 text-rose-300 shrink-0 mt-0.5" />
+                <div className="w-full max-w-md p-3.5 rounded-2xl bg-neutral-500/20 border border-neutral-500/30 text-neutral-200 text-xs text-left flex items-start gap-2.5 mb-3 animate-fade-in">
+                  <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0 mt-0.5" />
                   <div className="flex-1">
                     <p className="font-semibold mb-0.5 text-white">Voice Notice</p>
                     <p className="leading-relaxed">{voiceError}</p>
                     <div className="mt-2.5">
                       <button
                         onClick={handlePrimaryVoiceTap}
-                        className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white transition shadow cursor-pointer"
+                        className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-white transition shadow cursor-pointer"
                       >
                         Retry Voice
                       </button>
@@ -2166,19 +2166,19 @@ Available Function Tools:
               )}
 
               {/* RODEX Atmos Signature Voice Identity & Audition Pill */}
-              <div className="w-full max-w-lg mx-auto mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-purple-500/10 border border-sky-400/25 backdrop-blur-md flex items-center justify-between text-left">
+              <div className="w-full max-w-lg mx-auto mb-3 px-3.5 py-2.5 rounded-2xl bg-gradient-to-r from-neutral-500/10 via-neutral-500/10 to-neutral-500/10 border border-neutral-400/25 backdrop-blur-md flex items-center justify-between text-left">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-400 to-indigo-500 flex items-center justify-center text-white shadow-sm shrink-0">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-neutral-400 to-neutral-500 flex items-center justify-center text-white shadow-sm shrink-0">
                     <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
                     <div className="flex items-center gap-1.5">
                       <span className="text-[11px] font-bold text-white tracking-wide">RODEX Atmos Signature</span>
-                      <span className="px-1.5 py-0.5 rounded bg-sky-400/20 text-sky-300 text-[9px] font-semibold border border-sky-400/30">
+                      <span className="px-1.5 py-0.5 rounded bg-neutral-400/20 text-neutral-300 text-[9px] font-semibold border border-neutral-400/30">
                         Original Voice
                       </span>
                     </div>
-                    <p className="text-[10px] text-sky-200/70 leading-tight">
+                    <p className="text-[10px] text-neutral-200/70 leading-tight">
                       Warm, confident feminine voice • Gemini TTS Engine
                     </p>
                   </div>
@@ -2189,8 +2189,8 @@ Available Function Tools:
                   onClick={handleAuditionSignatureVoice}
                   className={`px-3 py-1.5 rounded-xl text-[10px] font-semibold transition flex items-center gap-1.5 cursor-pointer shrink-0 ${
                     isAuditioning
-                      ? 'bg-rose-500 text-white shadow-rose-500/30 animate-pulse'
-                      : 'bg-white/10 hover:bg-white/20 text-sky-200 hover:text-white border border-white/15'
+                      ? 'bg-neutral-500 text-white shadow-neutral-500/30 animate-pulse'
+                      : 'bg-white/10 hover:bg-white/20 text-neutral-200 hover:text-white border border-white/15'
                   }`}
                   title="Audition RODEX Atmos Signature Voice"
                 >
@@ -2200,16 +2200,16 @@ Available Function Tools:
               </div>
 
               {/* Real-Time Live Transcripts & Spoken Captions */}
-              <div aria-live="polite" aria-relevant="additions text" className="w-full max-w-lg bg-slate-950/70 border border-violet-300/20 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
-                <div className="text-[10px] uppercase font-bold text-sky-400 tracking-wider flex items-center justify-between">
+              <div aria-live="polite" aria-relevant="additions text" className="w-full max-w-lg bg-neutral-950/70 border border-neutral-300/20 rounded-2xl p-4 text-left flex flex-col h-44 overflow-y-auto text-xs space-y-2.5">
+                <div className="text-[10px] uppercase font-bold text-neutral-400 tracking-wider flex items-center justify-between">
                   <span>Live Spoken Conversation</span>
                   {voiceState === 'speaking' && (
-                    <span className="text-[9px] text-sky-300 font-medium animate-pulse flex items-center gap-1">
+                    <span className="text-[9px] text-neutral-300 font-medium animate-pulse flex items-center gap-1">
                       <Volume2 className="w-3 h-3" /> Atmos is speaking
                     </span>
                   )}
                   {voiceState === 'listening' && (
-                    <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-1">
+                    <span className="text-[9px] text-neutral-400 font-medium flex items-center gap-1">
                       <Mic className="w-3 h-3 animate-pulse" /> Microphone active
                     </span>
                   )}
@@ -2224,7 +2224,7 @@ Available Function Tools:
 
                 {liveTranscripts.map((t) => (
                   <div key={t.id} className="text-white/80 leading-relaxed">
-                    <strong className={t.sender === 'assistant' ? 'text-sky-300 font-semibold' : 'text-emerald-400 font-semibold'}>
+                    <strong className={t.sender === 'assistant' ? 'text-neutral-300 font-semibold' : 'text-neutral-400 font-semibold'}>
                       {t.sender === 'assistant' ? 'RODEX Atmos: ' : 'You: '}
                     </strong>
                     <span>{t.text}</span>
@@ -2233,24 +2233,24 @@ Available Function Tools:
 
                 {/* Real-time Interim User Speech */}
                 {interimUserSpeech && (
-                  <div className="text-amber-300/90 italic flex items-start gap-1.5 animate-pulse">
-                    <strong className="text-amber-400 font-semibold not-italic shrink-0">You (speaking): </strong>
+                  <div className="text-neutral-300/90 italic flex items-start gap-1.5 animate-pulse">
+                    <strong className="text-neutral-400 font-semibold not-italic shrink-0">You (speaking): </strong>
                     <span>"{interimUserSpeech}"</span>
                   </div>
                 )}
 
                 {/* Tool execution thinking indicator */}
                 {voiceState === 'thinking' && (
-                  <div className="text-indigo-300 italic flex items-center gap-2 py-0.5">
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400 shrink-0" />
+                  <div className="text-neutral-300 italic flex items-center gap-2 py-0.5">
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-neutral-400 shrink-0" />
                     <span>Retrieving verified weather forecast from router...</span>
                   </div>
                 )}
 
                 {/* Real-time Streaming Model Speech */}
                 {currentAssistantSpoken && (
-                  <div className="text-sky-200 animate-pulse leading-relaxed">
-                    <strong className="text-sky-400 font-semibold">RODEX Atmos: </strong>
+                  <div className="text-neutral-200 animate-pulse leading-relaxed">
+                    <strong className="text-neutral-400 font-semibold">RODEX Atmos: </strong>
                     <span>{currentAssistantSpoken}</span>
                   </div>
                 )}
@@ -2267,24 +2267,24 @@ Available Function Tools:
                      aria-pressed={isMuted}
                     className={`touch-target flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold border transition ${
                       isMuted
-                        ? 'bg-rose-500/20 border-rose-500/40 text-rose-100'
-                        : 'bg-violet-500/20 hover:bg-violet-500/30 border-violet-300/35 text-white'
+                        ? 'bg-neutral-500/20 border-neutral-500/40 text-neutral-100'
+                        : 'bg-neutral-500/20 hover:bg-neutral-500/30 border-neutral-300/35 text-white'
                     }`}
                   >
-                    {isMuted ? <MicOff className="w-4 h-4 text-rose-400" /> : <Mic className="w-4 h-4 text-sky-300" />}
+                    {isMuted ? <MicOff className="w-4 h-4 text-neutral-400" /> : <Mic className="w-4 h-4 text-neutral-300" />}
                     <span>{isMuted ? 'Muted' : 'Mute Mic'}</span>
                   </button>
 
                   <button
                     type="button"
                      onClick={() => stopVoiceSession('ended')}
-                    className="touch-target px-4 py-2 rounded-xl bg-white/10 hover:bg-rose-500/20 hover:border-rose-500/40 border border-white/20 text-white text-xs font-semibold transition"
+                    className="touch-target px-4 py-2 rounded-xl bg-white/10 hover:bg-neutral-500/20 hover:border-neutral-500/40 border border-white/20 text-white text-xs font-semibold transition"
                   >
                     End Voice
                   </button>
                 </div>
               )}
-              <p className="mt-2 max-w-md text-center text-[11px] leading-relaxed text-slate-300/85">
+              <p className="mt-2 max-w-md text-center text-[11px] leading-relaxed text-neutral-300/85">
                 Speak naturally, even while Atmos is answering, to interrupt. Use Mute Mic whenever you need privacy.
               </p>
             </div>
@@ -2304,7 +2304,7 @@ Available Function Tools:
                     <div
                       className={`max-w-[85%] rounded-2xl p-4 text-sm leading-relaxed ${
                         m.role === 'user'
-                          ? 'bg-sky-500 text-white rounded-br-none shadow-md'
+                          ? 'bg-neutral-500 text-white rounded-br-none shadow-md'
                           : 'bg-white/10 border border-white/15 text-white/95 rounded-bl-none shadow-md backdrop-blur-md'
                       }`}
                     >
@@ -2316,10 +2316,10 @@ Available Function Tools:
                           <button
                             type="button"
                             onClick={() => handleSpeakChatMessage(m.content)}
-                            className="text-[11px] text-sky-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer font-medium"
+                            className="text-[11px] text-neutral-300 hover:text-white flex items-center gap-1.5 transition cursor-pointer font-medium"
                             title="Listen with RODEX Atmos Signature Voice"
                           >
-                            <Volume2 className="w-3.5 h-3.5 text-sky-400" />
+                            <Volume2 className="w-3.5 h-3.5 text-neutral-400" />
                             <span>Listen with Atmos Signature Voice</span>
                           </button>
                         </div>
@@ -2328,7 +2328,7 @@ Available Function Tools:
                       {/* Attached City Update Button if tool was invoked */}
                       {m.cityUpdate && (
                         <div className="mt-3 pt-3 border-t border-white/15 flex items-center justify-between gap-3">
-                          <div className="text-xs text-sky-200">
+                          <div className="text-xs text-neutral-200">
                             Loaded <strong className="text-white">{m.cityUpdate.location.name}</strong> live weather
                           </div>
                           <button
@@ -2336,7 +2336,7 @@ Available Function Tools:
                               onSelectCityWeather(m.cityUpdate!);
                               onClose();
                             }}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-sky-500/30 hover:bg-sky-500 text-white text-xs font-semibold transition"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-neutral-500/30 hover:bg-neutral-500 text-white text-xs font-semibold transition"
                           >
                             <span>View on App</span>
                             <ArrowUpRight className="w-3.5 h-3.5" />
@@ -2351,8 +2351,8 @@ Available Function Tools:
                 ))}
 
                 {isChatLoading && (
-                  <div className="flex items-center gap-2 text-sky-300 text-xs py-2 px-3 rounded-xl bg-white/5 w-fit border border-white/10">
-                    <Loader2 className="w-4 h-4 animate-spin text-sky-400" />
+                  <div className="flex items-center gap-2 text-neutral-300 text-xs py-2 px-3 rounded-xl bg-white/5 w-fit border border-white/10">
+                    <Loader2 className="w-4 h-4 animate-spin text-neutral-400" />
                     <span>RODEX AI is analyzing atmospheric data...</span>
                   </div>
                 )}
@@ -2362,7 +2362,7 @@ Available Function Tools:
               {/* In-App Interactive Action Triggers */}
               {onExecuteAction && (
                 <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-none text-xs border-b border-white/10 mb-2">
-                  <span className="text-[10px] font-bold text-sky-300 uppercase tracking-wider shrink-0 self-center mr-1">
+                  <span className="text-[10px] font-bold text-neutral-300 uppercase tracking-wider shrink-0 self-center mr-1">
                     In-App Actions:
                   </span>
                   <button
@@ -2371,7 +2371,7 @@ Available Function Tools:
                       onExecuteAction('SWITCH_TAB', 'map');
                       onClose();
                     }}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-sky-500/20 hover:bg-sky-500 text-sky-200 hover:text-white border border-sky-400/30 transition flex items-center gap-1 font-semibold"
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-neutral-500/20 hover:bg-neutral-500 text-neutral-200 hover:text-white border border-neutral-400/30 transition flex items-center gap-1 font-semibold"
                   >
                     <span>🗺️ Switch to Weather Map</span>
                   </button>
@@ -2381,7 +2381,7 @@ Available Function Tools:
                       onExecuteAction('SET_MAP_LAYER', 'precipitation');
                       onClose();
                     }}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-blue-500/20 hover:bg-blue-500 text-blue-200 hover:text-white border border-blue-400/30 transition flex items-center gap-1 font-semibold"
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-neutral-500/20 hover:bg-neutral-500 text-neutral-200 hover:text-white border border-neutral-400/30 transition flex items-center gap-1 font-semibold"
                   >
                     <span>🌧️ Rain Layer</span>
                   </button>
@@ -2391,7 +2391,7 @@ Available Function Tools:
                       onExecuteAction('SET_MAP_LAYER', 'wind');
                       onClose();
                     }}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-teal-500/20 hover:bg-teal-500 text-teal-200 hover:text-white border border-teal-400/30 transition flex items-center gap-1 font-semibold"
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-neutral-500/20 hover:bg-neutral-500 text-neutral-200 hover:text-white border border-neutral-400/30 transition flex items-center gap-1 font-semibold"
                   >
                     <span>💨 Wind Layer</span>
                   </button>
@@ -2401,7 +2401,7 @@ Available Function Tools:
                       onExecuteAction('RESET_GPS');
                       onClose();
                     }}
-                    className="shrink-0 px-2.5 py-1 rounded-lg bg-emerald-500/20 hover:bg-emerald-500 text-emerald-200 hover:text-white border border-emerald-400/30 transition flex items-center gap-1 font-semibold"
+                    className="shrink-0 px-2.5 py-1 rounded-lg bg-neutral-500/20 hover:bg-neutral-500 text-neutral-200 hover:text-white border border-neutral-400/30 transition flex items-center gap-1 font-semibold"
                   >
                     <span>📍 Recenter to My Location</span>
                   </button>
@@ -2440,13 +2440,13 @@ Available Function Tools:
                   onChange={(e) => setInputQuery(e.target.value)}
                   placeholder={`Ask anything about ${weatherData?.location.name || 'weather'}...`}
                   disabled={isChatLoading}
-                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-sky-400/50 backdrop-blur-md transition disabled:opacity-50 min-h-[44px]"
+                  className="flex-1 bg-white/10 hover:bg-white/15 focus:bg-white/20 text-white placeholder-white/50 text-sm rounded-xl px-4 py-3 border border-white/20 focus:outline-none focus:ring-2 focus:ring-neutral-400/50 backdrop-blur-md transition disabled:opacity-50 min-h-[44px]"
                   aria-label="Ask assistant message"
                 />
                 <button
                   type="submit"
                   disabled={!inputQuery.trim() || isChatLoading}
-                  className="p-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-white font-semibold shadow-lg transition disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-hover-lift"
+                  className="p-3 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-white font-semibold shadow-lg transition disabled:opacity-40 min-h-[44px] min-w-[44px] flex items-center justify-center btn-hover-lift"
                   title="Send message"
                   aria-label="Send message"
                 >

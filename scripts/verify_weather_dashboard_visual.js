@@ -97,10 +97,11 @@ try {
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  if (!(await accountShortcut.isVisible())) {
-    throw new Error('The Account shortcut must remain visible on mobile.');
-  }
   const mobileNav = page.locator('nav[aria-label="Mobile Navigation"]');
+  const mobileAccount = mobileNav.locator('button[aria-label="Sign In"], button[aria-label="Account and Privacy"]');
+  if (!(await accountShortcut.isVisible()) && !(await mobileAccount.isVisible())) {
+    throw new Error('Account must be accessible through the header or mobile navigation.');
+  }
   const mobileActiveStyle = await mobileNav.locator('button[aria-current="page"]').evaluate((el) => {
     const style = getComputedStyle(el);
     return { background: style.backgroundImage + ' ' + style.backgroundColor, color: style.color, weight: Number(style.fontWeight) };

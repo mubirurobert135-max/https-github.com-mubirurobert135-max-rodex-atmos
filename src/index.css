@@ -7436,7 +7436,7 @@ body {
   border-radius: 14px;
   object-fit: cover;
   border: 1px solid rgba(255,255,255,.22);
-  background: #edeae8;
+  background: #ebebeb;
   filter: grayscale(1) contrast(1.06);
   box-shadow: 0 4px 18px rgba(0,0,0,.3);
 }
@@ -7664,4 +7664,113 @@ body {
     width: fit-content;
     max-width: 100%;
   }
+}
+
+
+/* RODEX Atmos: final authoritative monochrome design system.
+   A single dark/neutral palette across dashboard, AI, accounts, privacy, maps and PWA. */
+:root {
+  color-scheme: dark;
+  --font-heading: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-body: 'Plus Jakarta Sans', 'Segoe UI', Arial, sans-serif;
+  --atmos-cyan: #f5f5f5;
+  --atmos-mint: #d4d4d4;
+  --atmos-lilac: #a3a3a3;
+  --atmos-stroke: rgba(255,255,255,.18);
+  --atmos-text-muted: #bdbdbd;
+}
+html, body, #root { background-color: #090909; }
+.rodex-monochrome-theme {
+  isolation: isolate;
+  background: #090909;
+  color: #f5f5f5;
+}
+.rodex-monochrome-theme :is(button, input, textarea, select) {
+  accent-color: #fafafa;
+}
+.rodex-monochrome-theme :is(button, [role="button"], a) {
+  -webkit-tap-highlight-color: transparent;
+}
+.rodex-monochrome-theme :is(button, [role="button"], a, input, textarea, select):focus-visible {
+  outline: 2px solid #fafafa !important;
+  outline-offset: 3px;
+}
+.rodex-monochrome-theme :is(.wx-dashboard-panel, .wx-nearby-panel, .wx-map-card, .wx-live-weather-card) {
+  border-color: rgba(255,255,255,.19);
+}
+.rodex-monochrome-theme .wx-dashboard-panel :is(h2, h3),
+.rodex-monochrome-theme .wx-nearby-panel :is(h2, h3) {
+  color: #f7f7f7;
+}
+.rodex-monochrome-theme .wx-dashboard-panel :is(p,small),
+.rodex-monochrome-theme .wx-nearby-panel :is(p,small) {
+  color: #c8c8c8;
+}
+/* Street maps use a neutral photographic treatment without affecting click,
+   zoom, pan or the user's chosen layer. Leaflet labels remain legible. */
+.rodex-monochrome-theme .leaflet-tile-pane {
+  filter: grayscale(1) contrast(1.08) brightness(.94);
+}
+.rodex-monochrome-theme .leaflet-marker-pane,
+.rodex-monochrome-theme .leaflet-overlay-pane {
+  filter: grayscale(1);
+}
+.rodex-monochrome-theme .leaflet-container {
+  background: #242424 !important;
+}
+.rodex-monochrome-theme .leaflet-popup-content-wrapper,
+.rodex-monochrome-theme .leaflet-popup-tip {
+  background: #171717 !important;
+  color: #f7f7f7 !important;
+}
+.rodex-monochrome-theme .leaflet-popup-content :is(button, a):focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+/* Preserve sufficient contrast for selected navigation and actions. */
+.rodex-monochrome-theme .rodex-header-shortcuts button,
+.rodex-monochrome-theme .rodex-header-controls button {
+  border-color: rgba(255,255,255,.24);
+}
+.rodex-monochrome-theme .rodex-header-shortcuts button:hover,
+.rodex-monochrome-theme .rodex-header-controls button:hover {
+  border-color: rgba(255,255,255,.52);
+}
+.rodex-monochrome-theme .wx-map-search-input,
+.rodex-monochrome-theme .rodex-header-search input {
+  background: rgba(20,20,20,.9) !important;
+  color: #f5f5f5 !important;
+}
+.rodex-monochrome-theme .wx-map-search-input::placeholder,
+.rodex-monochrome-theme .rodex-header-search input::placeholder {
+  color: #b8b8b8 !important;
+}
+.rodex-monochrome-theme :is(.wx-map-card, .wx-reference-shell) ::selection {
+  color: #090909;
+  background: #fafafa;
+}
+@media (max-width: 680px) {
+  .rodex-monochrome-theme :is(.wx-dashboard-panel,.wx-nearby-panel,.wx-reference-shell) {
+    box-shadow: 0 12px 30px rgba(0,0,0,.25);
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+    background: rgba(11,11,11,.92) !important;
+    border-color: rgba(255,255,255,.28) !important;
+    box-shadow: 0 14px 42px rgba(0,0,0,.62);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rodex-monochrome-theme { scroll-behavior: auto; }
+}
+
+/* At desktop navigation breakpoint, use one navigation system, not two. */
+@media (min-width: 1024px) {
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] {
+    display: none !important;
+  }
+}
+
+/* Keep the approved emblem readable and strictly neutral even if the source PNG has colour. */
+.rodex-monochrome-theme .rodex-header-brand img.rodex-brand-symbol {
+  filter: grayscale(1) contrast(1.08) drop-shadow(0 2px 10px rgba(255,255,255,.08)) !important;
 }

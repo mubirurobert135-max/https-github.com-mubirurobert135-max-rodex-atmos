@@ -63,27 +63,27 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
   const peakRainProbability = rainProbabilities.length ? Math.max(...rainProbabilities) : null;
 
   return (
-    <div className="w-full bg-gradient-to-br from-slate-900/80 via-sky-950/60 to-indigo-950/80 backdrop-blur-2xl border border-sky-400/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-sky-400/45">
+    <div className="w-full bg-gradient-to-br from-neutral-900/80 via-neutral-950/60 to-neutral-950/80 backdrop-blur-2xl border border-neutral-400/30 rounded-3xl p-6 sm:p-8 shadow-2xl relative overflow-hidden transition-all duration-300 hover:border-neutral-400/45">
       {/* Decorative ambient glows */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-sky-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-60 h-60 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 right-0 w-80 h-80 bg-neutral-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-60 h-60 bg-neutral-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-400 to-blue-600 flex items-center justify-center shadow-lg shadow-sky-500/25 text-white">
-            <Sun className="w-5 h-5 text-amber-300 animate-pulse" />
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-neutral-400 to-neutral-600 flex items-center justify-center shadow-lg shadow-neutral-500/25 text-white">
+            <Sun className="w-5 h-5 text-neutral-300 animate-pulse" />
           </div>
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xl font-bold text-white tracking-wide font-display">
                 Daily forecast overview
               </h3>
-              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-sky-500/20 text-sky-200 border border-sky-400/30 font-medium">
+              <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-neutral-500/20 text-neutral-200 border border-neutral-400/30 font-medium">
                 {formatForecastLocalDate(data.weather.current?.time)}
               </span>
             </div>
-            <p className="text-xs text-sky-200/70 font-medium">
+            <p className="text-xs text-neutral-200/70 font-medium">
               A concise overview of forecast data for {data.location.name}
             </p>
           </div>
@@ -93,7 +93,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           {onOpenAssistant && (
             <button
               onClick={() => onOpenAssistant(`Summarise today's weather briefing for ${data.location.name}`)}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white text-xs font-bold transition shadow-md shadow-sky-500/20 active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-neutral-500 to-neutral-600 hover:from-neutral-400 hover:to-neutral-500 text-white text-xs font-bold transition shadow-md shadow-neutral-500/20 active:scale-95"
               title="Ask RODEX AI to explain this briefing in conversation"
             >
               <Sparkles className="w-3.5 h-3.5" />
@@ -104,10 +104,10 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           <button
             onClick={fetchBriefing}
             disabled={isLoading}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 border border-sky-400/30 text-sky-200 text-xs font-semibold transition backdrop-blur-md disabled:opacity-50 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-neutral-500/15 hover:bg-neutral-500/25 border border-neutral-400/30 text-neutral-200 text-xs font-semibold transition backdrop-blur-md disabled:opacity-50 active:scale-95"
             title="Refresh briefing with latest weather data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-sky-400' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-neutral-400' : ''}`} />
             <span className="hidden sm:inline">Refresh</span>
           </button>
         </div>
@@ -115,8 +115,8 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
 
       {/* Main Content */}
       {isLoading && !briefing ? (
-        <div className="flex flex-col items-center justify-center py-10 gap-3 text-sky-200/80">
-          <RefreshCw className="w-7 h-7 animate-spin text-sky-400" />
+        <div className="flex flex-col items-center justify-center py-10 gap-3 text-neutral-200/80">
+          <RefreshCw className="w-7 h-7 animate-spin text-neutral-400" />
           <p className="text-sm font-medium">Synthesizing personalized forecast briefing...</p>
         </div>
       ) : (
@@ -125,16 +125,16 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           {topAlert && (
             <div className={`p-4 rounded-2xl border flex items-start justify-between gap-3 backdrop-blur-xl ${
               topAlert.type === 'official' 
-                ? 'bg-rose-500/15 border-rose-500/40 text-rose-100'
+                ? 'bg-neutral-500/15 border-neutral-500/40 text-neutral-100'
                 : topAlert.severity === 'severe' || topAlert.severity === 'extreme'
-                ? 'bg-amber-500/15 border-amber-500/40 text-amber-100'
-                : 'bg-sky-500/15 border-sky-400/30 text-sky-100'
+                ? 'bg-neutral-500/15 border-neutral-500/40 text-neutral-100'
+                : 'bg-neutral-500/15 border-neutral-400/30 text-neutral-100'
             }`}>
               <div className="flex items-start gap-3">
                 {topAlert.type === 'official' ? (
-                  <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <ShieldAlert className="w-5 h-5 text-neutral-400 shrink-0 mt-0.5" />
                 ) : (
-                  <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-5 h-5 text-neutral-400 shrink-0 mt-0.5" />
                 )}
                 <div>
                   <div className="flex items-center gap-2">
@@ -160,7 +160,7 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
 
           {/* Greeting & Summary */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-5 backdrop-blur-md">
-            <h4 className="text-sm font-bold text-sky-200 mb-1 font-display">Forecast overview</h4>
+            <h4 className="text-sm font-bold text-neutral-200 mb-1 font-display">Forecast overview</h4>
             <p className="text-sm text-white/90 leading-relaxed">
               {briefing?.summary || `Current weather details for ${data.location.name} are unavailable. Refresh the forecast to try again.`}
             </p>
@@ -170,9 +170,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
           {/* Measured forecast indicators */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-              <Sun className="w-5 h-5 text-amber-400 shrink-0" />
+              <Sun className="w-5 h-5 text-neutral-400 shrink-0" />
               <div>
-                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Temperature Range</span>
+                <span className="text-[11px] text-neutral-200/70 font-medium block uppercase tracking-wider">Temperature Range</span>
                 <span className="text-sm font-bold text-white tabular-nums">
                   High: {maxT == null ? '—' : formatTemp(maxT, unit)} / Low: {minT == null ? '—' : formatTemp(minT, unit)}
                 </span>
@@ -180,9 +180,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-              <CloudRain className="w-5 h-5 text-sky-400 shrink-0" />
+              <CloudRain className="w-5 h-5 text-neutral-400 shrink-0" />
               <div>
-                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Peak rain probability · next 24 hours</span>
+                <span className="text-[11px] text-neutral-200/70 font-medium block uppercase tracking-wider">Peak rain probability · next 24 hours</span>
                 <span className="text-xs font-semibold text-white truncate block">
                   {peakRainProbability == null ? 'Unavailable' : peakRainProbability + '%'}
                 </span>
@@ -190,9 +190,9 @@ export const DailyBriefingCard: React.FC<DailyBriefingCardProps> = ({ data, onOp
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-xl p-3.5 flex items-center gap-3">
-              <Wind className="w-5 h-5 text-indigo-300 shrink-0" />
+              <Wind className="w-5 h-5 text-neutral-300 shrink-0" />
               <div>
-                <span className="text-[11px] text-sky-200/70 font-medium block uppercase tracking-wider">Atmospheric Wind</span>
+                <span className="text-[11px] text-neutral-200/70 font-medium block uppercase tracking-wider">Atmospheric Wind</span>
                 <span className="text-xs font-semibold text-white truncate block">
                   {currentWindText}
                 </span>

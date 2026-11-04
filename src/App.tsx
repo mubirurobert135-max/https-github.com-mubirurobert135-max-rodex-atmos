@@ -395,16 +395,16 @@ export default function App() {
         {locationNotice && !setupRequired && (
           <div className={`w-full border rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 backdrop-blur-xl animate-fade-in ${
             locationNotice.type === 'warning' 
-              ? 'bg-amber-500/15 border-amber-400/30 text-amber-200' 
-              : 'bg-sky-500/15 border-sky-400/30 text-sky-200'
+              ? 'bg-neutral-500/15 border-neutral-400/30 text-neutral-200' 
+              : 'bg-neutral-500/15 border-neutral-400/30 text-neutral-200'
           }`}>
             <div className="flex items-center gap-3">
               {locationMode === 'network' ? (
-                <Globe className="w-5 h-5 text-sky-300 shrink-0" />
+                <Globe className="w-5 h-5 text-neutral-300 shrink-0" />
               ) : locationMode === 'fallback' ? (
-                <MapPin className="w-5 h-5 text-amber-300 shrink-0" />
+                <MapPin className="w-5 h-5 text-neutral-300 shrink-0" />
               ) : (
-                <Navigation className="w-5 h-5 text-emerald-300 shrink-0" />
+                <Navigation className="w-5 h-5 text-neutral-300 shrink-0" />
               )}
               <div className="text-xs sm:text-sm font-medium leading-relaxed">
                 {locationNotice.message}
@@ -415,7 +415,7 @@ export default function App() {
               {locationMode !== 'gps' && (
                 <button
                   onClick={() => initializeStartupLocation(true)}
-                  className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-white text-xs font-bold transition shadow"
+                  className="px-3 py-1.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-white text-xs font-bold transition shadow"
                 >
                   Enable GPS Location
                 </button>
@@ -444,15 +444,15 @@ export default function App() {
 
         {/* Weather Provider Attribution & Disclaimer Banner */}
         {weatherData && weatherData.providerInfo && activeTab !== 'dashboard' && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-2xl bg-sky-500/10 border border-sky-400/20 backdrop-blur-md text-xs text-sky-200 gap-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-2xl bg-neutral-500/10 border border-neutral-400/20 backdrop-blur-md text-xs text-neutral-200 gap-2">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-sky-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-neutral-400 shrink-0" />
               <span className="font-semibold text-white">{weatherData.providerInfo.credit}</span>
               <span className="text-white/40">•</span>
-              <span className="text-sky-200/80">{weatherData.providerInfo.disclaimer}</span>
+              <span className="text-neutral-200/80">{weatherData.providerInfo.disclaimer}</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-sky-500/15 border border-sky-400/25 text-[11px] font-medium text-sky-200">
+              <span className="px-3 py-1 rounded-full bg-neutral-500/15 border border-neutral-400/25 text-[11px] font-medium text-neutral-200">
                 {locationMode === 'gps' ? 'GPS Location Verified' : locationMode === 'network' ? 'Approximate Network Location' : locationMode === 'search' ? 'Searched Location' : 'Default Fallback Location'}
               </span>
             </div>
@@ -461,22 +461,22 @@ export default function App() {
 
         {/* Setup Required State Message */}
         {setupRequired && (
-          <div className="w-full bg-amber-500/25 border-2 border-amber-400/50 rounded-3xl p-8 backdrop-blur-2xl shadow-2xl text-center space-y-4 animate-fade-in">
-            <div className="w-14 h-14 rounded-2xl bg-amber-500/30 flex items-center justify-center mx-auto text-amber-300">
+          <div className="w-full bg-neutral-500/25 border-2 border-neutral-400/50 rounded-3xl p-8 backdrop-blur-2xl shadow-2xl text-center space-y-4 animate-fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-neutral-500/30 flex items-center justify-center mx-auto text-neutral-300">
               <KeyRound className="w-8 h-8 animate-bounce" />
             </div>
             <h2 className="text-2xl font-black text-white">Weather Provider Setup Required</h2>
-            <p className="text-sm text-amber-100 max-w-xl mx-auto leading-relaxed">
+            <p className="text-sm text-neutral-100 max-w-xl mx-auto leading-relaxed">
               To view live weather forecasts, please configure a server-side API key in your environment secrets.
             </p>
-            <div className="bg-black/30 rounded-2xl p-4 max-w-md mx-auto text-left text-xs font-mono text-sky-200 space-y-1 border border-white/10">
-              <div className="text-amber-300 font-bold mb-1">Required Server Secret:</div>
+            <div className="bg-black/30 rounded-2xl p-4 max-w-md mx-auto text-left text-xs font-mono text-neutral-200 space-y-1 border border-white/10">
+              <div className="text-neutral-300 font-bold mb-1">Required Server Secret:</div>
               <div>WEATHERAPI_KEY="your_api_key_here"</div>
               <div className="text-white/50 text-[10px] mt-2">Get a free key at https://www.weatherapi.com/</div>
             </div>
             <button
               onClick={() => handleSearch('Kampala')}
-              className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm shadow-lg transition"
+              className="px-6 py-2.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-neutral-950 font-bold text-sm shadow-lg transition"
             >
               Retry Connection
             </button>
@@ -485,14 +485,14 @@ export default function App() {
 
         {/* Error Banner if any */}
         {errorMessage && !setupRequired && (
-          <div className="w-full bg-rose-500/20 border border-rose-500/40 rounded-2xl p-4 flex items-center justify-between gap-3 text-rose-200 backdrop-blur-xl animate-fade-in">
+          <div className="w-full bg-neutral-500/20 border border-neutral-500/40 rounded-2xl p-4 flex items-center justify-between gap-3 text-neutral-200 backdrop-blur-xl animate-fade-in">
             <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-rose-300 shrink-0" />
+              <AlertCircle className="w-5 h-5 text-neutral-300 shrink-0" />
               <span className="text-sm font-medium">{errorMessage}</span>
             </div>
             <button
               onClick={() => setErrorMessage(null)}
-              className="text-xs px-3 py-1 rounded-lg bg-rose-500/30 hover:bg-rose-500/50 transition font-semibold"
+              className="text-xs px-3 py-1 rounded-lg bg-neutral-500/30 hover:bg-neutral-500/50 transition font-semibold"
             >
               Dismiss
             </button>
@@ -502,8 +502,8 @@ export default function App() {
         {/* Loading State */}
         {isLoading && !weatherData && !setupRequired && (
           <div className="w-full py-24 flex flex-col items-center justify-center gap-4 bg-white/5 backdrop-blur-md rounded-3xl border border-white/10">
-            <RefreshCw className="w-10 h-10 text-sky-400 animate-spin" />
-            <p className="text-base font-semibold text-sky-200">Detecting local weather for your location...</p>
+            <RefreshCw className="w-10 h-10 text-neutral-400 animate-spin" />
+            <p className="text-base font-semibold text-neutral-200">Detecting local weather for your location...</p>
           </div>
         )}
 
@@ -523,7 +523,7 @@ export default function App() {
                 </div>
 
                 {mapDisplayMode === 'map' ? (
-                  <React.Suspense fallback={<div className="wx-map-card flex min-h-[clamp(320px,54dvh,470px)] items-center justify-center rounded-3xl border border-white/10 bg-[#11151B] p-6 text-sm text-white/70"><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Loading interactive weather map…</div>}>
+                  <React.Suspense fallback={<div className="wx-map-card flex min-h-[clamp(320px,54dvh,470px)] items-center justify-center rounded-3xl border border-white/10 bg-[#151515] p-6 text-sm text-white/70"><RefreshCw className="mr-2 h-4 w-4 animate-spin" />Loading interactive weather map…</div>}>
                     <WeatherMap
                       currentWeatherData={weatherData}
                       deviceLocationData={deviceLocationData}
@@ -644,8 +644,8 @@ export default function App() {
           title="Open RODEX AI Voice & Chat"
         >
           <div className="relative">
-            <Sparkles className="w-5 h-5 text-sky-200 group-hover:rotate-12 transition-transform" />
-            <Mic className="w-3 h-3 text-amber-300 absolute -bottom-1 -right-1" />
+            <Sparkles className="w-5 h-5 text-neutral-200 group-hover:rotate-12 transition-transform" />
+            <Mic className="w-3 h-3 text-neutral-300 absolute -bottom-1 -right-1" />
           </div>
           <span>RODEX AI (Voice & Chat)</span>
         </button>
@@ -654,7 +654,7 @@ export default function App() {
 
       {/* RODEX AI Live Voice & Text Assistant Modal */}
       {hasOpenedAssistant && (
-        <React.Suspense fallback={<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 text-sm text-white"><div className="flex items-center rounded-2xl border border-white/15 bg-[#11151B] px-5 py-4 shadow-2xl"><RefreshCw className="mr-3 h-4 w-4 animate-spin" />Preparing RODEX AI…</div></div>}>
+        <React.Suspense fallback={<div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 text-sm text-white"><div className="flex items-center rounded-2xl border border-white/15 bg-[#151515] px-5 py-4 shadow-2xl"><RefreshCw className="mr-3 h-4 w-4 animate-spin" />Preparing RODEX AI…</div></div>}>
           <AssistantModal
             isOpen={isAssistantOpen}
             onClose={() => setIsAssistantOpen(false)}
@@ -719,7 +719,8 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Mobile Responsive Navigation Dock */}
+      {/* Keep modal action buttons accessible: hide the floating dock during dialogs. */}
+      {!isAssistantOpen && !isAuthOpen && !isPrivacyPortalOpen && !isAlertsModalOpen && (
       <MobileNavBar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -729,6 +730,7 @@ export default function App() {
         onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
         activeAlertsCount={weatherData?.alerts?.length || 0}
       />
+      )}
     </div>
   );
 }

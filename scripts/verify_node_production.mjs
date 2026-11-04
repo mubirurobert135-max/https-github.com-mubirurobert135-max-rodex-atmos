@@ -143,9 +143,11 @@ try {
     }
 
     const searchVisible = await page.locator('input[aria-label="Search city or country"]').isVisible();
-    const accountVisible = await page.locator('button[aria-label="Open account"], button[aria-label="Sign in or create an account"]').first().isVisible();
-    const assistantVisible = await page.locator('button[aria-label="Open RODEX AI from header navigation"], button[aria-label="Open RODEX AI Voice and Chat Assistant"]').first().isVisible();
-    const privacyVisible = await page.locator('button[aria-label="Open Privacy Portal"], button[aria-label="Privacy Portal and Preferences"]').first().isVisible();
+    // A feature can be available in the phone dock while its desktop duplicate is hidden.
+    // Evaluate the visible control, not the first matching (possibly hidden) element.
+    const accountVisible = await page.locator('button[aria-label="Open account"]:visible, button[aria-label="Sign in or create an account"]:visible, button[aria-label="Sign In"]:visible, button[aria-label="Account and Privacy"]:visible').count() > 0;
+    const assistantVisible = await page.locator('button[aria-label="Open RODEX AI from header navigation"]:visible, button[aria-label="Open RODEX AI Voice and Chat Assistant"]:visible').count() > 0;
+    const privacyVisible = await page.locator('button[aria-label="Open Privacy Portal"]:visible, button[aria-label="Privacy Portal and Preferences"]:visible').count() > 0;
     if (!searchVisible || !accountVisible || !assistantVisible || !privacyVisible) {
       throw new Error(`A standard navigation feature is not visible at ${viewport.width}px.`);
     }

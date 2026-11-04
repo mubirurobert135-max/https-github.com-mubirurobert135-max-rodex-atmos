@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RODEX Atmos sun and cloud">
 <defs><clipPath id="art"><rect x="48" y="48" width="416" height="416" rx="76"/></clipPath></defs>
 <rect width="512" height="512" rx="112" fill="#101010"/>
-<image x="48" y="48" width="416" height="416" clip-path="url(#art)" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAEAAElEQVR42uz9
+<image x="48" y="48" width="416" height="416" clip-path="url(#art)" style="filter:grayscale(1)" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAgAAAAIACAIAAAB7GkOtAAEAAElEQVR42uz9
 fX/bRrItCtdLdwMkJduZ2eeec7//d3t+9+w9iW2JJIDurqrnj2qAoCxaVOJk
 kgwqnowiSyTxVtW9atVa+Pm//3+wxRZbbLHFf17Qdgq22GKLLbYCsMUWW2yx
 xVYAtthiiy222ArAFltsscUWWwHYYosttthiKwBbbLHFFltsBWCLLbbYYout

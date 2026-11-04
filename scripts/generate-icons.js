@@ -11,7 +11,8 @@ async function generateIcons() {
   // The approved artwork is imported once into public/rodex-emblem.png.
   // Bundle it into the favicon SVG so the logo remains available offline.
   if (fs.existsSync(approvedEmblemPath)) {
-    const image = fs.readFileSync(approvedEmblemPath).toString('base64');
+    // Keep the approved sun/cloud artwork while making every generated icon neutral.
+    const image = (await sharp(approvedEmblemPath).greyscale().png().toBuffer()).toString('base64');
     const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="RODEX Atmos sun and cloud">
       <defs><clipPath id="art"><rect x="48" y="48" width="416" height="416" rx="76"/></clipPath></defs>
       <rect width="512" height="512" rx="112" fill="#101010"/>

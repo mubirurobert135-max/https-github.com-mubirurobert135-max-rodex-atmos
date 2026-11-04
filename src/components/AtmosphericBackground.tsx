@@ -20,7 +20,7 @@ export const AtmosphericBackground: React.FC<AtmosphericBackgroundProps> = ({ th
         background: [
           'radial-gradient(ellipse at 14% 8%, rgba(255, 255, 255, .045), transparent 42%)',
           'radial-gradient(ellipse at 88% 78%, rgba(255, 255, 255, .025), transparent 46%)',
-          'linear-gradient(132deg, #080A0E 0%, #11151B 52%, #090B10 100%)'
+          'linear-gradient(132deg, #090909 0%, #151515 52%, #0a0a0a 100%)'
         ].join(', '),
         backgroundSize: 'cover',
         backgroundPosition: 'center',

@@ -196,11 +196,11 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
     // Color helper according to temperature
     const getTempColor = (celsius: number) => {
-      if (celsius <= 0) return 'from-neutral-600 to-neutral-800 text-white border-blue-400';
-      if (celsius <= 15) return 'from-cyan-500 to-teal-600 text-white border-cyan-300';
-      if (celsius <= 24) return 'from-emerald-500 to-green-600 text-white border-emerald-300';
-      if (celsius <= 32) return 'from-amber-500 to-orange-600 text-white border-amber-300';
-      return 'from-rose-500 to-red-600 text-white border-rose-300';
+      if (celsius <= 0) return 'from-neutral-800 to-neutral-950 text-white border-neutral-500';
+      if (celsius <= 15) return 'from-neutral-700 to-neutral-900 text-white border-neutral-400';
+      if (celsius <= 24) return 'from-neutral-600 to-neutral-800 text-white border-neutral-300';
+      if (celsius <= 32) return 'from-neutral-500 to-neutral-700 text-white border-neutral-200';
+      return 'from-neutral-200 to-neutral-400 text-black border-white';
     };
 
     // Helper to extract weather value at chosen time offset
@@ -246,14 +246,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
       const html = `
         <div class="relative group cursor-pointer animate-pulse-glow">
           <div class="px-3 py-1.5 rounded-2xl bg-gradient-to-r ${getTempColor(val.temp)} border-2 shadow-2xl flex items-center gap-2 transform transition duration-300 hover:scale-110">
-            <span class="w-2.5 h-2.5 rounded-full bg-sky-300 animate-ping"></span>
+            <span class="w-2.5 h-2.5 rounded-full bg-neutral-300 animate-ping"></span>
             <div class="flex flex-col text-left leading-tight">
               <span class="text-[10px] uppercase font-black tracking-wider opacity-90">${safeName}</span>
               <span class="text-xs font-black tabular-nums">${metricBadge}</span>
             </div>
             <span class="text-sm">${cond.icon}</span>
           </div>
-          <div class="w-3 h-3 bg-sky-400 rotate-45 mx-auto -mt-1 shadow-md"></div>
+          <div class="w-3 h-3 bg-neutral-400 rotate-45 mx-auto -mt-1 shadow-md"></div>
         </div>
       `;
 
@@ -270,17 +270,17 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           <div class="flex items-center justify-between border-b border-white/10 pb-2">
             <div>
               <div class="text-sm font-black text-white">${safeName}</div>
-              <div class="text-[11px] text-sky-200">${safeCountry}</div>
+              <div class="text-[11px] text-neutral-200">${safeCountry}</div>
             </div>
             <span class="text-xl">${cond.icon}</span>
           </div>
-          <div class="text-xs text-slate-300 space-y-1 font-medium">
+          <div class="text-xs text-neutral-300 space-y-1 font-medium">
             <div class="flex justify-between"><span>Temperature:</span><strong class="text-white">${tempDisplay}</strong></div>
-            <div class="flex justify-between"><span>Condition:</span><strong class="text-sky-300">${cond.label}</strong></div>
+            <div class="flex justify-between"><span>Condition:</span><strong class="text-neutral-300">${cond.label}</strong></div>
             <div class="flex justify-between"><span>Rain Chance:</span><strong class="text-white">${val.precipProb}%</strong></div>
             <div class="flex justify-between"><span>Wind:</span><strong class="text-white">${formatWind(val.windSpeed, unit)}</strong></div>
           </div>
-          <div class="text-[10px] px-2 py-1 rounded bg-sky-500/20 text-sky-300 border border-sky-400/30 font-semibold text-center mt-2">
+          <div class="text-[10px] px-2 py-1 rounded bg-neutral-500/20 text-neutral-300 border border-neutral-400/30 font-semibold text-center mt-2">
             ★ Active Selected Weather Location
           </div>
         </div>
@@ -300,8 +300,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
       const html = `
         <div class="relative group cursor-pointer">
-          <div class="px-2.5 py-1 rounded-xl bg-slate-900/90 border border-emerald-400 text-emerald-300 shadow-lg flex items-center gap-1.5 text-xs font-bold">
-            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <div class="px-2.5 py-1 rounded-xl bg-neutral-900/90 border border-neutral-400 text-neutral-300 shadow-lg flex items-center gap-1.5 text-xs font-bold">
+            <span class="w-2 h-2 rounded-full bg-neutral-400"></span>
             <span>GPS: ${tempDisplay}</span>
           </div>
         </div>
@@ -317,8 +317,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
       const gpsMarker = L.marker([latitude, longitude], { icon: customIcon });
       gpsMarker.bindPopup(`
         <div class="p-2 space-y-2">
-          <div class="text-xs font-bold text-emerald-300">Your Device GPS Location (${safeName})</div>
-          <button id="btn-select-gps" class="w-full text-center px-2 py-1 rounded bg-emerald-500 text-slate-950 font-bold text-xs hover:bg-emerald-400 transition">
+          <div class="text-xs font-bold text-neutral-300">Your Device GPS Location (${safeName})</div>
+          <button id="btn-select-gps" class="w-full text-center px-2 py-1 rounded bg-neutral-500 text-neutral-950 font-bold text-xs hover:bg-neutral-400 transition">
             Switch to My GPS Location
           </button>
         </div>
@@ -342,7 +342,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
       
       const html = `
         <div class="relative animate-bounce">
-          <div class="w-8 h-8 rounded-full bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-base shadow-2xl border-2 border-white">
+          <div class="w-8 h-8 rounded-full bg-neutral-500 text-neutral-950 flex items-center justify-center font-bold text-base shadow-2xl border-2 border-white">
             📍
           </div>
         </div>
@@ -359,8 +359,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
       if (isLoading) {
         inspectMarker.bindPopup(`
-          <div class="p-3 text-xs text-sky-200 flex items-center gap-2">
-            <div class="w-3 h-3 rounded-full border-2 border-sky-400 border-t-transparent animate-spin"></div>
+          <div class="p-3 text-xs text-neutral-200 flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full border-2 border-neutral-400 border-t-transparent animate-spin"></div>
             <span>Fetching live weather for coordinates...</span>
           </div>
         `).openPopup();
@@ -376,21 +376,21 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           <div class="p-3 space-y-2 min-w-[200px]">
             <div class="flex items-center justify-between border-b border-white/10 pb-2">
               <div>
-                <div class="text-sm font-bold text-amber-300">Inspected Point</div>
+                <div class="text-sm font-bold text-neutral-300">Inspected Point</div>
                 <div class="text-xs font-semibold text-white">${safeName}${safeCountry ? ', ' + safeCountry : ''}</div>
               </div>
               <span class="text-xl">${cond.icon}</span>
             </div>
-            <div class="text-xs text-slate-300 space-y-1 font-medium">
+            <div class="text-xs text-neutral-300 space-y-1 font-medium">
               <div class="flex justify-between"><span>Temperature:</span><strong class="text-white">${formatTemp(val.temp, unit)}</strong></div>
-              <div class="flex justify-between"><span>Condition:</span><strong class="text-sky-300">${cond.label}</strong></div>
+              <div class="flex justify-between"><span>Condition:</span><strong class="text-neutral-300">${cond.label}</strong></div>
               <div class="flex justify-between"><span>Rain Chance:</span><strong class="text-white">${val.precipProb}%</strong></div>
               <div class="flex justify-between"><span>Wind:</span><strong class="text-white">${formatWind(val.windSpeed, unit)}</strong></div>
             </div>
-            <button id="btn-select-inspected" class="w-full mt-2 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition shadow">
+            <button id="btn-select-inspected" class="w-full mt-2 py-1.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-neutral-950 font-bold text-xs transition shadow">
               Set as Active Weather Location
             </button>
-            <button id="btn-ai-inspected" class="w-full py-1 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 text-sky-200 font-semibold text-[11px] border border-sky-400/30 flex items-center justify-center gap-1 transition">
+            <button id="btn-ai-inspected" class="w-full py-1 rounded-xl bg-neutral-500/20 hover:bg-neutral-500/30 text-neutral-200 font-semibold text-[11px] border border-neutral-400/30 flex items-center justify-center gap-1 transition">
               <span>Ask RODEX AI about this spot</span>
             </button>
           </div>
@@ -485,8 +485,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
           
           {/* Left: Metric Layers Tabs */}
           <div className="wx-map-layer-controls flex items-center gap-1.5 overflow-x-auto pb-0.5 sm:pb-0 scrollbar-none">
-            <span className="text-xs font-bold text-sky-200/70 mr-1 hidden sm:flex items-center gap-1 shrink-0 font-heading">
-              <Layers className="w-3.5 h-3.5 text-sky-400" />
+            <span className="text-xs font-bold text-neutral-200/70 mr-1 hidden sm:flex items-center gap-1 shrink-0 font-heading">
+              <Layers className="w-3.5 h-3.5 text-neutral-400" />
               <span>Layer:</span>
             </span>
 
@@ -497,8 +497,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
               }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'temperature'
-                  ? 'bg-sky-500 text-white shadow-md shadow-sky-500/30 border border-sky-300/40'
-                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-neutral-500 text-white shadow-md shadow-neutral-500/30 border border-neutral-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-neutral-200 border border-white/10'
               }`}
             >
               <Thermometer className="w-3.5 h-3.5" />
@@ -512,8 +512,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
               }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'precipitation'
-                  ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30 border border-blue-300/40'
-                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-neutral-500 text-white shadow-md shadow-neutral-500/30 border border-neutral-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-neutral-200 border border-white/10'
               }`}
             >
               <CloudRain className="w-3.5 h-3.5" />
@@ -527,8 +527,8 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
               }}
               className={`px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shrink-0 btn-hover-lift min-h-[36px] ${
                 activeMetric === 'wind'
-                  ? 'bg-teal-500 text-white shadow-md shadow-teal-500/30 border border-teal-300/40'
-                  : 'bg-white/8 hover:bg-white/15 text-sky-200 border border-white/10'
+                  ? 'bg-neutral-500 text-white shadow-md shadow-neutral-500/30 border border-neutral-300/40'
+                  : 'bg-white/8 hover:bg-white/15 text-neutral-200 border border-white/10'
               }`}
             >
               <Wind className="w-3.5 h-3.5" />
@@ -541,7 +541,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             
             {/* Inline Map Location Search */}
             <form onSubmit={handleMapSearch} className="wx-map-search relative flex-1 sm:w-44 md:w-56 min-w-[120px]">
-              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-sky-300 pointer-events-none" />
+              <Search className="absolute left-2.5 top-2.5 w-3.5 h-3.5 text-neutral-300 pointer-events-none" />
               <input
                 type="text"
                 value={mapSearchTerm}
@@ -550,7 +550,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 className="wx-map-search-input w-full pl-8 pr-2 py-1.5 text-[#E5E5E5] text-xs rounded-xl border border-neutral-300 focus:border-neutral-600 focus:outline-none transition min-h-[40px]"
               />
               {(searchResults.length > 0 || isSearching || mapSearchTerm.trim().length >= 2) && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-[#0a1426] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#151515] border border-white/20 rounded-xl shadow-2xl z-50 max-h-48 overflow-y-auto">
                   {searchResults.map((city) => (
                     <button
                       key={`${city.name}-${city.lat}-${city.lon}`}
@@ -563,7 +563,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                         setSearchResults([]);
                         setMapSearchTerm('');
                       }}
-                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-neutral-50 text-[#E5E5E5] flex justify-between items-center border-b border-neutral-100 last:border-0"
+                      className="w-full text-left px-3 py-2.5 text-xs hover:bg-white/10 text-[#E5E5E5] flex justify-between items-center border-b border-neutral-100 last:border-0"
                     >
                       <span className="font-semibold text-neutral-900">{city.name}</span>
                       <span className="text-[10px] text-neutral-700">{city.admin1 ? city.admin1 + ', ' : ''}{city.country}</span>
@@ -580,7 +580,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Recenter Active City Button */}
             <button
               onClick={handleRecenterActive}
-              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-sky-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-neutral-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
               title="Center map on selected weather location"
               aria-label="Center map on selected city"
             >
@@ -590,7 +590,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Recenter Device GPS Button */}
             <button
               onClick={handleRecenterGPS}
-              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-emerald-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
+              className="p-2 rounded-xl bg-white/8 hover:bg-white/15 text-neutral-300 border border-white/12 transition btn-hover-lift min-h-[36px] min-w-[36px] flex items-center justify-center"
               title="Find and center on my device location"
               aria-label="Center map on physical GPS device location"
             >
@@ -622,7 +622,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 onClick={() => setIsSliderOpen(!isSliderOpen)}
                 className="wx-map-timeline-toggle px-3 py-1.5 rounded-xl text-xs font-bold shadow-lg flex items-center gap-1.5"
               >
-                <Clock className="w-3.5 h-3.5 text-sky-400" />
+                <Clock className="w-3.5 h-3.5 text-neutral-400" />
                 <span>{timeOffsetHours === 0 ? 'Forecast (Now)' : `+${timeOffsetHours}h Forecast`}</span>
               </button>
             </div>
@@ -630,11 +630,11 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
             {/* Slider Card */}
             <div className={`wx-map-timeline-card ${isSliderOpen ? 'block' : 'hidden sm:block'} w-72 sm:w-80 rounded-2xl p-3 shadow-2xl space-y-2`}>
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-sky-200 flex items-center gap-1.5 font-heading">
-                  <Clock className="w-3.5 h-3.5 text-sky-400" />
+                <span className="font-bold text-neutral-200 flex items-center gap-1.5 font-heading">
+                  <Clock className="w-3.5 h-3.5 text-neutral-400" />
                   <span>Forecast Timeline</span>
                 </span>
-                <span className="font-bold text-amber-300 tabular-nums">
+                <span className="font-bold text-neutral-300 tabular-nums">
                   {timeOffsetHours === 0 ? 'Live Conditions' : `+${timeOffsetHours}h Forecast`}
                 </span>
               </div>
@@ -646,7 +646,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
                 step={3}
                 value={timeOffsetHours}
                 onChange={(e) => setTimeOffsetHours(Number(e.target.value))}
-                className="w-full accent-sky-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
+                className="w-full accent-neutral-400 cursor-pointer h-1.5 bg-white/20 rounded-lg"
                 aria-label="Forecast offset in hours"
               />
 
@@ -662,7 +662,7 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
 
           {/* Interactive Map Hint Banner (Desktop only) */}
           <div className="wx-map-hint absolute top-3 left-3 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs shadow-xl pointer-events-none z-10">
-            <Sparkles className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+            <Sparkles className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
             <span>Tap map locations to inspect live weather</span>
           </div>
         </div>
@@ -670,14 +670,14 @@ export const WeatherMap: React.FC<WeatherMapProps> = ({
         {/* Footer info bar */}
         <div className="wx-map-footer px-3 py-2 border-t flex flex-col sm:flex-row items-center justify-between text-[11px] gap-1.5 z-10">
           <div className="flex items-center gap-2">
-            <Globe className="w-3.5 h-3.5 text-sky-400" />
+            <Globe className="w-3.5 h-3.5 text-neutral-400" />
             <span>Map data © OpenStreetMap contributors</span>
           </div>
           <button
             onClick={() => onOpenAssistant(`Give me an overview of weather patterns across the map near ${currentWeatherData?.location.name || 'my location'}.`)}
             className="wx-map-ai-link font-bold flex items-center gap-1 transition"
           >
-            <Sparkles className="w-3 h-3 text-sky-400" />
+            <Sparkles className="w-3 h-3 text-neutral-400" />
             <span>Analyze region with RODEX AI</span>
           </button>
         </div>

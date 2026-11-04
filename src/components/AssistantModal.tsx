@@ -683,6 +683,20 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     }
   }, [isOpen, stopVoiceSession]);
 
+  // Switching to text chat must not leave the microphone, speech recognition
+  // or Live socket running behind the inactive voice tab.
+  useEffect(() => {
+    if (activeTab === 'chat' && (
+      liveSetupAbortControllerRef.current ||
+      mediaStreamRef.current ||
+      wsRef.current ||
+      recognitionRef.current ||
+      isCompatModeRef.current
+    )) {
+      stopVoiceSession('idle');
+    }
+  }, [activeTab, stopVoiceSession]);
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {

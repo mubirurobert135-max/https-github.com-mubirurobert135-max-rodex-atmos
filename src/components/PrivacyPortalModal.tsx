@@ -153,21 +153,21 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
       role="dialog"
       aria-modal="true"
       aria-label="Privacy and Account Portal"
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-slate-950/85 backdrop-blur-xl animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-neutral-950/85 backdrop-blur-xl animate-fade-in"
     >
-      <div className="relative w-full max-w-4xl bg-[#0a1426]/95 border border-sky-400/25 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white flex flex-col max-h-[90dvh]">
+      <div className="relative w-full max-w-4xl bg-[#151515]/95 border border-neutral-400/25 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden backdrop-blur-2xl text-white flex flex-col max-h-[90dvh]">
         
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-white/10 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center shadow-lg text-white font-bold shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-neutral-500 to-neutral-600 flex items-center justify-center shadow-lg text-white font-bold shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black tracking-wide text-white flex items-center gap-2">
-                Privacy <span className="text-sky-300 font-light">& Account Portal</span>
+                Privacy <span className="text-neutral-300 font-light">& Account Portal</span>
               </h2>
-              <p className="text-xs text-sky-200/70 font-medium">
+              <p className="text-xs text-neutral-200/70 font-medium">
                 Individual Privacy Controls, Data Ownership & Security
               </p>
             </div>
@@ -184,52 +184,52 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
         <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
           
           {/* Navigation Sidebar */}
-          <div className="w-full md:w-64 bg-slate-950/40 border-b md:border-b-0 md:border-r border-white/10 p-3 flex md:flex-col gap-1 overflow-x-auto shrink-0 scrollbar-none">
+          <div className="w-full md:w-64 bg-neutral-950/40 border-b md:border-b-0 md:border-r border-white/10 p-3 flex md:flex-col gap-1 overflow-x-auto shrink-0 scrollbar-none">
             <button
               onClick={() => handleSwitchSection('overview')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'overview' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'overview' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <UserCheck className="w-4 h-4 shrink-0" /> Overview
             </button>
             <button
               onClick={() => handleSwitchSection('personal')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'personal' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'personal' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <Mail className="w-4 h-4 shrink-0" /> Personal Info
             </button>
             <button
               onClick={() => handleSwitchSection('location')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'location' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'location' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <MapPin className="w-4 h-4 shrink-0" /> Location Privacy
             </button>
             <button
               onClick={() => handleSwitchSection('voice')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'voice' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'voice' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <Mic className="w-4 h-4 shrink-0" /> AI & Voice
             </button>
             <button
               onClick={() => handleSwitchSection('consent')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'consent' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'consent' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <Sliders className="w-4 h-4 shrink-0" /> Preferences
             </button>
             <button
               onClick={() => handleSwitchSection('export')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'export' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'export' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <Download className="w-4 h-4 shrink-0" /> Export Data
             </button>
             <button
               onClick={() => handleSwitchSection('security')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'security' ? 'bg-sky-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'security' ? 'bg-neutral-500 text-white shadow-lg' : 'text-white/70 hover:bg-white/5 hover:text-white'}`}
             >
               <Lock className="w-4 h-4 shrink-0" /> Security
             </button>
             <button
               onClick={() => handleSwitchSection('delete')}
-              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'delete' ? 'bg-rose-500 text-white shadow-lg' : 'text-rose-300/80 hover:bg-rose-500/10 hover:text-rose-200'}`}
+              className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition shrink-0 whitespace-nowrap text-left ${activeSection === 'delete' ? 'bg-neutral-500 text-white shadow-lg' : 'text-neutral-300/80 hover:bg-neutral-500/10 hover:text-neutral-200'}`}
             >
               <Trash2 className="w-4 h-4 shrink-0" /> Delete Account
             </button>
@@ -240,23 +240,23 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
             {/* Feedback Notices */}
             {errorMessage && (
-              <div className="p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2.5 animate-fade-in">
-                <AlertCircle className="w-4 h-4 text-rose-300 shrink-0" />
+              <div className="p-3.5 rounded-2xl bg-neutral-500/20 border border-neutral-500/40 text-neutral-200 text-xs flex items-center gap-2.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
 
             {successMessage && (
-              <div className="p-3.5 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-200 text-xs flex items-center gap-2.5 animate-fade-in">
-                <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0" />
+              <div className="p-3.5 rounded-2xl bg-neutral-500/20 border border-neutral-500/40 text-neutral-200 text-xs flex items-center gap-2.5 animate-fade-in">
+                <CheckCircle2 className="w-4 h-4 text-neutral-300 shrink-0" />
                 <span>{successMessage}</span>
               </div>
             )}
 
             {/* Guest Banner Explanation */}
             {isGuest && (
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/30 text-amber-200 text-xs space-y-2">
-                <div className="font-bold flex items-center gap-2 text-amber-300">
+              <div className="p-4 rounded-2xl bg-neutral-500/10 border border-neutral-400/30 text-neutral-200 text-xs space-y-2">
+                <div className="font-bold flex items-center gap-2 text-neutral-300">
                   <Sparkles className="w-4 h-4" /> Guest Mode Active
                 </div>
                 <p className="leading-relaxed">
@@ -268,7 +268,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       onClose();
                       onOpenAuthModal();
                     }}
-                    className="px-3 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/40 text-amber-100 font-bold transition"
+                    className="px-3 py-1.5 rounded-xl bg-neutral-500/20 hover:bg-neutral-500/30 border border-neutral-400/40 text-neutral-100 font-bold transition"
                   >
                     Sign In or Register
                   </button>
@@ -280,11 +280,11 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'overview' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <UserCheck className="w-4 h-4 text-sky-400" /> Account Overview
+                  <UserCheck className="w-4 h-4 text-neutral-400" /> Account Overview
                 </h3>
 
                 <div className="flex items-center gap-3 rounded-2xl bg-white/5 border border-white/10 p-3.5">
-                  <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-sky-300/60 bg-slate-800">
+                  <div className="w-14 h-14 rounded-full overflow-hidden shrink-0 border-2 border-neutral-300/60 bg-neutral-800">
                     {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
                       <img
                         src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
@@ -301,7 +301,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <div className="min-w-0">
                     <div className="text-sm font-bold text-white truncate">{user?.displayName || userProfile?.displayName || 'RODEX User'}</div>
                     <div className="text-xs text-white/60 break-all">{user?.email || user?.phoneNumber || 'Guest Session'}</div>
-                    <div className="text-[10px] text-sky-200/75 mt-0.5">
+                    <div className="text-[10px] text-neutral-200/75 mt-0.5">
                       {user?.providerData.some((provider) => provider.providerId === 'google.com') ? 'Synced from your Google account' : 'RODEX account profile'}
                     </div>
                   </div>
@@ -315,14 +315,14 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
                     <span className="text-white/50 block font-semibold">Account Status</span>
-                    <span className={`inline-block px-2 py-0.5 rounded-full font-bold uppercase ${isVerified ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30' : 'bg-amber-500/20 text-amber-300 border border-amber-400/30'}`}>
+                    <span className={`inline-block px-2 py-0.5 rounded-full font-bold uppercase ${isVerified ? 'bg-neutral-500/20 text-neutral-300 border border-neutral-400/30' : 'bg-neutral-500/20 text-neutral-300 border border-neutral-400/30'}`}>
                       {isGuest ? 'Guest' : isVerified ? 'Verified Account' : 'Pending Verification'}
                     </span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
                     <span className="text-white/50 block font-semibold">Firebase UID</span>
-                    <span className="font-mono text-sky-300 break-all">{user?.uid || 'N/A (Guest)'}</span>
+                    <span className="font-mono text-neutral-300 break-all">{user?.uid || 'N/A (Guest)'}</span>
                   </div>
 
                   <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 space-y-1">
@@ -330,7 +330,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {user?.providerData && user.providerData.length > 0 ? (
                         user.providerData.map((p) => (
-                          <span key={p.providerId} className="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-200 border border-sky-400/30 text-[10px] font-semibold">
+                          <span key={p.providerId} className="px-2 py-0.5 rounded-lg bg-neutral-500/20 text-neutral-200 border border-neutral-400/30 text-[10px] font-semibold">
                             {p.providerId === 'google.com' ? 'Google' : p.providerId === 'password' ? 'Email/Password' : p.providerId === 'phone' ? 'Phone SMS' : p.providerId}
                           </span>
                         ))
@@ -357,16 +357,16 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'personal' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Mail className="w-4 h-4 text-sky-400" /> Personal Information
+                  <Mail className="w-4 h-4 text-neutral-400" /> Personal Information
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
                     <div>
-                      <label className="text-xs font-semibold text-sky-200 block">Display Name</label>
+                      <label className="text-xs font-semibold text-neutral-200 block">Display Name</label>
                       <span className="text-sm font-bold text-white">{userProfile?.displayName || user?.displayName || 'Not specified'}</span>
                       {user?.providerData.some((provider) => provider.providerId === 'google.com') && (
-                        <span className="block text-[10px] text-emerald-300 mt-0.5">Synced from your Google account</span>
+                        <span className="block text-[10px] text-neutral-300 mt-0.5">Synced from your Google account</span>
                       )}
                     </div>
 
@@ -379,7 +379,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                           }}
                           className="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-semibold transition flex items-center gap-1.5 self-start"
                         >
-                          <Edit2 className="w-3.5 h-3.5 text-sky-300" /> Edit
+                          <Edit2 className="w-3.5 h-3.5 text-neutral-300" /> Edit
                         </button>
                       ) : (
                         <form onSubmit={handleSaveDisplayName} className="flex items-center gap-2 w-full sm:w-auto">
@@ -388,12 +388,12 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                             value={displayNameInput}
                             onChange={(e) => setDisplayNameInput(e.target.value)}
                             placeholder="Enter name"
-                            className="bg-slate-900 border border-sky-400/40 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-full sm:w-40"
+                            className="bg-neutral-900 border border-neutral-400/40 rounded-xl px-3 py-1.5 text-xs text-white outline-none w-full sm:w-40"
                           />
                           <button
                             type="submit"
                             disabled={isLoading}
-                            className="px-3 py-1.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-xs font-bold text-white transition flex items-center gap-1 disabled:opacity-50"
+                            className="px-3 py-1.5 rounded-xl bg-neutral-500 hover:bg-neutral-400 text-xs font-bold text-white transition flex items-center gap-1 disabled:opacity-50"
                           >
                             <Save className="w-3.5 h-3.5" /> Save
                           </button>
@@ -403,7 +403,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-3 rounded-xl bg-black/20 border border-white/10 p-3">
-                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-slate-800 border border-white/15">
+                    <div className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-neutral-800 border border-white/15">
                       {(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL) ? (
                         <img
                           src={(user?.providerData.find((provider) => provider.providerId === 'google.com')?.photoURL || userProfile?.photoURL || user?.photoURL)!}
@@ -443,7 +443,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'location' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-sky-400" /> Location Privacy Controls
+                  <MapPin className="w-4 h-4 text-neutral-400" /> Location Privacy Controls
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
@@ -459,7 +459,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       type="button"
                       onClick={() => handleTogglePreference('autoLocationEnabled', !userPreferences.autoLocationEnabled)}
                       disabled={isLoading}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.autoLocationEnabled ? 'bg-sky-500' : 'bg-slate-700'}`}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.autoLocationEnabled ? 'bg-neutral-500' : 'bg-neutral-700'}`}
                     >
                       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${userPreferences.autoLocationEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -484,7 +484,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'voice' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Mic className="w-4 h-4 text-sky-400" /> AI & Voice Privacy (Hey Atmos)
+                  <Mic className="w-4 h-4 text-neutral-400" /> AI & Voice Privacy (Hey Atmos)
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
@@ -498,7 +498,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       type="button"
                       onClick={() => handleTogglePreference('allowVoiceAnalytics', !userPreferences.allowVoiceAnalytics)}
                       disabled={isLoading}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.allowVoiceAnalytics ? 'bg-sky-500' : 'bg-slate-700'}`}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.allowVoiceAnalytics ? 'bg-neutral-500' : 'bg-neutral-700'}`}
                     >
                       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${userPreferences.allowVoiceAnalytics ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -520,7 +520,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'consent' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Sliders className="w-4 h-4 text-sky-400" /> Data & Consent Preferences
+                  <Sliders className="w-4 h-4 text-neutral-400" /> Data & Consent Preferences
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4 text-xs">
@@ -535,7 +535,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       type="button"
                       onClick={() => handleTogglePreference('rememberLocationAcrossSessions', !userPreferences.rememberLocationAcrossSessions)}
                       disabled={isLoading}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.rememberLocationAcrossSessions ? 'bg-sky-500' : 'bg-slate-700'}`}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.rememberLocationAcrossSessions ? 'bg-neutral-500' : 'bg-neutral-700'}`}
                     >
                       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${userPreferences.rememberLocationAcrossSessions ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -551,7 +551,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                       type="button"
                       onClick={() => handleTogglePreference('saveFavoriteCities', !userPreferences.saveFavoriteCities)}
                       disabled={isLoading}
-                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.saveFavoriteCities ? 'bg-sky-500' : 'bg-slate-700'}`}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${userPreferences.saveFavoriteCities ? 'bg-neutral-500' : 'bg-neutral-700'}`}
                     >
                       <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${userPreferences.saveFavoriteCities ? 'translate-x-5' : 'translate-x-0'}`} />
                     </button>
@@ -565,7 +565,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'export' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Download className="w-4 h-4 text-sky-400" /> Export My Data
+                  <Download className="w-4 h-4 text-neutral-400" /> Export My Data
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
@@ -573,9 +573,9 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     Request a structured, downloadable JSON export containing all personal profile information, preferences, and user-owned data stored by RODEX Atmos.
                   </p>
 
-                  <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-400/20 text-xs text-sky-200 space-y-1">
+                  <div className="p-3.5 rounded-xl bg-neutral-500/10 border border-neutral-400/20 text-xs text-neutral-200 space-y-1">
                     <div className="font-bold flex items-center gap-1.5">
-                      <FileJson className="w-4 h-4 text-sky-300" /> Export Payload Contents:
+                      <FileJson className="w-4 h-4 text-neutral-300" /> Export Payload Contents:
                     </div>
                     <ul className="list-disc list-inside space-y-0.5 text-white/70">
                       <li>Authenticated Account Overview & Provider Data</li>
@@ -588,7 +588,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <button
                     onClick={handleDownloadExport}
                     disabled={isLoading || isGuest}
-                    className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-xl bg-gradient-to-r from-neutral-500 to-neutral-600 hover:from-neutral-400 hover:to-neutral-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     {isLoading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                     <span>Generate & Download Personal Data Export (.JSON)</span>
@@ -601,7 +601,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {activeSection === 'security' && (
               <div className="space-y-4 animate-fade-in">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
-                  <Lock className="w-4 h-4 text-sky-400" /> Account Security
+                  <Lock className="w-4 h-4 text-neutral-400" /> Account Security
                 </h3>
 
                 <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4 text-xs">
@@ -613,7 +613,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     {!isGuest && (
                       <button
                         onClick={logout}
-                        className="px-3.5 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/40 text-rose-200 font-bold transition flex items-center gap-1.5 self-start"
+                        className="px-3.5 py-1.5 rounded-xl bg-neutral-500/20 hover:bg-neutral-500/30 border border-neutral-500/40 text-neutral-200 font-bold transition flex items-center gap-1.5 self-start"
                       >
                         <LogOut className="w-3.5 h-3.5" /> Sign Out
                       </button>
@@ -624,15 +624,15 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                     <span className="font-bold text-white block">Security Features</span>
                     <ul className="space-y-1.5 text-white/70">
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         <span>Firebase Authentication Token Validation</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         <span>Firestore Security Rules (Owner-Only Access)</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                         <span>Zero Password / Token Exposure in Firestore</span>
                       </li>
                     </ul>
@@ -644,16 +644,16 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
             {/* SECTION 8: DELETE MY ACCOUNT */}
             {activeSection === 'delete' && (
               <div className="space-y-4 animate-fade-in">
-                <h3 className="text-base font-bold text-rose-300 flex items-center gap-2">
-                  <Trash2 className="w-4 h-4 text-rose-400" /> Permanent Account Deletion
+                <h3 className="text-base font-bold text-neutral-300 flex items-center gap-2">
+                  <Trash2 className="w-4 h-4 text-neutral-400" /> Permanent Account Deletion
                 </h3>
 
-                <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 space-y-4 text-xs">
-                  <div className="flex items-start gap-2.5 text-rose-200">
-                    <ShieldAlert className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                <div className="p-4 rounded-2xl bg-neutral-500/10 border border-neutral-500/30 space-y-4 text-xs">
+                  <div className="flex items-start gap-2.5 text-neutral-200">
+                    <ShieldAlert className="w-5 h-5 text-neutral-400 shrink-0 mt-0.5" />
                     <div>
-                      <div className="font-bold text-rose-300 text-sm">Permanent Action Warning</div>
-                      <p className="mt-1 leading-relaxed text-rose-200/80">
+                      <div className="font-bold text-neutral-300 text-sm">Permanent Action Warning</div>
+                      <p className="mt-1 leading-relaxed text-neutral-200/80">
                         Deleting your account will permanently remove your profile (`/users/{user?.uid}`), saved preferences, and authentication records from RODEX Atmos.
                       </p>
                     </div>
@@ -662,7 +662,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   <button
                     onClick={() => setShowDeleteConfirmModal(true)}
                     disabled={isGuest}
-                    className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-xl bg-neutral-600 hover:bg-neutral-500 text-white font-bold text-xs shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50"
                   >
                     <Trash2 className="w-4 h-4" />
                     <span>Initiate Account Deletion</span>
@@ -678,8 +678,8 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
       {/* Account Deletion Confirmation Modal */}
       {showDeleteConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-rose-500/40 rounded-3xl p-6 space-y-4 text-white shadow-2xl">
-            <div className="flex items-center gap-2.5 text-rose-400">
+          <div className="w-full max-w-md bg-neutral-900 border border-neutral-500/40 rounded-3xl p-6 space-y-4 text-white shadow-2xl">
+            <div className="flex items-center gap-2.5 text-neutral-400">
               <ShieldAlert className="w-6 h-6 shrink-0" />
               <h3 className="text-base font-bold">Confirm Account Deletion</h3>
             </div>
@@ -690,8 +690,8 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
 
             {/* Inline Error Notice inside modal */}
             {errorMessage && (
-              <div className="p-3.5 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-rose-200 text-xs flex items-center gap-2.5 animate-fade-in">
-                <AlertCircle className="w-4 h-4 text-rose-300 shrink-0" />
+              <div className="p-3.5 rounded-2xl bg-neutral-500/20 border border-neutral-500/40 text-neutral-200 text-xs flex items-center gap-2.5 animate-fade-in">
+                <AlertCircle className="w-4 h-4 text-neutral-300 shrink-0" />
                 <span>{errorMessage}</span>
               </div>
             )}
@@ -704,7 +704,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                 if (errorMessage) setErrorMessage(null);
               }}
               placeholder="Type DELETE"
-              className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-3.5 py-2.5 text-sm text-center font-mono tracking-widest text-white outline-none focus:ring-2 focus:ring-rose-500"
+              className="w-full bg-neutral-950 border border-neutral-500/40 rounded-xl px-3.5 py-2.5 text-sm text-center font-mono tracking-widest text-white outline-none focus:ring-2 focus:ring-neutral-500"
             />
 
             {/* Password input for Email/Password provider re-authentication */}
@@ -718,7 +718,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
                   value={deletePasswordInput}
                   onChange={(e) => setDeletePasswordInput(e.target.value)}
                   placeholder="Enter your account password"
-                  className="w-full bg-slate-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-rose-500"
+                  className="w-full bg-neutral-950 border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white outline-none focus:border-neutral-500"
                 />
               </div>
             )}
@@ -739,7 +739,7 @@ export const PrivacyPortalModal: React.FC<PrivacyPortalModalProps> = ({
               <button
                 onClick={handleConfirmAccountDeletion}
                 disabled={isLoading || deleteConfirmText.trim().toUpperCase() !== 'DELETE'}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white transition flex items-center gap-1.5 disabled:opacity-50 shadow-lg shadow-rose-600/30"
+                className="px-4 py-2 rounded-xl bg-neutral-600 hover:bg-neutral-500 text-xs font-bold text-white transition flex items-center gap-1.5 disabled:opacity-50 shadow-lg shadow-neutral-600/30"
               >
                 {isLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
                 <span>Permanently Delete</span>

@@ -459,7 +459,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptsBottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
-  const recognitionRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recognitionRestartTimerRef = useRef<number | null>(null);
   const isCompatModeRef = useRef<boolean>(false);
   const liveTranscriptsRef = useRef<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
 

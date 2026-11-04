@@ -80,9 +80,9 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     // 4. Core Sphere (Dark Obsidian Metallic Earth)
     const sphereGeo = new THREE.SphereGeometry(2, 64, 64);
     const sphereMat = new THREE.MeshPhongMaterial({
-      color: new THREE.Color('#0A1329'),
-      emissive: new THREE.Color('#030A19'),
-      specular: new THREE.Color('#38BDF8'),
+      color: new THREE.Color('#171717'),
+      emissive: new THREE.Color('#080808'),
+      specular: new THREE.Color('#d4d4d4'),
       shininess: 35,
       wireframe: false,
     });
@@ -92,7 +92,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     // 5. Wireframe Grid Overlay (Longitude / Latitude lines)
     const gridGeo = new THREE.WireframeGeometry(new THREE.SphereGeometry(2.01, 24, 24));
     const gridMat = new THREE.LineBasicMaterial({
-      color: new THREE.Color('#0EA5E9'),
+      color: new THREE.Color('#bcbcbc'),
       transparent: true,
       opacity: 0.15,
     });
@@ -102,7 +102,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     // 6. Outer Atmosphere Cloud Glow Shell
     const cloudsGeo = new THREE.SphereGeometry(2.08, 48, 48);
     const cloudsMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#38BDF8'),
+      color: new THREE.Color('#d4d4d4'),
       transparent: true,
       opacity: 0.12,
       wireframe: true,
@@ -113,7 +113,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     // 7. Orbital Particle Ring (Atmospheric Ring)
     const ringGeo = new THREE.RingGeometry(2.3, 2.38, 64);
     const ringMat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color('#06B6D4'),
+      color: new THREE.Color('#999999'),
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.25,
@@ -138,7 +138,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
       // Marker Dot
       const dotGeo = new THREE.SphereGeometry(hub.active ? 0.08 : 0.04, 16, 16);
       const dotMat = new THREE.MeshBasicMaterial({
-        color: hub.active ? new THREE.Color('#10B981') : new THREE.Color('#38BDF8'),
+        color: hub.active ? new THREE.Color('#f5f5f5') : new THREE.Color('#d4d4d4'),
       });
       const dotMesh = new THREE.Mesh(dotGeo, dotMat);
       dotMesh.position.copy(pos);
@@ -148,7 +148,7 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
       if (hub.active) {
         const pulseGeo = new THREE.RingGeometry(0.09, 0.14, 16);
         const pulseMat = new THREE.MeshBasicMaterial({
-          color: new THREE.Color('#10B981'),
+          color: new THREE.Color('#f5f5f5'),
           side: THREE.DoubleSide,
           transparent: true,
           opacity: 0.6,
@@ -169,11 +169,11 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
     scene.add(ambientLight);
 
-    const dirLight1 = new THREE.DirectionalLight(0x38bdf8, 2.0);
+    const dirLight1 = new THREE.DirectionalLight(0xe5e5e5, 2.0);
     dirLight1.position.set(5, 3, 5);
     scene.add(dirLight1);
 
-    const dirLight2 = new THREE.DirectionalLight(0x06b6d4, 1.2);
+    const dirLight2 = new THREE.DirectionalLight(0x8a8a8a, 1.2);
     dirLight2.position.set(-5, -2, -5);
     scene.add(dirLight2);
 
@@ -280,25 +280,25 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
 
   return (
     <div 
-      className="wx-globe-panel relative w-full rounded-2xl bg-slate-900/80 border border-cyan-500/20 backdrop-blur-md p-4 overflow-hidden shadow-2xl transition-all duration-300 hover:border-cyan-400/40 group"
+      className="wx-globe-panel relative w-full rounded-2xl bg-neutral-900/80 border border-neutral-500/20 backdrop-blur-md p-4 overflow-hidden shadow-2xl transition-all duration-300 hover:border-neutral-400/40 group"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Background Radial Glow */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-cyan-950/30 via-slate-900/60 to-emerald-950/20 pointer-events-none" />
-      <div className="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-tr from-neutral-950/30 via-neutral-900/60 to-neutral-950/20 pointer-events-none" />
+      <div className="absolute -top-24 -left-24 w-48 h-48 bg-neutral-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-neutral-500/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* Header Bar */}
       <div className="relative z-10 flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
+          <div className="p-1.5 rounded-lg bg-neutral-500/10 border border-neutral-500/30 text-neutral-400">
             <Globe className="w-4 h-4 animate-spin-slow" />
           </div>
           <div>
-            <span className="text-xs font-semibold uppercase tracking-wider text-cyan-400/90 block">3D Climate Radar</span>
-            <span className="text-sm font-bold text-slate-100 flex items-center gap-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400/90 block">3D Climate Radar</span>
+            <span className="text-sm font-bold text-neutral-100 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-neutral-400" />
               {cityName}{country ? `, ${country}` : ''}
             </span>
           </div>
@@ -310,8 +310,8 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
             onClick={() => setIsRotating(!isRotating)}
             className={`p-1.5 rounded-lg border text-xs font-medium transition-all ${
               isRotating
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/40'
-                : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
+                ? 'bg-neutral-500/20 text-neutral-300 border-neutral-500/40'
+                : 'bg-neutral-800/80 text-neutral-400 border-neutral-700 hover:text-neutral-200'
             }`}
             title={isRotating ? 'Pause rotation' : 'Auto rotate'}
           >
@@ -325,20 +325,20 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
         <div ref={mountRef} className="w-full h-full" />
 
         {/* Hover Hint Overlay */}
-        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 text-[10px] text-slate-400 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-slate-800 shadow-lg pointer-events-none">
-          <Compass className="w-3 h-3 text-cyan-400" />
+        <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 text-[10px] text-neutral-400 bg-neutral-900/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-neutral-800 shadow-lg pointer-events-none">
+          <Compass className="w-3 h-3 text-neutral-400" />
           <span>Drag to rotate • Tap pin to select</span>
         </div>
 
         {/* Active Weather Overlay Tag */}
         {temperature !== undefined && (
-          <div className="absolute top-2 right-2 z-10 bg-slate-900/90 backdrop-blur-md border border-cyan-500/30 rounded-xl px-3 py-1.5 text-right shadow-xl">
-            <div className="text-xs text-slate-400 font-medium">{condition || 'Live'}</div>
+          <div className="absolute top-2 right-2 z-10 bg-neutral-900/90 backdrop-blur-md border border-neutral-500/30 rounded-xl px-3 py-1.5 text-right shadow-xl">
+            <div className="text-xs text-neutral-400 font-medium">{condition || 'Live'}</div>
             <div className="text-lg font-bold text-white tracking-tight">
               {Math.round(temperature)}°{unit}
             </div>
-            <div className="text-[9px] text-emerald-400 flex items-center justify-end gap-1 font-mono">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <div className="text-[9px] text-neutral-400 flex items-center justify-end gap-1 font-mono">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-400 animate-pulse" />
               {lat.toFixed(2)}°, {lon.toFixed(2)}°
             </div>
           </div>
@@ -346,15 +346,15 @@ export const Interactive3DGlobe: React.FC<Interactive3DGlobeProps> = ({
       </div>
 
       {/* Global Hotspots Bar */}
-      <div className="relative z-10 mt-2 pt-2 border-t border-slate-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-semibold whitespace-nowrap">Global Stations:</span>
+      <div className="relative z-10 mt-2 pt-2 border-t border-neutral-800/80 flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+        <span className="text-[10px] text-neutral-500 uppercase tracking-wider font-semibold whitespace-nowrap">Global Stations:</span>
         {GLOBAL_HUBS.slice(1).map((hub) => (
           <button
             key={hub.name}
             onClick={() => onSelectCoordinates && onSelectCoordinates(hub.lat, hub.lon, hub.name)}
-            className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-800/60 hover:bg-cyan-950/60 text-slate-300 hover:text-cyan-300 border border-slate-700/50 hover:border-cyan-500/30 whitespace-nowrap transition-all flex items-center gap-1"
+            className="text-[11px] px-2.5 py-1 rounded-lg bg-neutral-800/60 hover:bg-neutral-950/60 text-neutral-300 hover:text-neutral-300 border border-neutral-700/50 hover:border-neutral-500/30 whitespace-nowrap transition-all flex items-center gap-1"
           >
-            <Navigation className="w-2.5 h-2.5 text-cyan-400" />
+            <Navigation className="w-2.5 h-2.5 text-neutral-400" />
             {hub.name}
           </button>
         ))}

@@ -15,7 +15,7 @@ for (const width of [360, 768, 1440]) {
       let count = 0;
       const channels = (cssValue: string) => {
         const results: number[][] = [];
-        const pattern = /rgba?\\(\\s*(\\d{1,3})[\\s,]+(\\d{1,3})[\\s,]+(\\d{1,3})/g;
+        const pattern = /rgba?\(\s*(\d{1,3})[\s,]+(\d{1,3})[\s,]+(\d{1,3})/g;
         for (const m of cssValue.matchAll(pattern)) {
           results.push([Number(m[1]), Number(m[2]), Number(m[3])]);
         }

@@ -36,9 +36,13 @@ test('RODEX AI chat accepts one request even when send is triggered twice', asyn
 test('Closing RODEX AI prevents a late network reply from appearing in chat', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 });
   let started = false;
+  // Hold the HTTP reply until after the close operation to test cancellation
+  // rather than relying on a timer that can finish before the modal closes.
+  let releaseResponse!: () => void;
+  const responseGate = new Promise<void>((resolve) => { releaseResponse = resolve; });
   await page.route('**/api/ai/chat', async (route) => {
     started = true;
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    await responseGate;
     try {
       await route.fulfill({
         status: 200,
@@ -57,7 +61,8 @@ test('Closing RODEX AI prevents a late network reply from appearing in chat', as
   await expect.poll(() => started).toBe(true);
   await page.getByTitle('Close Assistant').click();
   await expect(page.getByRole('dialog')).toBeHidden();
-  await page.waitForTimeout(500);
+  releaseResponse();
+  await page.waitForTimeout(250);
 
   await page.getByRole('button', { name: 'Open RODEX AI from header navigation' }).click();
   await page.getByRole('button', { name: 'Text Chat', exact: true }).click();

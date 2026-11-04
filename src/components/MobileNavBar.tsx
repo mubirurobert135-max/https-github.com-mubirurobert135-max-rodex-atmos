@@ -34,7 +34,7 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
   return (
     <nav
       aria-label="Mobile Navigation"
-      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[520px] z-40 lg:hidden bg-[rgba(29,43,42,0.68)] backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
+      className="fixed bottom-3 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] max-w-[520px] z-40 lg:hidden bg-black/85 backdrop-blur-2xl border border-white/25 rounded-[22px] px-2 pt-1 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-2xl transition-all"
     >
       <div className="max-w-md mx-auto grid grid-cols-6 items-center justify-items-center">
         
@@ -44,19 +44,19 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           onPointerMove={updateNavPointer}
           className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'dashboard'
-              ? 'text-sky-300'
+              ? 'text-white'
               : 'text-white/60 hover:text-white/90'
           }`}
           aria-current={activeTab === 'dashboard' ? 'page' : undefined}
           aria-label="Weather Dashboard"
         >
           <div className="relative">
-            <Compass className={`w-5 h-5 transition-transform ${activeTab === 'dashboard' ? 'scale-110 text-sky-300' : ''}`} />
+            <Compass className={`w-5 h-5 transition-transform ${activeTab === 'dashboard' ? 'scale-110 text-white' : ''}`} />
             {activeTab === 'dashboard' && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-sky-400 rounded-full" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
             )}
           </div>
-          <span className="text-[10px] font-semibold tracking-tight mt-1">Dashboard</span>
+          <span className="text-[10px] font-semibold tracking-tight mt-1"><span className="min-[420px]:inline hidden">Dashboard</span><span className="min-[420px]:hidden">Home</span></span>
         </button>
 
         {/* 2. Interactive Weather Map Tab */}
@@ -65,16 +65,16 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           onPointerMove={updateNavPointer}
           className={`rodex-pointer-spotlight flex flex-col items-center justify-center w-full min-h-[48px] py-1 px-1 rounded-xl transition-all ${
             activeTab === 'map'
-              ? 'text-sky-300'
+              ? 'text-white'
               : 'text-white/60 hover:text-white/90'
           }`}
           aria-current={activeTab === 'map' ? 'page' : undefined}
           aria-label="Interactive Weather Map"
         >
           <div className="relative">
-            <Globe className={`w-5 h-5 transition-transform ${activeTab === 'map' ? 'scale-110 text-sky-300' : ''}`} />
+            <Globe className={`w-5 h-5 transition-transform ${activeTab === 'map' ? 'scale-110 text-white' : ''}`} />
             {activeTab === 'map' && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-sky-400 rounded-full" />
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-white rounded-full" />
             )}
           </div>
           <span className="text-[10px] font-semibold tracking-tight mt-1">Map</span>
@@ -85,16 +85,16 @@ export const MobileNavBar: React.FC<MobileNavBarProps> = ({
           <button
             onClick={onOpenAssistant}
             onPointerMove={updateNavPointer}
-            className="rodex-pointer-spotlight w-13 h-13 rounded-full bg-gradient-to-br from-cyan-400 via-sky-500 to-emerald-400 hover:from-cyan-300 hover:to-emerald-300 text-white shadow-xl shadow-cyan-500/25 border-2 border-white/45 flex items-center justify-center transition-transform active:scale-95 group"
+            className="rodex-pointer-spotlight w-13 h-13 rounded-full bg-gradient-to-br from-white via-neutral-200 to-neutral-400 hover:from-white hover:to-neutral-300 text-black shadow-xl shadow-black/35 border-2 border-white/70 flex items-center justify-center transition-transform active:scale-95 group"
             aria-label="Open RODEX AI Voice and Chat Assistant"
             title="Open RODEX AI Assistant"
           >
             <div className="relative flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white group-hover:rotate-12 transition-transform" />
-              <Mic className="w-3 h-3 text-amber-300 absolute -bottom-1 -right-1" />
+              <Sparkles className="w-5 h-5 text-black group-hover:rotate-12 transition-transform" />
+              <Mic className="w-3 h-3 text-neutral-800 absolute -bottom-1 -right-1" />
             </div>
           </button>
-          <span className="text-[9px] font-extrabold tracking-wider text-sky-200 uppercase mt-1">RODEX AI</span>
+          <span className="text-[9px] font-extrabold tracking-wider text-white/85 uppercase mt-1">RODEX AI</span>
         </div>
 
         {/* 4. Weather Alerts Tab */}

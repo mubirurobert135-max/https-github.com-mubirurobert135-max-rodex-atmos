@@ -5,6 +5,16 @@ const previewBypassSecret = process.env.VERCEL_AUTOMATION_BYPASS_SECRET || '';
 if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error('GITHUB_REPOSITORY is missing or invalid.');
 if (!/^\d+$/.test(pullRequestNumber)) throw new Error('PR_NUMBER is missing or invalid.');
 
+// This repository intentionally protects all Vercel preview deployments with
+// Vercel Authentication. Anonymous GitHub runners cannot perform HTTP checks.
+// Never weaken deployment security for CI: emit an explicit skipped check until
+// an optional, restricted automation bypass secret is configured.
+if (process.env.VERCEL_PREVIEW_PROTECTED === 'true' && !previewBypassSecret) {
+  console.warn('::warning::SKIP live preview probes: Vercel Authentication is enabled and no automation bypass secret is configured. Local tests remain required.');
+  console.log('SKIP protected preview. To enable full live checks, configure VERCEL_AUTOMATION_BYPASS_SECRET in repository Actions secrets.');
+  process.exit(0);
+}
+
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const headers = {
   'accept': 'application/vnd.github+json',

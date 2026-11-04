@@ -50,7 +50,7 @@ async function assertPreview(baseUrl) {
   }
   const { response: pageResponse, body: html } = await get(baseUrl);
   const isProtected = [401, 403].includes(pageResponse.status) ||
-    /(?:Authentication Required|Vercel Authentication|Deployment Protection|This deployment is protected|Sign in to Vercel|auth\\.vercel\\.com|vercel\\.com\\/sso)/i.test(html);
+    /(?:Authentication Required|Vercel Authentication|Deployment Protection|This deployment is protected|Sign in to Vercel|auth[.]vercel[.]com|vercel[.]com[/]sso)/i.test(html);
   if (isProtected && (!html.includes('id="root"') || !html.includes('RODEX Atmos'))) {
     if (previewBypassSecret) {
       throw new Error('Preview is still protected despite configured automation bypass. Check the preview secret.');

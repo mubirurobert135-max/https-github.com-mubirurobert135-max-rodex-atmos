@@ -138,7 +138,17 @@ export const WeatherReferenceDashboard: React.FC<WeatherReferenceDashboardProps>
     <section className="wx-reference-shell" aria-label="RODEX Atmos weather dashboard">
       <aside className="wx-reference-rail" aria-label="RODEX Atmos navigation">
         <div className="wx-brand-lockup">
-          <div className="wx-reference-mark" aria-hidden="true">R</div>
+          <img
+            className="wx-reference-mark"
+            src="/rodex-emblem.png"
+            alt=""
+            aria-hidden="true"
+            width="44"
+            height="44"
+            loading="eager"
+            decoding="async"
+            onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = '/icon.svg'; }}
+          />
           <div className="wx-brand-copy">
             <strong>RODEX <span>Atmos</span></strong>
             <small>Understand your day</small>

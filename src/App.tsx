@@ -719,7 +719,8 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Mobile Responsive Navigation Dock */}
+      {/* Keep modal action buttons accessible: hide the floating dock during dialogs. */}
+      {!isAssistantOpen && !isAuthOpen && !isPrivacyPortalOpen && !isAlertsModalOpen && (
       <MobileNavBar
         activeTab={activeTab}
         onSelectTab={setActiveTab}
@@ -729,6 +730,7 @@ export default function App() {
         onOpenPrivacy={() => setIsPrivacyPortalOpen(true)}
         activeAlertsCount={weatherData?.alerts?.length || 0}
       />
+      )}
     </div>
   );
 }

@@ -139,7 +139,21 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   });
   const [inputQuery, setInputQuery] = useState('');
   const [isChatLoading, setIsChatLoading] = useState(false);
+  // Lock submissions synchronously before React renders the disabled control.
+  const chatInFlightRef = useRef(false);
+  const chatAbortControllerRef = useRef<AbortController | null>(null);
   const chatBottomRef = useRef<HTMLDivElement>(null);
+
+  // Cancel in-flight chat on close/unmount instead of displaying stale replies.
+  useEffect(() => {
+    if (!isOpen) {
+      chatAbortControllerRef.current?.abort();
+      chatAbortControllerRef.current = null;
+      chatInFlightRef.current = false;
+      setIsChatLoading(false);
+    }
+    return () => chatAbortControllerRef.current?.abort();
+  }, [isOpen]);
 
   // Auto-switch to chat and set initial query when prompt is provided
   useEffect(() => {
@@ -445,6 +459,7 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
   const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const transcriptsBottomRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const recognitionRestartTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isCompatModeRef = useRef<boolean>(false);
   const liveTranscriptsRef = useRef<Array<{ sender: 'user' | 'assistant'; text: string; id: string }>>([]);
 
@@ -634,7 +649,11 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       wsRef.current = null;
     }
 
-    // 6. Stop browser SpeechRecognition if active
+    // 6. Stop recognition and clear any queued compatibility restart.
+    if (recognitionRestartTimerRef.current) {
+      clearTimeout(recognitionRestartTimerRef.current);
+      recognitionRestartTimerRef.current = null;
+    }
     if (recognitionRef.current) {
       try { recognitionRef.current.abort(); } catch (e) {}
       recognitionRef.current = null;
@@ -726,6 +745,10 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
     setVoiceState('listening');
     isSpeechProcessingRef.current = false;
     processedResultIndicesRef.current.clear();
+    if (recognitionRestartTimerRef.current) {
+      clearTimeout(recognitionRestartTimerRef.current);
+      recognitionRestartTimerRef.current = null;
+    }
 
     const SpeechRecognitionClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognitionClass) {
@@ -870,15 +893,21 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
               });
               turnTimer.markTextRendered(Date.now());
 
+              let playbackFinished = false;
               const onPlaybackFinished = () => {
-                if (currentTurnIdRef.current !== currentTurnId) return;
+                if (playbackFinished || currentTurnIdRef.current !== currentTurnId) return;
+                playbackFinished = true;
                 activeAudioElementRef.current = null;
                 setCurrentAssistantSpoken('');
                 isSpeechProcessingRef.current = false;
                 if (isCompatModeRef.current) {
                   setVoiceState('listening');
                   processedResultIndicesRef.current.clear();
-                  try { recognition.start(); } catch (e) {}
+                  if (!isMutedRef.current) {
+                    try { recognition.start(); } catch (e) {
+                      console.warn('[RODEX Voice] Could not resume speech recognition:', e);
+                    }
+                  }
                 } else {
                   setVoiceState('idle');
                 }
@@ -1001,12 +1030,25 @@ export const AssistantModal: React.FC<AssistantModalProps> = ({
       };
 
       recognition.onend = () => {
-        // If still listening and not in the middle of processing speech, restart recognition cleanly
-        if (isCompatModeRef.current && !isSpeechProcessingRef.current && !isMutedRef.current) {
-          setVoiceState('listening');
+        // Restart after onend exits; immediate start() triggers InvalidStateError
+        // in some browsers and can leave voice mode apparently connected but silent.
+        if (!isCompatModeRef.current || isSpeechProcessingRef.current || isMutedRef.current) return;
+        if (recognitionRestartTimerRef.current) clearTimeout(recognitionRestartTimerRef.current);
+        recognitionRestartTimerRef.current = window.setTimeout(() => {
+          recognitionRestartTimerRef.current = null;
+          if (!isCompatModeRef.current || isSpeechProcessingRef.current || isMutedRef.current ||
+              recognitionRef.current !== recognition) return;
           processedResultIndicesRef.current.clear();
-          try { recognition.start(); } catch (e) {}
-        }
+          try {
+            recognition.start();
+            setVoiceState('listening');
+          } catch (error) {
+            console.warn('[RODEX Voice] Speech recognition restart failed:', error);
+            isCompatModeRef.current = false;
+            setVoiceError('Microphone recognition stopped. Tap Retry Voice to reconnect.');
+            setVoiceState('error');
+          }
+        }, 250);
       };
 
       recognitionRef.current = recognition;
@@ -1802,7 +1844,8 @@ Available Function Tools:
 
   // Play PCM audio chunk gaplessly with jitter buffer lead-time
   const playPcmAudioChunk = (base64Audio: string, mimeType: string = 'audio/pcm;rate=24000', ctx: AudioContext) => {
-    if (isMutedRef.current || !ctx || ctx.state === 'closed') {
+    // Mute Mic stops input only; incoming assistant speech remains audible.
+    if (!ctx || ctx.state === 'closed') {
       playbackMetricsRef.current.discardedChunks += 1;
       return;
     }
@@ -1871,7 +1914,10 @@ Available Function Tools:
   // Text Chat Submit Handler
   const handleSendTextMessage = async (textToSend?: string) => {
     const text = (textToSend || inputQuery).trim();
-    if (!text || isChatLoading) return;
+    if (!text || chatInFlightRef.current) return;
+    chatInFlightRef.current = true;
+    const chatController = new AbortController();
+    chatAbortControllerRef.current = chatController;
 
     const userMsg: ChatMessage = {
       id: Date.now().toString(),
@@ -1894,12 +1940,14 @@ Available Function Tools:
           weatherData,
           deviceLocationData,
           mapContextData,
-          activeMapLayer
+          activeMapLayer,
+          userName: authenticatedFirstName
         }),
-        signal: AbortSignal.timeout(28000)
+        signal: AbortSignal.any([chatController.signal, AbortSignal.timeout(28000)])
       });
 
       const data = await res.json().catch(() => ({}));
+      if (chatController.signal.aborted) return;
       if (!res.ok) {
         throw new Error(data.message || data.error || `Chat service returned HTTP ${res.status}.`);
       }
@@ -1922,6 +1970,7 @@ Available Function Tools:
         onSelectCityWeather(data.updatedCityWeather);
       }
     } catch (err: any) {
+      if (chatController.signal.aborted) return;
       console.error('Chat error:', err);
       setMessages((prev) => [
         ...prev,
@@ -1933,7 +1982,11 @@ Available Function Tools:
         }
       ]);
     } finally {
-      setIsChatLoading(false);
+      if (chatAbortControllerRef.current === chatController) {
+        chatAbortControllerRef.current = null;
+        chatInFlightRef.current = false;
+        setIsChatLoading(false);
+      }
     }
   };
 

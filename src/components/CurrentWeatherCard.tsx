@@ -91,7 +91,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
         return (
           <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
             <div className="absolute inset-0 bg-neutral-500/25 rounded-full blur-lg" />
-            <CloudRain className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 drop-shadow-[0_0_12px_rgba(56,189,248,0.6)] animate-pulse" />
+            <CloudRain className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 drop-shadow-[0_0_12px_rgba(210,210,210,0.45)] animate-pulse" />
           </div>
         );
       case 'CloudSnow':
@@ -105,7 +105,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
         return (
           <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
             <div className="absolute inset-0 bg-neutral-400/30 rounded-full blur-lg animate-pulse" />
-            <CloudLightning className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 drop-shadow-[0_0_12px_rgba(252,211,77,0.7)]" />
+            <CloudLightning className="w-10 h-10 sm:w-12 sm:h-12 text-neutral-300 drop-shadow-[0_0_12px_rgba(220,220,220,0.5)]" />
           </div>
         );
       case 'CloudFog':
@@ -309,7 +309,7 @@ export const CurrentWeatherCard: React.FC<CurrentWeatherCardProps> = ({
               </div>
               <div className="mt-2.5">
                 <div className="text-2xl sm:text-3xl font-black text-white tabular-nums font-heading">
-                  {current.surface_pressure} <span className="text-xs font-normal text-white/50">hPa</span>
+                  {current.surface_pressure} <span className="text-xs font-normal text-white/70">hPa</span>
                 </div>
                 <div className="text-xs text-neutral-200/60 mt-0.5 truncate">
                   Barometric

@@ -238,7 +238,7 @@ export const Header: React.FC<HeaderProps> = ({
             />
 
             {!searchTerm && !isInputFocused && (
-              <span className={`absolute left-9 right-8 text-xs sm:text-sm text-neutral-200/60 pointer-events-none transition-opacity duration-300 truncate ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
+              <span className={`absolute left-9 right-8 text-xs sm:text-sm text-neutral-200/85 pointer-events-none transition-opacity duration-300 truncate ${isFadingOut ? 'opacity-0' : 'opacity-100'}`}>
                 {PLACEHOLDER_MESSAGES[placeholderIndex]}
               </span>
             )}
@@ -281,7 +281,7 @@ export const Header: React.FC<HeaderProps> = ({
                   <div className="flex items-center gap-2 truncate">
                     <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                     <span className="font-medium group-hover:text-neutral-300 transition truncate">{city.name}</span>
-                    {city.admin1 && <span className="text-[11px] text-white/50 truncate">({city.admin1})</span>}
+                    {city.admin1 && <span className="text-[11px] text-white/75 truncate">({city.admin1})</span>}
                   </div>
                   <span className="text-[11px] text-neutral-200/70 font-semibold px-2 py-0.5 rounded-md bg-white/5 border border-white/10 shrink-0 ml-2">
                     {city.country}
@@ -300,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
                   className="w-full text-left px-4 py-2.5 hover:bg-white/10 text-white text-xs sm:text-sm flex items-center justify-between transition group border-b border-white/5 last:border-0"
                 >
                   <span className="font-medium group-hover:text-neutral-300 transition">{city.name}</span>
-                  <span className="text-xs text-white/50">{city.country}</span>
+                  <span className="text-xs text-white/75">{city.country}</span>
                 </button>
               ))}
             </div>

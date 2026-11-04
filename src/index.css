@@ -7774,3 +7774,243 @@ html, body, #root { background-color: #090909; }
 .rodex-monochrome-theme .rodex-header-brand img.rodex-brand-symbol {
   filter: grayscale(1) contrast(1.08) drop-shadow(0 2px 10px rgba(255,255,255,.08)) !important;
 }
+
+
+/* RODEX Atmos — typography, accessible contrast and coherent emblem.
+   Keep text readable at phone, tablet and desktop dimensions. */
+.rodex-monochrome-theme {
+  --rodex-ink: #fafafa;
+  --rodex-supporting: #d2d2d2;
+  --rodex-subtle: #bfbfbf;
+  font-size: 14px;
+  line-height: 1.5;
+}
+.rodex-monochrome-theme :is(.wx-reference-shell,.wx-reference-content,.wx-dashboard-panel,.wx-wardrobe-card,.wx-ai-neutral-summary) {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.rodex-monochrome-theme :is(.wx-dashboard-panel-heading h2,.wx-ai-neutral-heading h3,.wx-nearby-heading,.wx-hourly-heading,.wx-weekly-strip-title) {
+  font-family: var(--font-body) !important;
+  font-size: 15px !important;
+  font-weight: 750 !important;
+  letter-spacing: -.015em !important;
+  line-height: 1.3 !important;
+  color: var(--rodex-ink) !important;
+}
+
+/* Approved sun-and-cloud symbol, including its dashboard sidebar instance.
+   The light inset preserves contrast with the actual artwork, even in dark mode. */
+.rodex-monochrome-theme .rodex-header-brand img.rodex-brand-symbol,
+.rodex-monochrome-theme .wx-reference-mark {
+  object-fit: contain !important;
+  box-sizing: border-box !important;
+  background: #efefef !important;
+  border: 1px solid rgba(255,255,255,.65) !important;
+  filter: grayscale(1) contrast(1.14) !important;
+  box-shadow: 0 5px 15px rgba(0,0,0,.35) !important;
+}
+.rodex-monochrome-theme .wx-reference-mark {
+  display: block !important;
+  width: 44px !important;
+  height: 44px !important;
+  flex: 0 0 44px !important;
+  border-radius: 13px !important;
+}
+.rodex-monochrome-theme .rodex-brand-name {
+  font-size: clamp(18px,1.55vw,23px);
+  font-weight: 750;
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  color: #fff;
+}
+.rodex-monochrome-theme .rodex-brand-name span { color: #ededed; }
+.rodex-monochrome-theme .rodex-brand-tagline {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .105em;
+  line-height: 1.3;
+  color: #d6d6d6;
+}
+.rodex-monochrome-theme .wx-brand-copy strong {
+  font-size: 14px !important;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: #fff !important;
+}
+.rodex-monochrome-theme .wx-brand-copy small {
+  font-size: 11px !important;
+  font-weight: 550;
+  color: var(--rodex-supporting) !important;
+  white-space: normal;
+  line-height: 1.3;
+}
+.rodex-monochrome-theme .wx-reference-rail-button {
+  font-size: 12px !important;
+  min-height: 44px !important;
+}
+.rodex-monochrome-theme .wx-rail-assistant-card small,
+.rodex-monochrome-theme .wx-reference-rail-status {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+  color: var(--rodex-supporting) !important;
+}
+
+/* Dashboard secondary labels were previously 8–10px: keep all meaningful
+   weather labels at a practical minimum, with visible neutral contrast. */
+.rodex-monochrome-theme :is(
+  .wx-welcome-line,.wx-reference-kicker,.wx-live-status,.wx-story-label,
+  .wx-story-copy,.wx-hourly-heading-note,.wx-hourly-temperature > span,
+  .wx-hourly-temperature small,.wx-curve-topline,.wx-curve-badge,.wx-curve-axis,
+  .wx-weekly-day > span,.wx-weekly-day small,.wx-live-weather-location,
+  .wx-location-status,.wx-live-weather-condition,.wx-live-weather-feels,
+  .wx-live-weather-metrics span,.wx-nearby-heading small,
+  .wx-nearby-city-name,.wx-nearby-city-condition,.wx-nearby-loading,
+  .wx-nearby-empty,.wx-nearby-map-link,.wx-reference-quick-location,
+  .wx-hero-eyebrow,.wx-hero-location,.wx-hero-feels,.wx-hero-range span,
+  .wx-hero-weather-caption,.wx-hero-metric-copy small,
+  .wx-dashboard-panel-heading p,.wx-panel-link,.wx-dashboard-hour-time,
+  .wx-dashboard-hour small,.wx-dashboard-hourly-foot,.wx-dashboard-daily-foot,
+  .wx-dashboard-day-name,.wx-dashboard-day-condition,.wx-dashboard-day small,
+  .wx-more-weather-copy small,.wx-ai-neutral-heading p,.wx-ai-neutral-label,
+  .wx-ai-neutral-footer > p,.wx-ai-neutral-refresh,.wx-wardrobe-eyebrow,
+  .wx-wardrobe-status,.wx-wardrobe-label,.wx-wardrobe-item,
+  .wx-wardrobe-notes p,.wx-wardrobe-footer > span,.wx-wardrobe-footer button
+) {
+  font-size: 11px !important;
+  line-height: 1.45 !important;
+  color: var(--rodex-supporting) !important;
+}
+.rodex-monochrome-theme :is(
+  .wx-dashboard-day strong,.wx-dashboard-hour strong,
+  .wx-live-weather-metrics strong,.wx-weekly-day strong,
+  .wx-nearby-city > strong,.wx-hero-metric-copy strong
+) {
+  font-size: 13px !important;
+  font-weight: 750 !important;
+  line-height: 1.3 !important;
+  color: #fafafa !important;
+}
+.rodex-monochrome-theme :is(
+  .wx-hero-condition,.wx-live-weather-condition,.wx-ai-neutral-copy,
+  .wx-story-copy,.wx-wardrobe-notes p
+) {
+  font-size: 13px !important;
+  line-height: 1.55 !important;
+  color: #eeeeee !important;
+}
+.rodex-monochrome-theme :is(
+  .wx-dashboard-panel-heading p,.wx-dashboard-hour-time,
+  .wx-dashboard-hour small,.wx-dashboard-day-name,
+  .wx-dashboard-day-condition,.wx-dashboard-day small
+) { color: #dbdbdb !important; }
+.rodex-monochrome-theme :is(
+  .wx-panel-link,.wx-hero-metric-copy small,.wx-live-status,
+  .wx-reference-kicker
+) { color: #ededed !important; }
+
+/* More room for enlarged forecast labels without crushing content. */
+.rodex-monochrome-theme .wx-dashboard-hour {
+  min-height: 122px;
+  gap: 7px;
+  padding: 9px 4px;
+}
+.rodex-monochrome-theme .wx-dashboard-day {
+  min-height: 44px;
+  gap: 7px;
+  padding-block: 7px;
+}
+.rodex-monochrome-theme .wx-dashboard-panel-heading {
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+.rodex-monochrome-theme .wx-hero-metric-copy small {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.rodex-monochrome-theme .wx-hero-metric {
+  min-height: 58px;
+}
+.rodex-monochrome-theme .wx-ai-neutral-footer {
+  flex-wrap: wrap;
+}
+.rodex-monochrome-theme .wx-dashboard-panel :is(p,small),
+.rodex-monochrome-theme .wx-nearby-panel :is(p,small) {
+  color: #d6d6d6 !important;
+}
+
+/* Modern controls: readable labels, detectable borders, accessible focus. */
+.rodex-monochrome-theme :is(
+  .rodex-header-primary-nav button,.rodex-header-shortcuts button,
+  .rodex-header-controls button,.wx-rail-assistant-card,
+  .wx-reference-rail-button
+) {
+  font-weight: 700 !important;
+  line-height: 1.3;
+}
+.rodex-monochrome-theme .rodex-header-search input {
+  font-weight: 550;
+  letter-spacing: normal;
+}
+.rodex-monochrome-theme .rodex-header-search input::placeholder {
+  color: #c9c9c9 !important;
+  opacity: 1;
+}
+.rodex-monochrome-theme :is(.rodex-header-shortcuts,.rodex-header-controls) button {
+  color: #f7f7f7 !important;
+  border-color: rgba(255,255,255,.36) !important;
+}
+
+/* Keep small helper copy in the assistant, accounts and privacy dialogs legible. */
+.rodex-monochrome-theme :is([role="dialog"],.wx-map-card) :is(
+  [class*="text-white/30"],[class*="text-white/40"],[class*="text-white/50"]
+) {
+  color: #c7c7c7 !important;
+}
+.rodex-monochrome-theme [role="dialog"] :is(input,textarea) {
+  font-size: max(14px,1rem);
+  color: #f7f7f7;
+}
+.rodex-monochrome-theme [role="dialog"] :is(input,textarea)::placeholder {
+  color: #c2c2c2;
+}
+@media (max-width: 680px) {
+  .rodex-monochrome-theme .rodex-brand-name { font-size: 18px; }
+  .rodex-monochrome-theme .rodex-brand-tagline {
+    font-size: 9.5px;
+    letter-spacing: .06em;
+  }
+  .rodex-monochrome-theme .wx-dashboard-hourly-list {
+    grid-auto-columns: minmax(98px,1fr);
+  }
+  .rodex-monochrome-theme .wx-hero-metrics { gap: 8px; }
+  .rodex-monochrome-theme .wx-dashboard-day {
+    grid-template-columns: 50px 20px minmax(0,1fr) auto auto !important;
+    gap: 6px !important;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day-condition {
+    display: block !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button > span {
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    line-height: 1.2;
+    letter-spacing: -.02em;
+  }
+}
+@media (max-width: 390px) {
+  .rodex-monochrome-theme .rodex-brand-name { font-size: 16px; }
+  .rodex-monochrome-theme .rodex-brand-tagline { font-size: 9px; letter-spacing: .015em; }
+  .rodex-monochrome-theme .wx-dashboard-day {
+    grid-template-columns: 45px 18px minmax(0,1fr) auto auto !important;
+    gap: 4px !important;
+  }
+  .rodex-monochrome-theme .wx-dashboard-day-condition { font-size: 10px !important; }
+  .rodex-monochrome-theme nav[aria-label="Mobile Navigation"] button > span {
+    font-size: 10px !important;
+    letter-spacing: -.025em;
+  }
+}
